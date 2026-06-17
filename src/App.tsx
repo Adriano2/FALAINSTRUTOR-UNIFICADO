@@ -27,6 +27,7 @@ import {
 } from './data';
 
 import { User, Course, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission } from './types';
+import { authApi, clearToken, getToken } from './api';
 import { Lock, Mail, UserPlus, Key, Info, HelpCircle, Check, AlertCircle } from 'lucide-react';
 
 export default function App() {
@@ -176,6 +177,21 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // Restore the session on load: if a JWT exists, validate it against the API.
+  // An invalid/expired token is cleared. Evaluator shortcuts (local, no token)
+  // are left untouched.
+  React.useEffect(() => {
+    if (!getToken()) return;
+    authApi
+      .me()
+      .then((freshUser) => setCurrentUser(freshUser))
+      .catch(() => {
+        clearToken();
+        setCurrentUser(null);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   React.useEffect(() => {
     localStorage.setItem('fil_users', JSON.stringify(users));
   }, [users]);
@@ -231,46 +247,25 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    clearToken();
     setCurrentUser(null);
     handleNavigate('home');
     alert("Sessão finalizada com sucesso. Até breve!");
   };
 
-  // Login handler
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // Login handler — autentica no backend (senha verificada com bcrypt + JWT).
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanMail = loginEmail.trim().toLowerCase();
-    const matched = users.find((u) => u.email.toLowerCase() === cleanMail);
-
-    // Account does not exist
-    if (!matched) {
-      alert("Não encontramos uma conta com este e-mail. Verifique os dados ou cadastre-se.");
-      return;
+    try {
+      const user = await authApi.login(loginEmail, loginPassword);
+      setCurrentUser(user);
+      setLoginEmail('');
+      setLoginPassword('');
+      handleNavigate(user.role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
+      alert(`Bem-vindo de volta, ${user.name}!`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Não foi possível efetuar o login.");
     }
-
-    // Account exists but is disabled
-    if (!matched.isActive) {
-      alert("Esta conta está inativa. Entre em contato com o administrador para reativá-la.");
-      return;
-    }
-
-    // Validate the password when the account has one defined.
-    // Legacy/demo accounts without a stored password remain accessible.
-    if (matched.password && matched.password !== loginPassword) {
-      alert("Senha incorreta. Por favor, tente novamente.");
-      return;
-    }
-
-    setCurrentUser(matched);
-    setLoginEmail('');
-    setLoginPassword('');
-
-    if (matched.role === 'admin') {
-      handleNavigate('admin-dashboard');
-    } else {
-      handleNavigate('student-dashboard');
-    }
-    alert(`Bem-vindo de volta, ${matched.name}!`);
   };
 
   // Evaluator Quick Login shortcut helper
@@ -288,8 +283,8 @@ export default function App() {
     }
   };
 
-  // Signup Register handler
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  // Signup Register handler — cria a conta no backend.
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (regPass.length < 6) {
       alert("A senha deve possuir no mínimo 6 caracteres.");
@@ -300,38 +295,29 @@ export default function App() {
       return;
     }
 
-    const cleanMail = regEmail.trim().toLowerCase();
-    const already = users.some((u) => u.email.toLowerCase() === cleanMail || u.cpf === regCpf);
-    if (already) {
-      alert("O E-mail ou CPF informado já se encontra vinculado a uma conta existente.");
-      return;
+    try {
+      const newUser = await authApi.register({
+        name: regName,
+        email: regEmail,
+        cpf: regCpf,
+        password: regPass,
+        dob: regDob || undefined,
+      });
+      setCurrentUser(newUser);
+
+      // Clear registration fields
+      setRegName('');
+      setRegEmail('');
+      setRegCpf('');
+      setRegDob('');
+      setRegPass('');
+      setRegConfirmPass('');
+
+      handleNavigate('student-dashboard');
+      alert(`Seja bem-vindo, ${newUser.name}! Sua conta de SST foi criada e habilitada.`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Não foi possível concluir o cadastro.");
     }
-
-    const newUser: User = {
-      id: "usr-" + Date.now(),
-      name: regName,
-      dob: regDob || "1994-01-01",
-      cpf: regCpf,
-      email: cleanMail,
-      password: regPass,
-      role: 'student',
-      isActive: true,
-      registeredAt: new Date().toISOString().split('T')[0]
-    };
-
-    setUsers([...users, newUser]);
-    setCurrentUser(newUser);
-    
-    // Clear registration fields
-    setRegName('');
-    setRegEmail('');
-    setRegCpf('');
-    setRegDob('');
-    setRegPass('');
-    setRegConfirmPass('');
-
-    handleNavigate('student-dashboard');
-    alert(`Seja bem-vindo, ${newUser.name}! Sua conta de SST foi criada e habilitada.`);
   };
 
   // Cart operations
