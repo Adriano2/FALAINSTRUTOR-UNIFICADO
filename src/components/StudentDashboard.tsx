@@ -11,7 +11,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import TutorChat from './TutorChat';
-import { ShieldEmblem, LogoHorizontal } from './BrandLogo';
+import { FiEmblem, LogoHorizontal, RosetteSeal } from './BrandLogo';
 
 // Formata uma data (ISO ou yyyy-mm-dd) por extenso em português: "10 de junho de 2024".
 function formatLongDatePt(value: string): string {
@@ -808,30 +808,43 @@ export default function StudentDashboard({
         const longDate = formatLongDatePt(viewingCertificate.startDate);
         const badge = certificateBadge(course.code);
 
-        // Moldura decorativa (verde + dourada) reutilizada nas duas páginas.
+        // Moldura: textura diagonal sutil, borda fina e cantos angulares
+        // (verde + azul-marinho) no topo-esquerdo e na base-direita.
         const Frame = (
           <>
-            <div className="absolute inset-[10px] border-[3px] border-[#1f9d55] pointer-events-none" />
-            <div className="absolute inset-[15px] border border-[#c9a227]/70 pointer-events-none" />
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.05]"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(45deg, #1f2a44 0, #1f2a44 1px, transparent 1px, transparent 9px)',
+              }}
+            />
+            <div className="absolute inset-[9px] border border-slate-300 pointer-events-none" />
+            {/* Canto superior esquerdo */}
+            <div className="absolute top-0 left-0 w-[26%] h-[18%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+            <div className="absolute top-0 left-0 w-[16%] h-[11%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            {/* Canto inferior direito */}
+            <div className="absolute bottom-0 right-0 w-[22%] h-[15%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            <div className="absolute bottom-0 right-0 w-[13%] h-[9%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
           </>
         );
 
         // Logo central "Fala Instrutor / Higiene Ocupacional" (SVG vetorial).
         const LogoBlock = <LogoHorizontal />;
 
-        // Coluna esquerda: selo da NR (losango amarelo), marca e QR Code real.
+        // Coluna esquerda: selo da NR (losango amarelo), emblema FI e QR real.
         const LeftColumn = (
-          <div className="w-[19%] flex flex-col items-center justify-between py-[5%] shrink-0">
-            <div className="w-[74px] h-[74px] bg-[#ffc107] border-[3px] border-slate-900 rotate-45 flex items-center justify-center shadow-md">
+          <div className="w-[19%] flex flex-col items-center justify-between pt-[15%] pb-[6%] shrink-0">
+            <div className="w-[78px] h-[78px] bg-[#f5c518] border-[3px] border-slate-900 rounded-[14px] rotate-45 flex items-center justify-center shadow-md">
               <div className="-rotate-45 text-center leading-none">
-                {badge.top && <span className="block text-[15px] font-black text-slate-900 leading-none">{badge.top}</span>}
-                <span className={`block ${badge.main.length > 2 ? 'text-base' : 'text-[26px]'} font-black text-[#d91f26] leading-none`}>{badge.main}</span>
+                {badge.top && <span className="block text-[16px] font-black text-slate-900 leading-none">{badge.top}</span>}
+                <span className={`block ${badge.main.length > 2 ? 'text-base' : 'text-[28px]'} font-black text-[#d91f26] leading-none`}>{badge.main}</span>
               </div>
             </div>
-            <ShieldEmblem className="w-[72px] h-auto" />
+            <FiEmblem className="w-[88px] h-auto" />
             {certQrUrl
-              ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[80px] h-[80px]" />
-              : <div className="w-[80px] h-[80px] bg-slate-100 border border-slate-300" />}
+              ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[78px] h-[78px]" />
+              : <div className="w-[78px] h-[78px] bg-slate-100 border border-slate-300" />}
           </div>
         );
 
@@ -893,20 +906,18 @@ export default function StudentDashboard({
                     <div className="flex-1 flex flex-col items-center text-center pr-[2%] pt-[1.5%]">
                       {LogoBlock}
 
-                      {/* Título "Certificado" com selos decorativos */}
-                      <div className="flex items-center justify-center gap-4 mt-3 mb-1">
-                        <Award className="w-9 h-9 text-[#c9a227]" />
-                        <h1 className="text-[44px] font-black italic text-[#2c7a7b] tracking-tight leading-none" style={{ fontFamily: 'Georgia, serif' }}>
-                          Certificado
+                      {/* Título "Certificado" com selo de roseta */}
+                      <div className="flex items-center justify-center gap-3 mt-2 mb-1">
+                        <h1 className="text-[48px] leading-none font-extrabold tracking-tight" style={{ fontFamily: '"Baloo 2", system-ui, sans-serif' }}>
+                          <span style={{ color: '#1e9b46' }}>Cert</span>
+                          <span style={{ color: '#1f2a44' }}>ificado</span>
                         </h1>
-                        <div className="w-9 h-9 rounded-full border-4 border-[#c9a227] flex items-center justify-center">
-                          <div className="w-4 h-4 rounded-full bg-[#c9a227]" />
-                        </div>
+                        <RosetteSeal className="h-[68px] w-auto" />
                       </div>
 
                       {/* Corpo */}
                       <div className="flex-1 flex flex-col justify-center w-full max-w-2xl mx-auto">
-                        <h2 className="text-2xl sm:text-[26px] font-bold text-[#2c7a7b] uppercase tracking-wide mb-4">
+                        <h2 className="text-2xl sm:text-[26px] font-bold text-[#1f2a44] uppercase tracking-wide mb-4">
                           {viewingCertificate.userName}
                         </h2>
                         <p className="text-[13px] sm:text-[14px] text-slate-800 leading-relaxed font-medium">
@@ -918,13 +929,13 @@ export default function StudentDashboard({
                       </div>
 
                       {/* Assinaturas */}
-                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-1 gap-8">
-                        <div className="w-56 flex flex-col items-center">
+                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-[5%] gap-8">
+                        <div className="w-52 flex flex-col items-center">
                           <div className="w-full h-px bg-slate-900 mb-1.5" />
                           <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
                         </div>
-                        <div className="w-64 flex flex-col items-center">
-                          <span className="italic text-2xl text-slate-800 leading-none mb-1" style={{ fontFamily: 'Georgia, serif' }}>
+                        <div className="w-60 flex flex-col items-center">
+                          <span className="text-[24px] text-slate-800 leading-none mb-0.5" style={{ fontFamily: '"Dancing Script", cursive' }}>
                             {firstInstructor.name}
                           </span>
                           <div className="w-full h-px bg-slate-900 mb-1.5" />
@@ -950,7 +961,7 @@ export default function StudentDashboard({
                     <div className="flex-1 flex flex-col pr-[2%] pt-[1.5%]">
                       <div className="flex justify-center">{LogoBlock}</div>
 
-                      <h3 className="text-[14px] max-w-2xl mx-auto text-center font-bold text-slate-900 mt-4 mb-4 border-b-2 border-[#1f9d55] pb-2">
+                      <h3 className="text-[14px] max-w-2xl mx-auto text-center font-bold text-[#1f2a44] mt-3 mb-4 border-b-2 border-[#1e9b46] pb-2">
                         Conteúdo Programático do Treinamento de {course.name}
                       </h3>
 
@@ -966,7 +977,7 @@ export default function StudentDashboard({
                       </div>
 
                       {/* Footer URL */}
-                      <div className="mt-auto pt-4 flex justify-center text-[12px] text-[#1f9d55] font-black tracking-[0.2em] w-full">
+                      <div className="mt-auto pt-4 flex justify-center text-[12px] text-[#1e9b46] font-black tracking-[0.2em] w-full">
                         WWW.FALAINSTRUTOR.COM.BR
                       </div>
                     </div>
