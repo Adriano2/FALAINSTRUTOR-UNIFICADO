@@ -1,0 +1,1519 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React from 'react';
+import { 
+  User, Course, Enrollment, SalesTransaction, Coupon, Comment, 
+  ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission 
+} from '../types';
+import { getExamQuestions } from '../data';
+import { 
+  BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare, 
+  Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus, 
+  Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key 
+} from 'lucide-react';
+
+interface AdminDashboardProps {
+  users: User[];
+  courses: Course[];
+  enrollments: Enrollment[];
+  transactions: SalesTransaction[];
+  coupons: Coupon[];
+  comments: Comment[];
+  contactMessages: ContactMessage[];
+  studentExams: StudentExamSubmission[];
+  layoutConfig: LayoutConfig;
+  paymentConfig: PaymentConfig;
+  onUpdateUsers: (users: User[]) => void;
+  onUpdateCourses: (courses: Course[]) => void;
+  onUpdateEnrollments: (enrollments: Enrollment[]) => void;
+  onUpdateTransactions: (transactions: SalesTransaction[]) => void;
+  onUpdateCoupons: (coupons: Coupon[]) => void;
+  onUpdateComments: (comments: Comment[]) => void;
+  onUpdateLayout: (layout: LayoutConfig) => void;
+  onUpdatePayment: (payment: PaymentConfig) => void;
+}
+
+export default function AdminDashboard({
+  users,
+  courses,
+  enrollments,
+  transactions,
+  coupons,
+  comments,
+  contactMessages,
+  studentExams,
+  layoutConfig,
+  paymentConfig,
+  onUpdateUsers,
+  onUpdateCourses,
+  onUpdateEnrollments,
+  onUpdateTransactions,
+  onUpdateCoupons,
+  onUpdateComments,
+  onUpdateLayout,
+  onUpdatePayment
+}: AdminDashboardProps) {
+  // Sidebar State
+  const [activeTab, setActiveTab] = React.useState<string>('dashboard');
+  const [dashboardDaysFilter, setDashboardDaysFilter] = React.useState<number>(30);
+
+  // General CSV Downloader helper
+  const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+      + [headers.join(','), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Metrics summary calculations based on selected days
+  const metrics = React.useMemo(() => {
+    return {
+      totalUsers: users.length,
+      totalEnrollments: enrollments.length,
+      completedCertificates: enrollments.filter(e => e.passed && e.certificateCode).length,
+      totalRevenues: transactions.filter(t => t.status === 'active').reduce((acc, t) => acc + t.total, 0),
+      discountsApplied: transactions.reduce((acc, t) => acc + t.discount, 0),
+      totalProducts: courses.length,
+    };
+  }, [users, enrollments, transactions, courses, dashboardDaysFilter]);
+
+  // General course modal states
+  const [managingCourse, setManagingCourse] = React.useState<Course | null>(null);
+  const [courseModalType, setCourseModalType] = React.useState<'instructors' | 'modules' | null>(null);
+  const [newInstructorName, setNewInstructorName] = React.useState('');
+  const [newInstructorFormation, setNewInstructorFormation] = React.useState('');
+  const [newModuleText, setNewModuleText] = React.useState('');
+
+  // Coupon manager states
+  const [newCouponCode, setNewCouponCode] = React.useState('');
+  const [newCouponDesc, setNewCouponDesc] = React.useState('');
+  const [newCouponVal, setNewCouponVal] = React.useState<number>(10);
+  const [newCouponType, setNewCouponType] = React.useState<'percentage' | 'fixed'>('percentage');
+
+  // Manual User Registration state
+  const [newUserOpen, setNewUserOpen] = React.useState(false);
+  const [newName, setNewName] = React.useState('');
+  const [newEmail, setNewEmail] = React.useState('');
+  const [newCpf, setNewCpf] = React.useState('');
+  const [newDob, setNewDob] = React.useState('');
+  const [newRole, setNewRole] = React.useState<'admin' | 'student'>('student');
+
+  // CSV Batch Upload state modal
+  const [csvUploadOpen, setCsvUploadOpen] = React.useState(false);
+
+  // Batch Enrollment state modal
+  const [batchEnrollOpen, setBatchEnrollOpen] = React.useState(false);
+  const [selectedEnrollUsers, setSelectedEnrollUsers] = React.useState<string[]>([]);
+  const [batchEnrollCourseId, setBatchEnrollCourseId] = React.useState('');
+
+  // Comment Reply state
+  const [replyCommentId, setReplyCommentId] = React.useState<string | null>(null);
+  const [replyText, setReplyText] = React.useState('');
+
+  // Layout Colors states
+  const [layoutCompany, setLayoutCompany] = React.useState(layoutConfig.companyName);
+  const [layoutPhone, setLayoutPhone] = React.useState(layoutConfig.phone);
+  const [cfgPrimary, setCfgPrimary] = React.useState(layoutConfig.primaryColor);
+  const [cfgSecondary, setCfgSecondary] = React.useState(layoutConfig.secondaryColor);
+  const [cfgCnpj, setCfgCnpj] = React.useState(paymentConfig.cnpj);
+  const [cfgCep, setCfgCep] = React.useState(paymentConfig.cep);
+  const [cfgStreet, setCfgStreet] = React.useState(paymentConfig.street);
+  const [cfgNum, setCfgNum] = React.useState(paymentConfig.number);
+  const [cfgComp, setCfgComp] = React.useState(paymentConfig.complement || '');
+  const [cfgCity, setCfgCity] = React.useState(paymentConfig.city);
+  const [cfgState, setCfgState] = React.useState(paymentConfig.state);
+
+  // Exam Details state drawer
+  const [auditingExam, setAuditingExam] = React.useState<StudentExamSubmission | null>(null);
+
+  // Export actions
+  const handleExportEnrollments = () => {
+    const headers = ["Matrícula ID", "Estudante", "Email", "Código Curso", "Curso", "Progresso (%)", "Exame", "Aprovado", "Data Início"];
+    const rows = enrollments.map(e => [
+      e.id, e.userName, e.userEmail, e.courseCode, e.courseName, e.progress.toString(),
+      e.examScore !== null ? `${e.examScore}%` : "Pendente", e.passed ? "Sim" : "Não", e.startDate
+    ]);
+    downloadCSV("enrollments_export.csv", headers, rows);
+  };
+
+  const handleExportSales = () => {
+    const headers = ["Transação ID", "Estudante", "Curso", "Total Pago", "Desconto", "Status", "Parcelas", "Cupom", "Data"];
+    const rows = transactions.map(t => [
+      t.id, t.userName, t.courseName, t.total.toFixed(2), t.discount.toFixed(2), t.status, t.installments.toString(), t.couponCode || "Nenhum", t.date
+    ]);
+    downloadCSV("sales_export.csv", headers, rows);
+  };
+
+  // Add customized instructors
+  const handleAddInstructor = () => {
+    if (!managingCourse || !newInstructorName || !newInstructorFormation) return;
+    const updatedCourses = courses.map(c => {
+      if (c.id === managingCourse.id) {
+        return {
+          ...c,
+          instructors: [...c.instructors, { id: 'inst-' + Date.now(), name: newInstructorName, formation: newInstructorFormation }]
+        };
+      }
+      return c;
+    });
+    onUpdateCourses(updatedCourses);
+    setNewInstructorName('');
+    setNewInstructorFormation('');
+    setManagingCourse(null);
+    setCourseModalType(null);
+    alert("Instrutor associado com sucesso!");
+  };
+
+  // Add customized modules
+  const handleAddModule = () => {
+    if (!managingCourse || !newModuleText) return;
+    const updatedCourses = courses.map(c => {
+      if (c.id === managingCourse.id) {
+        return {
+          ...c,
+          modules: [...c.modules, newModuleText]
+        };
+      }
+      return c;
+    });
+    onUpdateCourses(updatedCourses);
+    setNewModuleText('');
+    setManagingCourse(null);
+    setCourseModalType(null);
+    alert("Módulo de conteúdo adicionado com sucesso!");
+  };
+
+  // Create manual individual Account
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName || !newEmail || !newCpf) return;
+
+    const exists = users.some(u => u.email.toLowerCase() === newEmail.toLowerCase() || u.cpf === newCpf);
+    if (exists) {
+      alert("Já existe um usuário registrado com este E-mail ou CPF.");
+      return;
+    }
+
+    const newUser: User = {
+      id: "usr-" + Date.now(),
+      name: newName,
+      email: newEmail,
+      cpf: newCpf,
+      dob: newDob || "1990-01-01",
+      role: newRole,
+      isActive: true,
+      registeredAt: new Date().toISOString().split('T')[0]
+    };
+
+    onUpdateUsers([...users, newUser]);
+    setNewName('');
+    setNewEmail('');
+    setNewCpf('');
+    setNewDob('');
+    setNewRole('student');
+    setNewUserOpen(false);
+    alert("Usuário registrado com sucesso!");
+  };
+
+  // Download template CSV file
+  const handleDownloadCsvTemplate = () => {
+    const headers = ["Nome Completo", "Nascimento (AAAA-MM-DD)", "CPF (000.000.000-00)", "Email", "Cargo"];
+    const rows = [
+      ["Lucas de Assis Soares", "1993-04-15", "123.456.789-10", "lucas@empresa.com.br", "student"],
+      ["Gabriela Mendes Albuquerque", "1989-11-20", "225.441.905-11", "gabriela@empresa.com.br", "student"],
+    ];
+    downloadCSV("user_example_template.csv", headers, rows);
+  };
+
+  // Mock upload CSV registry file
+  const handleMockCsvUpload = () => {
+    setCsvUploadOpen(false);
+    // Simulate parsing 3 users instantly
+    const parsedUsers: User[] = [
+      {
+        id: "usr-csv-1",
+        name: "Larissa Mayara Carvalho",
+        dob: "1994-07-16",
+        cpf: "542.128.988-11",
+        email: "larissa.mayara@empresa.com.br",
+        role: "student",
+        isActive: true,
+        registeredAt: new Date().toISOString().split('T')[0]
+      },
+      {
+        id: "usr-csv-2",
+        name: "Bruno de Sousa Barros",
+        dob: "1991-03-24",
+        cpf: "191.129.435-02",
+        email: "bruno.sousa@empresa.com.br",
+        role: "student",
+        isActive: true,
+        registeredAt: new Date().toISOString().split('T')[0]
+      },
+      {
+        id: "usr-csv-3",
+        name: "Olívia Santos Soares",
+        dob: "1997-12-05",
+        cpf: "348.911.233-14",
+        email: "olivia.santos@empresa.com.br",
+        role: "student",
+        isActive: true,
+        registeredAt: new Date().toISOString().split('T')[0]
+      }
+    ];
+
+    onUpdateUsers([...users, ...parsedUsers]);
+    alert("Arquivo de lote processado! 3 novos profissionais de SST foram engajados e registrados no FalaInstrutor.");
+  };
+
+  // Batch Enrollment trigger
+  const handleBatchEnroll = () => {
+    if (selectedEnrollUsers.length === 0 || !batchEnrollCourseId) {
+      alert("Por favor, selecione pelo menos um usuário e informe o curso de destino.");
+      return;
+    }
+
+    const course = courses.find(c => c.id === batchEnrollCourseId);
+    if (!course) return;
+
+    const newEnrollments: Enrollment[] = [...enrollments];
+
+    selectedEnrollUsers.forEach(userId => {
+      const u = users.find(user => user.id === userId);
+      if (!u) return;
+
+      // Check if already enrolled in this course
+      const already = enrollments.some(e => e.userId === userId && e.courseId === batchEnrollCourseId);
+      if (already) return;
+
+      newEnrollments.push({
+        id: "enr-" + Math.floor(Math.random() * 89999 + 10000),
+        userId: userId,
+        userName: u.name,
+        userEmail: u.email,
+        courseId: course.id,
+        courseName: course.name,
+        courseCode: course.code,
+        progress: 0,
+        startDate: new Date().toISOString().split('T')[0],
+        examScore: null,
+        passed: false,
+        certificateCode: null,
+        enrolledAt: new Date().toISOString().split('T')[0]
+      });
+    });
+
+    onUpdateEnrollments(newEnrollments);
+    setSelectedEnrollUsers([]);
+    setBatchEnrollCourseId('');
+    setBatchEnrollOpen(false);
+    alert("Usuários selecionados matriculados e integrados com sucesso!");
+  };
+
+  // Save Settings Config
+  const handleSaveSettings = () => {
+    onUpdateLayout({
+      ...layoutConfig,
+      companyName: layoutCompany,
+      phone: layoutPhone,
+      primaryColor: cfgPrimary,
+      secondaryColor: cfgSecondary
+    });
+    onUpdatePayment({
+      ...paymentConfig,
+      cnpj: cfgCnpj,
+      cep: cfgCep,
+      street: cfgStreet,
+      number: cfgNum,
+      complement: cfgComp,
+      city: cfgCity,
+      state: cfgState
+    });
+    alert("Configurações gerais do FalaInstrutor guardadas com sucesso!");
+  };
+
+  // Post Administrative reply to comment
+  const handleSaveReply = () => {
+    if (!replyCommentId || !replyText) return;
+    const updated = comments.map(c => {
+      if (c.id === replyCommentId) {
+        return { ...c, reply: replyText };
+      }
+      return c;
+    });
+    onUpdateComments(updated);
+    setReplyCommentId(null);
+    setReplyText('');
+    alert("Resposta publicada e transmitida ao e-mail do aluno!");
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 font-sans transition-colors duration-200">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        
+        {/* Admin Left navigation column */}
+        <div className="md:col-span-1 space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 rounded-lg p-4 space-y-4">
+            
+            <div>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Treinamento Geral</p>
+              <div className="space-y-1">
+                {[
+                  { id: 'dashboard', label: 'Visão Geral', icon: BarChart },
+                  { id: 'courses', label: 'Gestão de Cursos', icon: BookOpen },
+                  { id: 'enrollments', label: 'Matrículas', icon: ClipboardList },
+                  { id: 'sales', label: 'Gestão de Vendas', icon: DollarSign },
+                  { id: 'users', label: 'Usuários LMS', icon: Users },
+                  { id: 'coupons', label: 'Gerenciar Cupons', icon: Tag },
+                ].map(opt => {
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setActiveTab(opt.id)}
+                      className={`w-full flex items-center gap-2 p-2 rounded text-xs font-semibold text-left transition select-none cursor-pointer ${
+                        activeTab === opt.id 
+                          ? 'bg-amber-500 text-slate-950 font-extrabold' 
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" /> {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Administração Configs</p>
+              <div className="space-y-1">
+                {[
+                  { id: 'settings', label: 'Configurações', icon: Settings },
+                  { id: 'comments', label: 'Comentários', icon: MessageSquare },
+                  { id: 'contacts', label: 'Mensagens Contato', icon: Mail },
+                  { id: 'exams', label: 'Provas / Atividades', icon: BookOpenCheck },
+                ].map(opt => {
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setActiveTab(opt.id)}
+                      className={`w-full flex items-center gap-2 p-2 rounded text-xs font-semibold text-left transition select-none cursor-pointer ${
+                        activeTab === opt.id 
+                          ? 'bg-amber-500 text-slate-950 font-extrabold' 
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" /> {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Admin right main workspace panel */}
+        <div className="md:col-span-3 space-y-6">
+          
+          {/* TAB 1: METRICS DASHBOARD */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              
+              {/* Filter Row header */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800 p-4 rounded-lg">
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Estatísticas Gerais</h2>
+                  <p className="text-xs text-slate-400">Atividades e relatórios financeiros consolidados.</p>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded text-xs font-bold">
+                  {[7, 15, 30].map(days => (
+                    <button
+                      key={days}
+                      onClick={() => setDashboardDaysFilter(days)}
+                      className={`px-3 py-1 rounded transition select-none cursor-pointer ${
+                        dashboardDaysFilter === days 
+                          ? 'bg-amber-500 text-slate-950 font-black' 
+                          : 'text-slate-650 dark:text-slate-350 hover:text-amber-500'
+                      }`}
+                    >
+                      {days} Dias
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary Cards values */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+                  <div className="p-3 bg-blue-500/10 text-blue-500 rounded-full shrink-0"><Users className="w-5 h-5" /></div>
+                  <div>
+                    <span className="text-[10px] text-slate-450 uppercase font-black block">Total Usuários</span>
+                    <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{metrics.totalUsers}</strong>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+                  <div className="p-3 bg-amber-500/10 text-amber-500 rounded-full shrink-0"><BookOpen className="w-5 h-5" /></div>
+                  <div>
+                    <span className="text-[10px] text-slate-450 uppercase font-black block">Matrículas Ativas</span>
+                    <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{metrics.totalEnrollments}</strong>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+                  <div className="p-3 bg-purple-500/10 text-purple-500 rounded-full shrink-0"><Award className="w-5 h-5" /></div>
+                  <div>
+                    <span className="text-[10px] text-slate-450 uppercase font-black block">Certificados Emitidos</span>
+                    <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{metrics.completedCertificates}</strong>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+                  <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-full shrink-0"><DollarSign className="w-5 h-5" /></div>
+                  <div>
+                    <span className="text-[10px] text-slate-450 uppercase font-black block">Receita Bruta</span>
+                    <strong className="text-lg font-extrabold text-slate-900 dark:text-white">R$ {metrics.totalRevenues.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+                  <div className="p-3 bg-rose-500/10 text-rose-500 rounded-full shrink-0"><Tag className="w-5 h-5" /></div>
+                  <div>
+                    <span className="text-[10px] text-slate-450 uppercase font-black block">Cupons Aplicados</span>
+                    <strong className="text-lg font-extrabold text-slate-900 dark:text-white">R$ {metrics.discountsApplied.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+                  <div className="p-3 bg-indigo-500/10 text-indigo-500 rounded-full shrink-0"><Sliders className="w-5 h-5" /></div>
+                  <div>
+                    <span className="text-[10px] text-slate-450 uppercase font-black block">Cursos Ativos</span>
+                    <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{metrics.totalProducts}</strong>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Visual custom SVG graphics elements */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-6">
+                <div>
+                  <h3 className="text-sm font-black text-slate-950 dark:text-slate-100 uppercase tracking-tight">Tendências de Registro & Práticas</h3>
+                  <span className="text-slate-400 text-xs">Visão consolidada do fluxo do tráfego corporativo semipresencial.</span>
+                </div>
+
+                {/* Highly responsive animated custom interactive SVG Bar Chart */}
+                <div className="w-full aspect-[2.1] bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded p-4 flex flex-col justify-between">
+                  <div className="flex-1 flex items-end justify-between gap-2.5 sm:gap-6 relative sm:px-6">
+                    {/* SVG Chart vertical gridlines */}
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none select-none">
+                      <div className="w-full border-t border-slate-200 dark:border-slate-800 text-[9px] text-slate-400 pt-0.5 font-bold">50 Users</div>
+                      <div className="w-full border-t border-slate-200 dark:border-slate-800 text-[9px] text-slate-400 pt-0.5 font-bold">25 Users</div>
+                      <div className="w-full border-t border-slate-200 dark:border-slate-800 text-[9px] text-slate-400 pt-0.5 font-bold">10 Users</div>
+                    </div>
+
+                    {[
+                      { l: 'Set/25', u: 40, h: '85%' },
+                      { l: 'Out/25', u: 28, h: '60%' },
+                      { l: 'Nov/25', u: 52, h: '100%' },
+                      { l: 'Dez/25', u: 10, h: '25%' },
+                      { l: 'Jan/26', u: 31, h: '70%' },
+                      { l: 'Fev/26', u: 45, h: '90%' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 z-1">
+                        <div className="w-full max-w-[28px] bg-amber-500 rounded-t shadow transition-all duration-500 hover:opacity-85 cursor-help" style={{ height: item.h }} title={`${item.u} usuários inscritos`}>
+                          {/* tooltip spacer */}
+                        </div>
+                        <span className="text-[10px] text-slate-450 font-bold select-none">{item.l}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-center pt-2 text-[10px] text-amber-500 font-bold tracking-wide uppercase select-none">
+                    Gráfico Mensal de Desempenho e Matrícula de Turmas
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 2: COURSE ADMIN */}
+          {activeTab === 'courses' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
+                Gestão e Homologação de Cursos
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {courses.map(course => (
+                  <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex flex-col justify-between space-y-4 shadow-sm">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-amber-500 font-extrabold pb-0.5 block">{course.code}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">{course.duration}h total</span>
+                      </div>
+                      <h3 className="font-bold text-xs text-slate-900 dark:text-slate-100 uppercase line-clamp-1">{course.name}</h3>
+                      <p className="text-xs text-slate-500 line-clamp-2 mt-1">{course.description}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 dark:border-slate-800 pt-3">
+                      <button
+                        onClick={() => {
+                          setManagingCourse(course);
+                          setCourseModalType('instructors');
+                        }}
+                        className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-500/10 text-slate-700 dark:text-slate-300 rounded font-semibold text-center text-[11px] transition select-none cursor-pointer"
+                      >
+                        Docentes ({course.instructors.length})
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          setManagingCourse(course);
+                          setCourseModalType('modules');
+                        }}
+                        className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-500/10 text-slate-700 dark:text-slate-300 rounded font-semibold text-center text-[11px] transition select-none cursor-pointer"
+                      >
+                        Módulos Práticos
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 3: MATRICULAS (ENROLLMENTS) */}
+          {activeTab === 'enrollments' && (
+            <div className="space-y-4">
+              
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Matrículas e Aproveitamento</h2>
+                <button 
+                  onClick={handleExportEnrollments}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 hover:text-amber-500 text-white font-bold text-xs rounded shadow flex items-center gap-1.5 select-none cursor-pointer uppercase tracking-wider"
+                >
+                  <Download className="w-4 h-4" /> Exportar Planilha
+                </button>
+              </div>
+
+              {/* Enrollments table row */}
+              <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-205 dark:border-slate-800 overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="p-3">Estudante</th>
+                      <th className="p-3">Código Curso</th>
+                      <th className="p-3">Progresso</th>
+                      <th className="p-3">Avaliação</th>
+                      <th className="p-3 text-right">Data Início</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {enrollments.map((enr) => (
+                      <tr key={enr.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                        <td className="p-3 space-y-0.5">
+                          <p className="font-bold text-slate-900 dark:text-slate-150">{enr.userName}</p>
+                          <p className="text-[10px] text-slate-400 font-mono truncate max-w-[130px]">{enr.userEmail}</p>
+                        </td>
+                        <td className="p-3 font-semibold text-slate-650 dark:text-slate-400">{enr.courseCode}</td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{enr.progress}%</span>
+                            <div className="w-16 bg-slate-150 dark:bg-slate-800 rounded-full h-1">
+                              <div className="bg-amber-500 h-1 rounded-full" style={{ width: `${enr.progress}%` }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {enr.examScore !== null ? (
+                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded font-bold">
+                              {enr.examScore}% Aprovado
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">Em andamento</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right text-slate-450 font-bold font-mono">{enr.startDate}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 4: SALES JOURNAL */}
+          {activeTab === 'sales' && (
+            <div className="space-y-4">
+              
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Fluxo de Caixa Asaas</h2>
+                <button 
+                  onClick={handleExportSales}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 hover:text-amber-500 text-white font-bold text-xs rounded shadow flex items-center gap-1.5 select-none cursor-pointer uppercase tracking-wider"
+                >
+                  <Download className="w-4 h-4" /> Exportar Vendas
+                </button>
+              </div>
+
+              {/* Transactions table row */}
+              <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-205 dark:border-slate-800 overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="p-3">Estudante</th>
+                      <th className="p-3">Treinamentos</th>
+                      <th className="p-3 text-right">Desconto</th>
+                      <th className="p-3 text-right">Total Pago</th>
+                      <th className="p-3 text-center">Intermediário</th>
+                      <th className="p-3 text-right">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {transactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                        <td className="p-3 font-semibold text-slate-900 dark:text-slate-150">{tx.userName}</td>
+                        <td className="p-3 max-w-[200px] truncate font-medium text-slate-700 dark:text-slate-350">{tx.courseName}</td>
+                        <td className="p-3 text-right text-rose-500 font-semibold">- R$ {tx.discount.toFixed(2)}</td>
+                        <td className="p-3 text-right font-black text-slate-900 dark:text-white">
+                          R$ {tx.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`px-2 py-0.5 rounded font-black text-[9px] uppercase ${
+                            tx.status === 'active' 
+                              ? 'bg-emerald-500/10 text-emerald-500' 
+                              : tx.status === 'open' 
+                                ? 'bg-amber-500/10 text-amber-500' 
+                                : 'bg-red-500/10 text-red-500'
+                          }`}>
+                            {tx.status}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right text-slate-450 font-bold font-mono">{tx.date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 5: USERS DIRECTORY */}
+          {activeTab === 'users' && (
+            <div className="space-y-4">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Profissionais Cadastrados</h2>
+                
+                {/* Actions Dropdown triggers */}
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setNewUserOpen(true)}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase rounded flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Novo Usuário
+                  </button>
+                  <button 
+                    onClick={() => setCsvUploadOpen(true)}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-805 hover:text-amber-400 text-white font-bold text-xs uppercase rounded flex items-center gap-1 cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4" /> Importar CSV
+                  </button>
+                  <button 
+                    onClick={() => setBatchEnrollOpen(true)}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-805 hover:text-amber-400 text-white font-bold text-xs uppercase rounded flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sliders className="w-4 h-4" /> Matricular Lote
+                  </button>
+                </div>
+              </div>
+
+              {/* Users Ledger Table listing */}
+              <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-205 dark:border-slate-800 overflow-x-auto shadow-sm">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="p-3">Nome</th>
+                      <th className="p-3">E-mail</th>
+                      <th className="p-3">CPF</th>
+                      <th className="p-3">Função</th>
+                      <th className="p-3 text-center">Status</th>
+                      <th className="p-3 text-right">Data Registro</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {users.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                        <td className="p-3 whitespace-nowrap font-bold text-slate-900 dark:text-slate-150">{u.name}</td>
+                        <td className="p-3 text-slate-500 select-all">{u.email}</td>
+                        <td className="p-3 font-mono">{u.cpf}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            u.role === 'admin' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                          }`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center">
+                          {/* Active / Inactive switch toggler */}
+                          <button 
+                            onClick={() => {
+                              const updatedUsers = users.map(user => {
+                                if (user.id === u.id) {
+                                  return { ...user, isActive: !user.isActive };
+                                }
+                                return user;
+                              });
+                              onUpdateUsers(updatedUsers);
+                            }}
+                            className="p-1 focus:outline-none"
+                            title="Alternar Inativo / Ativo"
+                          >
+                            {u.isActive ? (
+                              <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" />
+                            ) : (
+                              <X className="w-5 h-5 text-red-500 mx-auto" />
+                            )}
+                          </button>
+                        </td>
+                        <td className="p-3 text-right text-slate-400 font-bold font-mono">{u.registeredAt}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 6: DISCOUNT COUPONS */}
+          {activeTab === 'coupons' && (
+            <div className="space-y-6 bg-white dark:bg-slate-900 p-6 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
+                Cadastrar Código Promocional
+              </h2>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!newCouponCode) return;
+                const newCp: Coupon = {
+                  id: 'cup-' + Date.now(),
+                  code: newCouponCode.toUpperCase(),
+                  description: newCouponDesc,
+                  value: newCouponVal,
+                  type: newCouponType,
+                  isActive: true,
+                  associatedProducts: courses.map(c => c.id) // initially maps to all courses
+                };
+                onUpdateCoupons([...coupons, newCp]);
+                setNewCouponCode('');
+                setNewCouponDesc('');
+                alert("Cupom de promoção registrado e ativo!");
+              }} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end bg-slate-50 dark:bg-slate-950 p-4 rounded border border-slate-100 dark:border-slate-800">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Chave Código *</label>
+                  <input 
+                    type="text" 
+                    placeholder="EX: LOTO30"
+                    value={newCouponCode}
+                    onChange={(e) => setNewCouponCode(e.target.value)}
+                    required
+                    className="w-full text-xs p-2 rounded bg-white dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none uppercase"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Valor Desconto *</label>
+                  <input 
+                    type="number" 
+                    value={newCouponVal}
+                    onChange={(e) => setNewCouponVal(Number(e.target.value))}
+                    required
+                    className="w-full text-xs p-2 rounded bg-white dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
+                  <select
+                    value={newCouponType}
+                    onChange={(e) => setNewCouponType(e.target.value as any)}
+                    className="w-full text-xs p-2 rounded bg-white dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                  >
+                    <option value="percentage">Percentual (%)</option>
+                    <option value="fixed">Fixo (R$)</option>
+                  </select>
+                </div>
+                <button 
+                  type="submit"
+                  className="py-2 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer select-none"
+                >
+                  Criar Cupom
+                </button>
+              </form>
+
+              {/* Coupons list */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-black uppercase text-slate-400">Cupons Ativos no Asaas</h3>
+                {coupons.map(cp => (
+                  <div key={cp.id} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-955 rounded border border-slate-100 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-300">
+                    <div>
+                      <strong className="text-amber-505 dark:text-amber-400 font-extrabold pr-2">{cp.code}</strong>
+                      <span className="text-slate-450">({cp.type === 'percentage' ? `${cp.value}%` : `R$ ${cp.value}`} de desconto)</span>
+                      <p className="text-[10px] text-slate-400 mt-1">{cp.description || 'Disponível em todos os treinamentos do portal.'}</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        onUpdateCoupons(coupons.filter(c => c.id !== cp.id));
+                        alert("Cupom removido!");
+                      }}
+                      className="p-1 text-slate-400 hover:text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 7: GENERAL LAYOUT SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-lg border border-slate-250 dark:border-slate-800 shadow-sm">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
+                Configurações da Plataforma
+              </h2>
+
+              <div className="space-y-6">
+                
+                {/* Section A: Layout Configs */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-1">Canal e Visual de Cores</h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Título da Entidade</label>
+                      <input 
+                        type="text" 
+                        value={layoutCompany}
+                        onChange={(e) => setLayoutCompany(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Central Telefone Suporte</label>
+                      <input 
+                        type="text" 
+                        value={layoutPhone}
+                        onChange={(e) => setLayoutPhone(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase block">Cor Primária (Theme)</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={cfgPrimary} onChange={(e) => setCfgPrimary(e.target.value)} className="w-8 h-8 rounded border border-slate-3D" />
+                        <span className="font-mono text-slate-650 dark:text-slate-350">{cfgPrimary}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase block">Cor Secundária (Destaques)</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={cfgSecondary} onChange={(e) => setCfgSecondary(e.target.value)} className="w-8 h-8 rounded border border-slate-3D" />
+                        <span className="font-mono text-slate-650 dark:text-slate-350">{cfgSecondary}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section B: Billing Address Coordinates */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-1">Coordenadas Institucionais (Rodapé e Certificados)</h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">CNPJ Corporativo</label>
+                      <input 
+                        type="text" 
+                        value={cfgCnpj}
+                        onChange={(e) => setCfgCnpj(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">CEP Postal</label>
+                      <input 
+                        type="text" 
+                        value={cfgCep}
+                        onChange={(e) => setCfgCep(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2 space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Logradouro / Avenida</label>
+                      <input 
+                        type="text" 
+                        value={cfgStreet}
+                        onChange={(e) => setCfgStreet(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="col-span-1 space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Número</label>
+                      <input 
+                        type="text" 
+                        value={cfgNum}
+                        onChange={(e) => setCfgNum(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Cidade de Homologação</label>
+                      <input 
+                        type="text" 
+                        value={cfgCity}
+                        onChange={(e) => setCfgCity(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Estado da Federação (UF)</label>
+                      <input 
+                        type="text" 
+                        value={cfgState}
+                        onChange={(e) => setCfgState(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4 text-xs font-semibold text-slate-550">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase block">Arquivo Certificado Digital (.pfx / A1)</label>
+                      <input 
+                        type="file" 
+                        disabled
+                        className="w-full cursor-not-allowed"
+                      />
+                      <span className="text-[10px] text-amber-500 font-bold block">{paymentConfig.digitalCertificateName} ativo</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase block">Senha do Certificado PFX</label>
+                      <input 
+                        type="password" 
+                        value="••••••••••••••"
+                        disabled
+                        className="w-full text-xs p-2.5 rounded bg-slate-100 dark:bg-slate-850 border border-slate-205 text-slate-405 cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+
+                </div>
+
+                <button 
+                  onClick={handleSaveSettings}
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded shadow cursor-pointer select-none"
+                >
+                  Atualizar Configurações Gerais
+                </button>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: COMMENTS ADMINISTRATION */}
+          {activeTab === 'comments' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
+                Moderar Comentários & Dúvidas Técnicas
+              </h2>
+
+              <div className="space-y-4">
+                {comments.map(com => (
+                  <div key={com.id} className="bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <div>
+                        <strong className="text-slate-800 dark:text-slate-150 pr-2">{com.userName}</strong>
+                        <span>concluiu dúvidas sobre: {com.courseName}</span>
+                      </div>
+                      <span>{com.date}</span>
+                    </div>
+                    <p className="text-xs text-slate-650 dark:text-slate-350 leading-relaxed font-semibold">{com.text}</p>
+                    
+                    {com.reply ? (
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800 border-l-4 border-amber-500 rounded text-xs text-slate-700 dark:text-slate-300">
+                        <span className="font-extrabold text-amber-500 text-[10px] block mb-1">SUA RESPOSTA ADMINISTRATIVA:</span>
+                        <p>{com.reply}</p>
+                      </div>
+                    ) : (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            setReplyCommentId(com.id);
+                            setReplyText('');
+                          }}
+                          className="px-3 py-1.5 bg-slate-905 hover:bg-amber-500 hover:text-slate-950 text-white rounded text-xs font-semibold select-none cursor-pointer"
+                        >
+                          Responder dúvida
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Reply Comment absolute Drawer Overlay */}
+              {replyCommentId && (
+                <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 flex items-center justify-center backdrop-blur-xs">
+                  <div className="bg-white dark:bg-slate-900 p-6 rounded-lg max-w-md w-full space-y-4 shadow-2xl border border-slate-2D">
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase">Escrever resposta oficial do Instrutor</h3>
+                    <textarea 
+                      rows={4}
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Redija sua resposta explicativa normativa..."
+                      className="w-full text-xs p-2 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                    />
+                    <div className="flex gap-2 justify-end text-xs">
+                      <button onClick={handleSaveReply} className="px-4 py-2 bg-emerald-500 font-bold text-white rounded hover:bg-emerald-450">Publicar</button>
+                      <button onClick={() => setReplyCommentId(null)} className="px-3 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300">Fechar</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* TAB 9: CONTACT INBOUND INBOX */}
+          {activeTab === 'contacts' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
+                Contatos Institucionais Recebidos
+              </h2>
+
+              <div className="space-y-4">
+                {contactMessages.map(msg => (
+                  <div key={msg.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-lg space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <div>
+                        <strong className="text-slate-800 dark:text-white pr-2">{msg.name}</strong>
+                        <span>({msg.email})</span>
+                      </div>
+                      <span>{msg.date}</span>
+                    </div>
+                    
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 rounded text-xs space-y-2">
+                      <span className="font-extrabold text-slate-400 block text-[10px] uppercase">Assunto: {msg.subject}</span>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed italic">"{msg.message}"</p>
+                    </div>
+
+                    <div className="text-xs text-slate-450 font-bold flex items-center gap-1">
+                      <span>WhatsApp de retorno:</span>
+                      <strong className="text-amber-500 hover:underline cursor-pointer" onClick={() => window.open(`https://api.whatsapp.com/send?phone=${msg.phone.replace(/[^0-9]/g, '')}`, '_blank')}>
+                        {msg.phone}
+                      </strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 10: USER EXAMS SUBMISSIONS */}
+          {activeTab === 'exams' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
+                Auditoria de Provas Regulamentadas
+              </h2>
+
+              <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-205 dark:border-slate-800 overflow-x-auto shadow-sm">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="p-3">Aluno</th>
+                      <th className="p-3">Norma</th>
+                      <th className="p-3 text-center">Score Obtido</th>
+                      <th className="p-3 text-center">Habilitação</th>
+                      <th className="p-3 text-right">Data Exame</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {studentExams.map(ex => (
+                      <tr 
+                        key={ex.id} 
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40 cursor-pointer"
+                        title="Clique para inspecionar respostas"
+                        onClick={() => setAuditingExam(ex)}
+                      >
+                        <td className="p-3 font-bold text-slate-900 dark:text-white">{ex.userName}</td>
+                        <td className="p-3 font-semibold text-slate-650 dark:text-slate-350">{ex.courseCode} - {ex.courseName}</td>
+                        <td className="p-3 text-center font-bold text-sm text-slate-900 dark:text-slate-150">{ex.score}%</td>
+                        <td className="p-3 text-center">
+                          {ex.passed ? (
+                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 font-extrabold rounded">Habilitado</span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-red-500/10 text-red-500 font-semibold rounded">Reprovado</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right text-slate-400 font-bold font-mono">{ex.date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Exam auditor detailed popup sheet */}
+              {auditingExam && (
+                <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 sm:p-6 flex items-center justify-center backdrop-blur-xs">
+                  <div className="bg-white p-6 rounded-lg max-w-2xl w-full space-y-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+                    <div className="flex items-center justify-between border-b pb-2 text-slate-900">
+                      <h3 className="font-extrabold uppercase text-sm">Respostas do Profissional {auditingExam.userName}</h3>
+                      <button onClick={() => setAuditingExam(null)} className="p-1 px-3 bg-red-600 text-white rounded text-xs font-bold">X</button>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <p className="font-bold text-slate-600">Treinamento: {auditingExam.courseName} ({auditingExam.courseCode})</p>
+                      <p className="text-slate-500">Média Regulamentar obtida: <strong className="text-slate-900 font-black">{auditingExam.score}%</strong></p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {getExamQuestions(auditingExam.courseId).map((q, qIndex) => {
+                        const studentChoiceIdx = auditingExam.answers[qIndex];
+                        return (
+                          <div key={qIndex} className="p-3 bg-slate-50 border rounded text-xs space-y-2">
+                            <p className="font-bold text-slate-800">{qIndex + 1}. {q.question}</p>
+                            <div className="space-y-1 ml-2">
+                              {q.options.map((opt, oIndex) => {
+                                const isCorrect = oIndex === q.correctIndex;
+                                const isStudentChoice = oIndex === studentChoiceIdx;
+                                return (
+                                  <div 
+                                    key={oIndex} 
+                                    className={`p-1.5 rounded flex items-center gap-1.5 ${
+                                      isCorrect 
+                                        ? 'bg-emerald-500/10 text-emerald-800 font-bold' 
+                                        : isStudentChoice 
+                                          ? 'bg-red-500/10 text-red-800 font-semibold' 
+                                          : 'text-slate-650'
+                                    }`}
+                                  >
+                                    <span>{opt}</span>
+                                    {isCorrect && <span className="text-[10px] text-emerald-600">(Índice Correto)</span>}
+                                    {isStudentChoice && !isCorrect && <span className="text-[10px] text-red-500">(Escolha do Aluno)</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+      {/* CORE ADMIN POPUPS AND DIALOGS MODALS */}
+
+      {/* MODAL GROUP A: COURSE INSTRUTORES & CONTÉUDO DO CURSO */}
+      {managingCourse && courseModalType === 'instructors' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 flex items-center justify-center backdrop-blur-xs">
+          <div className="bg-white text-slate-900 p-6 rounded-lg max-w-md w-full space-y-4 shadow-2xl border border-slate-3D animate-scale-up">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-black text-sm uppercase tracking-tight">Docentes do Curso: {managingCourse.code}</h3>
+              <button onClick={() => setManagingCourse(null)} className="text-slate-400 hover:text-red-500 font-black">X</button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <span className="font-bold text-slate-400 block uppercase">Instrutores Cadastrados</span>
+              {managingCourse.instructors.map(i => (
+                <div key={i.id} className="p-2.5 bg-slate-50 border rounded flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-slate-900">{i.name}</p>
+                    <p className="text-[10px] text-amber-600 uppercase font-semibold">{i.formation}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Form list inline */}
+            <div className="pt-3 border-t border-slate-100 space-y-3 text-xs">
+              <span className="font-extrabold text-slate-400 block uppercase">Associar Novo Instrutor</span>
+              <div className="space-y-2">
+                <input 
+                  type="text" 
+                  placeholder="Nome Completo do Engenheiro"
+                  value={newInstructorName}
+                  onChange={(e) => setNewInstructorName(e.target.value)}
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                />
+                <input 
+                  type="text" 
+                  placeholder="Formação (ex: Eng. de Segurança / CREA)"
+                  value={newInstructorFormation}
+                  onChange={(e) => setNewInstructorFormation(e.target.value)}
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                />
+                <button 
+                  onClick={handleAddInstructor}
+                  className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer select-none"
+                >
+                  Adicionar Instrutor Responsável
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {managingCourse && courseModalType === 'modules' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 flex items-center justify-center backdrop-blur-xs">
+          <div className="bg-white text-slate-900 p-6 rounded-lg max-w-md w-full space-y-4 shadow-2xl border border-slate-3D">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-black text-sm uppercase tracking-tight">Atividades Práticas Registradas</h3>
+              <button onClick={() => setManagingCourse(null)} className="text-slate-400 hover:text-red-500 font-black">X</button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              {managingCourse.manualActivities && managingCourse.manualActivities.length > 0 ? (
+                managingCourse.manualActivities.map((act, ax) => (
+                  <div key={ax} className="p-2.5 bg-slate-50 border rounded flex justify-between items-center font-semibold text-slate-750">
+                    <span>{act}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] text-slate-400 text-center py-2">Nenhuma atividade prática manual registrada ainda.</p>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-150 space-y-2 text-xs">
+              <span className="font-bold text-slate-400 block uppercase">Adicionar Módulo de Habilidade</span>
+              <input 
+                type="text" 
+                placeholder="Ex Atividade: Prática com talabarte estático"
+                value={newModuleText}
+                onChange={(e) => setNewModuleText(e.target.value)}
+                className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+              />
+              <button 
+                onClick={handleAddModule}
+                className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer select-none"
+              >
+                Incluir Novo Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GROUP B: MANUAL CREATION DIALOG */}
+      {newUserOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 flex items-center justify-center backdrop-blur-xs">
+          <div className="bg-white text-slate-900 p-6 sm:p-8 rounded-lg max-w-md w-full space-y-4 shadow-2xl border border-slate-3D">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-extrabold uppercase text-sm">Registrar Profissional</h3>
+              <button onClick={() => setNewUserOpen(false)} className="text-slate-450 hover:text-red-550 font-black">X</button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="space-y-4 text-xs font-semibold text-slate-550">
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 uppercase block">Nome Completo</label>
+                <input 
+                  type="text" 
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Seu nome"
+                  required
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-400 uppercase block">CPF do profissional</label>
+                  <input 
+                    type="text" 
+                    value={newCpf}
+                    onChange={(e) => setNewCpf(e.target.value)}
+                    placeholder="000.000.000-00"
+                    required
+                    className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-900"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-400 uppercase block">Data Nascimento</label>
+                  <input 
+                    type="date" 
+                    value={newDob}
+                    onChange={(e) => setNewDob(e.target.value)}
+                    className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 uppercase block">E-mail (Login institucional)</label>
+                <input 
+                  type="email" 
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="usuario@empresa.com.br"
+                  required
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-900"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 uppercase block">Função / Perfil</label>
+                <select 
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as any)}
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                >
+                  <option value="student">Aluno de Treinamento</option>
+                  <option value="admin">Administrador Entidade</option>
+                </select>
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer select-none"
+              >
+                Cadastrar Colaborador
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GROUP C: BATCH REGISTRY FROM EXCEL CSV */}
+      {csvUploadOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 flex items-center justify-center backdrop-blur-xs">
+          <div className="bg-white text-slate-900 p-6 sm:p-8 rounded-lg max-w-md w-full space-y-4 shadow-2xl border border-slate-2D">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-extrabold uppercase text-sm">Matrícula em Lote (.CSV)</h3>
+              <button onClick={() => setCsvUploadOpen(false)} className="text-slate-450 hover:text-red-550 font-black">X</button>
+            </div>
+
+            <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded text-xs text-slate-700 leading-relaxed font-semibold">
+              <span className="font-black text-amber-500 block mb-1 uppercase tracking-wider">Como preparar o arquivo?</span>
+              Baixe nosso arquivo de modelo, preencha as colunas do Excel sem alterar as estruturas iniciais do cabeçalho e realize o envio seguro em lote.
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <button 
+                onClick={handleDownloadCsvTemplate}
+                className="w-full py-2.0 border border-slate-200 hover:border-amber-500 text-slate-705 dark:text-slate-800 hover:text-amber-500 rounded font-semibold text-center select-none cursor-pointer flex items-center justify-center gap-1"
+              >
+                <Download className="w-4 h-4" /> Baixar Modelo Exemplo (.CSV)
+              </button>
+
+              <div className="border-2 border-dashed border-slate-205 rounded-lg p-6 text-center space-y-2 bg-slate-50/50 hover:bg-indigo-50/10 transition">
+                <FileText className="w-10 h-10 text-slate-350 mx-auto" />
+                <span className="font-extrabold text-[11px] text-slate-500 block uppercase">Arrastar e Soltar Planilha Excel (.CSV)</span>
+                <input 
+                  type="file" 
+                  accept=".csv"
+                  onChange={handleMockCsvUpload}
+                  className="text-xs max-w-[180px] mx-auto block cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GROUP D: BATCH ENROLLMENT LMS SELECTION */}
+      {batchEnrollOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 flex items-center justify-center backdrop-blur-xs">
+          <div className="bg-white text-slate-900 p-6 sm:p-8 rounded-lg max-w-lg w-full space-y-4 shadow-2xl border border-slate-2D">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-extrabold uppercase text-sm">Vincular Usuários a um Treinamento</h3>
+              <button onClick={() => setBatchEnrollOpen(false)} className="text-slate-450 hover:text-red-550 font-black">X</button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase block">1. Selecione o Treinamento Alvo</label>
+                <select
+                  value={batchEnrollCourseId}
+                  onChange={(e) => setBatchEnrollCourseId(e.target.value)}
+                  className="w-full p-2.5 rounded bg-slate-50 border text-xs focus:outline-none text-slate-900"
+                >
+                  <option value="">-- Escolha um treinamento regulamentar --</option>
+                  {courses.map(c => (
+                    <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase block">2. Marque os Alunos (Selecione em lote)</label>
+                <div className="max-h-40 overflow-y-auto border border-slate-200 rounded p-2 bg-slate-50/50 space-y-1.5">
+                  {users.filter(u => u.role === 'student').map(u => (
+                    <label key={u.id} className="flex items-center gap-2 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={selectedEnrollUsers.includes(u.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedEnrollUsers([...selectedEnrollUsers, u.id]);
+                          } else {
+                            setSelectedEnrollUsers(selectedEnrollUsers.filter(id => id !== u.id));
+                          }
+                        }}
+                        className="accent-amber-500"
+                      />
+                      <span>{u.name} ({u.email})</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <button 
+                onClick={handleBatchEnroll}
+                className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase rounded shadow cursor-pointer select-none text-[11px] tracking-wide"
+              >
+                Ativar Matrícula em Lote
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

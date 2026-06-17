@@ -1,0 +1,6 @@
+{
+  "name": "FalaInstrutor",
+  "description": "Uma plataforma de treinamento completo e homologação SST com gestão intuitiva de cursos, matrículas, certificados e métricas robustas de desempenho.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
