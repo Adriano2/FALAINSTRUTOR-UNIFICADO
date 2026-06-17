@@ -11,6 +11,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import TutorChat from './TutorChat';
+import { FiEmblem, LogoHorizontal } from './BrandLogo';
 
 // Formata uma data (ISO ou yyyy-mm-dd) por extenso em português: "10 de junho de 2024".
 function formatLongDatePt(value: string): string {
@@ -815,20 +816,8 @@ export default function StudentDashboard({
           </>
         );
 
-        // Logo central "Fala Instrutor / Higiene Ocupacional".
-        const LogoBlock = (
-          <div className="flex flex-col items-center">
-            <span className="text-[7px] tracking-[0.35em] text-slate-500 font-semibold uppercase">Higiene Ocupacional</span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-3xl font-black italic text-[#1f9d55] leading-none border-l-[3px] border-t-[3px] border-[#293452] pl-1 pt-0.5">FI</span>
-              <div className="text-left leading-[0.8]">
-                <div className="text-xl font-black text-[#293452] tracking-tight">FALA</div>
-                <div className="text-xl font-black text-[#293452] tracking-tight">INSTRUTOR</div>
-              </div>
-            </div>
-            <span className="text-[7px] tracking-[0.3em] text-[#1f9d55] font-bold uppercase mt-1">Segurança do Trabalho</span>
-          </div>
-        );
+        // Logo central "Fala Instrutor / Higiene Ocupacional" (SVG vetorial).
+        const LogoBlock = <LogoHorizontal />;
 
         // Coluna esquerda: selo da NR (losango amarelo), marca e QR Code real.
         const LeftColumn = (
@@ -839,10 +828,7 @@ export default function StudentDashboard({
                 <span className={`block ${badge.main.length > 2 ? 'text-base' : 'text-[26px]'} font-black text-[#d91f26] leading-none`}>{badge.main}</span>
               </div>
             </div>
-            <div className="flex flex-col items-center gap-1">
-              <span className="bg-[#293452] text-white text-[6px] font-bold uppercase tracking-[0.2em] px-2 py-1">Fala Instrutor</span>
-              <span className="text-4xl font-black italic text-[#1f9d55] leading-none">FI</span>
-            </div>
+            <FiEmblem className="w-[90px] h-auto" />
             {certQrUrl
               ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[80px] h-[80px]" />
               : <div className="w-[80px] h-[80px] bg-slate-100 border border-slate-300" />}
