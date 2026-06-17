@@ -97,7 +97,7 @@ app.post('/api/tutor', async (req: Request, res: Response) => {
       config: {
         systemInstruction,
         temperature: 0.5,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       },
     });
 
