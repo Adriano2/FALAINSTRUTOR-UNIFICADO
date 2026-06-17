@@ -26,6 +26,40 @@ real, em fases:
 - bcryptjs + JWT (autenticação), zod (validação)
 - @google/genai (Tutor de IA)
 
+## Teste rápido na sua máquina
+
+```bash
+# 1. Pegue o código
+git clone <repo> && cd FALAINSTRUTOR-UNIFICADO
+git checkout claude/festive-brahmagupta-zxkdk0
+npm install
+
+# 2. Banco de dados — escolha UMA opção:
+#    (a) Postgres local com Docker:
+docker compose up -d
+#    (b) ou use um Postgres gerenciado grátis (Neon, Supabase, Render)
+#        e copie a connection string.
+
+# 3. Configure o .env
+cp .env.example .env
+#    Edite DATABASE_URL (e, se quiser o Tutor de IA, GEMINI_API_KEY).
+#    Para a opção (a) acima, use:
+#    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/falainstrutor?schema=public"
+
+# 4. Crie as tabelas e os dados iniciais
+npm run db:migrate
+npm run db:seed
+
+# 5. Rode (dois terminais)
+npm run dev:server   # backend  -> http://localhost:8787
+npm run dev          # frontend -> http://localhost:3000
+```
+
+Abra `http://localhost:3000`. Para testar a **autenticação real**: clique em
+"Cadastre-se", crie uma conta (a senha vai criptografada para o banco), saia e
+entre novamente. Admin de teste: `adriano.ricardo01@gmail.com` /
+`Anthony9936#` (ou o valor de `ADMIN_PASSWORD` usado no seed).
+
 ## Backend, banco de dados e autenticação (Fase 1)
 
 **Pré-requisitos:** Node.js 18+ e um PostgreSQL acessível.
