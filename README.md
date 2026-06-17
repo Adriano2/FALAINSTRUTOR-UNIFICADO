@@ -6,19 +6,51 @@ exames com emissão de certificado, validação pública de certificados e um
 painel administrativo robusto (usuários, matrículas, vendas, cupons,
 comentários e configurações).
 
-O front-end (React + Vite + TypeScript + Tailwind CSS) persiste todo o estado
-no `localStorage` do navegador. Há também um **backend Express opcional** que
-fornece o **Tutor de IA** (Google Gemini) — ele existe apenas para manter a
-chave de API protegida no servidor.
+## Arquitetura (em evolução para produção)
+
+O projeto está migrando de protótipo (dados no navegador) para uma plataforma
+real, em fases:
+
+- **Front-end** (React + Vite + Tailwind) — hoje ainda usa `localStorage`. A
+  migração para a API acontece na Fase 2.
+- **Backend** (Express + PostgreSQL + Prisma) — **Fase 1 concluída**:
+  autenticação real com senha criptografada (bcrypt) e tokens JWT, API de
+  catálogo/matrículas/certificados e o Tutor de IA (Gemini) com a chave
+  protegida no servidor.
 
 ## Stack
 
-- React 19 + TypeScript
-- Vite 6
-- Tailwind CSS 4
-- lucide-react (ícones)
-- jsPDF + html2canvas (geração do certificado em PDF)
-- Express + @google/genai (backend do Tutor de IA)
+- React 19 + TypeScript + Vite 6 + Tailwind CSS 4
+- lucide-react (ícones), jsPDF + html2canvas (certificado em PDF)
+- Express + PostgreSQL + Prisma ORM
+- bcryptjs + JWT (autenticação), zod (validação)
+- @google/genai (Tutor de IA)
+
+## Backend, banco de dados e autenticação (Fase 1)
+
+**Pré-requisitos:** Node.js 18+ e um PostgreSQL acessível.
+
+1. Copie `.env.example` para `.env` e preencha `DATABASE_URL`, `JWT_SECRET` e
+   (opcional) `GEMINI_API_KEY`.
+2. Crie as tabelas e popule os dados iniciais:
+   ```bash
+   npm run db:migrate   # aplica as migrações (cria as tabelas)
+   npm run db:seed      # cursos, cupons, admin (senha via ADMIN_PASSWORD) e config
+   ```
+3. Suba o backend: `npm run dev:server` (porta `8787`).
+
+Principais endpoints: `POST /api/auth/register`, `POST /api/auth/login`,
+`GET /api/auth/me`, `GET /api/courses`, `GET /api/enrollments/me`,
+`GET /api/certificates/:code`, `POST /api/tutor`, `GET /api/health`.
+
+## Deploy (Render / Railway / Docker)
+
+- **Render:** o arquivo `render.yaml` provisiona o Web Service + um PostgreSQL
+  gerenciado. Em New > Blueprint, selecione o repositório e defina
+  `GEMINI_API_KEY` e `ADMIN_PASSWORD` no painel. Migrações e seed rodam
+  automaticamente no `preDeployCommand`.
+- **Railway / Cloud Run / VPS:** use o `Dockerfile` incluso (aplica migrações e
+  inicia o servidor). Configure as variáveis de ambiente do `.env.example`.
 
 ## Rodando localmente
 
@@ -56,11 +88,14 @@ npm start       # Express serve o dist/ e a API na porta 8787
 ## Scripts
 
 - `npm run dev` — front-end (Vite) em modo desenvolvimento
-- `npm run dev:server` — backend do Tutor de IA com hot-reload
+- `npm run dev:server` — backend (API + Tutor de IA) com hot-reload
 - `npm run build` — build de produção (saída em `dist/`)
 - `npm start` — sobe o backend servindo o build + a API
 - `npm run preview` — pré-visualiza o build de produção (sem API)
 - `npm run lint` — checagem de tipos do front-end e do servidor
+- `npm run db:migrate` / `db:deploy` — migrações (dev / produção)
+- `npm run db:seed` — popula dados iniciais
+- `npm run db:studio` — abre o Prisma Studio (inspeção do banco)
 
 ## Acesso de teste
 

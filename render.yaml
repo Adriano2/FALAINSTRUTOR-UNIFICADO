@@ -1,0 +1,39 @@
+# Blueprint de deploy no Render (https://render.com).
+# Cria um Web Service Node + um PostgreSQL gerenciado.
+#
+# Como usar:
+#   1. Faça push deste repositório para o GitHub.
+#   2. No Render: New > Blueprint > selecione o repositório.
+#   3. Defina a variável GEMINI_API_KEY (sync:false) no painel do serviço.
+#   O DATABASE_URL e o JWT_SECRET são preenchidos automaticamente.
+
+services:
+  - type: web
+    name: falainstrutor
+    runtime: node
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    # Executa migrações e seed (idempotente) antes de cada deploy.
+    preDeployCommand: npx prisma migrate deploy && npx prisma db seed
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: falainstrutor-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      # Senha inicial do admin no seed (troque após o primeiro deploy).
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: falainstrutor-db
+    plan: free

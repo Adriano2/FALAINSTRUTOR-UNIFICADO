@@ -4,15 +4,15 @@
  */
 
 /**
- * FalaInstrutor — Backend seguro do Tutor de IA.
+ * FalaInstrutor — servidor de aplicação.
  *
- * Este servidor Express mantém a GEMINI_API_KEY exclusivamente no lado do
- * servidor (lida de variáveis de ambiente / .env) e expõe um único endpoint
- * `POST /api/tutor` que repassa a conversa para o Google Gemini. A chave
- * NUNCA é enviada ao navegador.
+ * Responsável por:
+ *  - Autenticação real (JWT + bcrypt) em /api/auth
+ *  - API de recursos (catálogo, matrículas, certificados...) em /api
+ *  - Tutor de IA (Google Gemini) em /api/tutor — a chave fica só no servidor
+ *  - Servir o build de produção (dist/) com fallback de SPA
  *
- * Em produção, este mesmo servidor também serve os arquivos estáticos do
- * build (pasta `dist/`).
+ * Segredos e conexões vêm de variáveis de ambiente (.env não versionado).
  */
 
 import 'dotenv/config';
@@ -21,6 +21,9 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import express, { type Request, type Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
+import { authRouter } from './auth';
+import { apiRouter } from './routes';
+import { prisma } from './db';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -30,8 +33,6 @@ const PORT = Number(process.env.PORT) || 8787;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-// Lazily create the client only when a key is present, so the server still
-// boots (and returns a helpful error) when the key is not configured yet.
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 interface ChatTurn {
@@ -42,11 +43,23 @@ interface ChatTurn {
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 
-// Health check / configuration status (does NOT leak the key).
-app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ ok: true, aiConfigured: Boolean(ai), model: GEMINI_MODEL });
+// Health check / configuration status (does NOT leak secrets).
+app.get('/api/health', async (_req: Request, res: Response) => {
+  let dbOk = false;
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    dbOk = true;
+  } catch {
+    dbOk = false;
+  }
+  res.json({ ok: true, db: dbOk, aiConfigured: Boolean(ai), model: GEMINI_MODEL });
 });
 
+// Authentication + resource routes.
+app.use('/api/auth', authRouter);
+app.use('/api', apiRouter);
+
+// --- Tutor de IA ---
 app.post('/api/tutor', async (req: Request, res: Response) => {
   if (!ai) {
     return res.status(503).json({
@@ -85,7 +98,6 @@ app.post('/api/tutor', async (req: Request, res: Response) => {
       .filter(Boolean)
       .join('\n');
 
-    // Convert the lightweight chat history into the SDK content format.
     const contents = history.map((turn) => ({
       role: turn.role === 'model' ? 'model' : 'user',
       parts: [{ text: String(turn.text ?? '') }],
@@ -94,11 +106,7 @@ app.post('/api/tutor', async (req: Request, res: Response) => {
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
       contents,
-      config: {
-        systemInstruction,
-        temperature: 0.5,
-        maxOutputTokens: 2048,
-      },
+      config: { systemInstruction, temperature: 0.5, maxOutputTokens: 2048 },
     });
 
     const reply =
@@ -109,8 +117,7 @@ app.post('/api/tutor', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[tutor] Erro ao chamar o Gemini:', err);
     res.status(500).json({
-      error:
-        'Ocorreu um erro ao consultar o Tutor de IA. Tente novamente em instantes.',
+      error: 'Ocorreu um erro ao consultar o Tutor de IA. Tente novamente em instantes.',
     });
   }
 });
@@ -118,7 +125,6 @@ app.post('/api/tutor', async (req: Request, res: Response) => {
 // Serve the production build when it exists (single-server deployment).
 if (fs.existsSync(DIST_DIR)) {
   app.use(express.static(DIST_DIR));
-  // SPA fallback: anything that is not an API route returns index.html.
   app.get(/^(?!\/api\/).*/, (_req: Request, res: Response) => {
     res.sendFile(path.join(DIST_DIR, 'index.html'));
   });
