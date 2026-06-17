@@ -27,7 +27,7 @@ import {
 } from './data';
 
 import { User, Course, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission } from './types';
-import { authApi, clearToken, getToken } from './api';
+import { authApi, coursesApi, clearToken, getToken } from './api';
 import { Lock, Mail, UserPlus, Key, Info, HelpCircle, Check, AlertCircle } from 'lucide-react';
 
 export default function App() {
@@ -188,6 +188,20 @@ export default function App() {
       .catch(() => {
         clearToken();
         setCurrentUser(null);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load the course catalog from the API. Falls back silently to the locally
+  // cached/seed catalog if the backend is unavailable.
+  React.useEffect(() => {
+    coursesApi
+      .list()
+      .then((apiCourses) => {
+        if (apiCourses.length > 0) setCourses(apiCourses);
+      })
+      .catch(() => {
+        /* mantém o catálogo local como fallback */
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -487,11 +501,7 @@ export default function App() {
         )}
 
         {currentScreen === 'validate-certificate' && (
-          <ValidationView 
-            enrollments={enrollments}
-            users={users}
-            courses={courses}
-          />
+          <ValidationView />
         )}
 
         {currentScreen === 'student-dashboard' && currentUser && (

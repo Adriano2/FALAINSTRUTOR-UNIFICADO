@@ -8,7 +8,7 @@
  * Centraliza o token JWT (em localStorage) e o tratamento de erros.
  */
 
-import { User } from './types';
+import { User, Course } from './types';
 
 const TOKEN_KEY = 'fil_token';
 
@@ -59,6 +59,78 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   }
   return data as T;
 }
+
+// Formato do curso retornado pela API (Prisma).
+interface ApiCourse {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  duration: number;
+  price: number;
+  coverImage: string | null;
+  isActive: boolean;
+  isFeatured: boolean;
+  modules: string[];
+  manualActivities: string[];
+  instructors: { id: string; name: string; formation: string }[];
+}
+
+export function mapApiCourse(c: ApiCourse): Course {
+  return {
+    id: c.id,
+    code: c.code,
+    name: c.name,
+    description: c.description,
+    duration: c.duration,
+    price: c.price,
+    coverImage: c.coverImage ?? undefined,
+    isActive: c.isActive,
+    isFeatured: c.isFeatured,
+    modules: c.modules ?? [],
+    manualActivities: c.manualActivities ?? [],
+    instructors: (c.instructors ?? []).map((i) => ({
+      id: i.id,
+      name: i.name,
+      formation: i.formation,
+    })),
+  };
+}
+
+export interface CertificateResult {
+  code: string;
+  studentName: string;
+  studentCpf: string;
+  studentDob: string;
+  courseName: string;
+  courseCode: string;
+  workload: number;
+  completionDate: string;
+  instructor: string;
+  instructorFormation: string;
+  manualActivities: string[];
+}
+
+export const coursesApi = {
+  async list(): Promise<Course[]> {
+    const data = await apiFetch<{ courses: ApiCourse[] }>('/courses');
+    return (data.courses ?? []).map(mapApiCourse);
+  },
+};
+
+export const certificatesApi = {
+  // Returns the certificate when valid, or null when not found.
+  async validate(code: string): Promise<CertificateResult | null> {
+    try {
+      const data = await apiFetch<{ valid: boolean; certificate: CertificateResult }>(
+        `/certificates/${encodeURIComponent(code.trim())}`,
+      );
+      return data.valid ? data.certificate : null;
+    } catch {
+      return null;
+    }
+  },
+};
 
 export const authApi = {
   async login(email: string, password: string): Promise<User> {

@@ -89,17 +89,21 @@ apiRouter.get('/certificates/:code', async (req, res) => {
   if (!enrollment) {
     return res.status(404).json({ valid: false, error: 'Certificado não encontrado.' });
   }
+  const instructor = enrollment.course.instructors[0];
   res.json({
     valid: true,
     certificate: {
       code: enrollment.certificateCode,
       studentName: enrollment.user.name,
       studentCpf: enrollment.user.cpf,
+      studentDob: enrollment.user.dob ?? 'Não cadastrada',
       courseName: enrollment.course.name,
       courseCode: enrollment.course.code,
       workload: enrollment.course.duration,
       completionDate: enrollment.startDate,
-      instructor: enrollment.course.instructors[0]?.name ?? 'Instrutor Qualificado',
+      instructor: instructor?.name ?? 'Instrutor Qualificado',
+      instructorFormation: instructor?.formation ?? 'Engenheiro de Segurança / Civil',
+      manualActivities: enrollment.course.manualActivities ?? [],
     },
   });
 });

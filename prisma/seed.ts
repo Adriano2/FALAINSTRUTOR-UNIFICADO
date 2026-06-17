@@ -104,6 +104,57 @@ async function main() {
     });
   }
 
+  // 3b) Alunos de exemplo + certificados emitidos (para testar a validação)
+  const studentHash = await bcrypt.hash('aluno123', 10);
+  const demoStudents = [
+    {
+      id: 'usr-2',
+      name: 'Jéssica da Silva Ribeiro',
+      dob: '1995-08-24',
+      cpf: '110.887.259-11',
+      email: 'jessica@gmail.com',
+      certificateCode: 'CERT-35-JESSICA-01A',
+    },
+    {
+      id: 'usr-3',
+      name: 'Thiago Aparecido Ramos',
+      dob: '1988-02-14',
+      cpf: '083.551.492-49',
+      email: 'thiago.ramos@empresa.com',
+      certificateCode: 'CERT-35-THIAGO-02B',
+    },
+  ];
+
+  for (const s of demoStudents) {
+    await prisma.user.upsert({
+      where: { email: s.email },
+      update: {},
+      create: {
+        id: s.id,
+        name: s.name,
+        dob: s.dob,
+        cpf: s.cpf,
+        email: s.email,
+        passwordHash: studentHash,
+        role: 'STUDENT',
+        isActive: true,
+      },
+    });
+    // Matrícula concluída e aprovada na NR 35, com certificado emitido.
+    await prisma.enrollment.upsert({
+      where: { userId_courseId: { userId: s.id, courseId: 'course-nr35' } },
+      update: { progress: 100, passed: true, examScore: 100, certificateCode: s.certificateCode },
+      create: {
+        userId: s.id,
+        courseId: 'course-nr35',
+        progress: 100,
+        passed: true,
+        examScore: 100,
+        certificateCode: s.certificateCode,
+      },
+    });
+  }
+
   // 4) Configurações globais (layout + pagamento)
   const layout = INITIAL_LAYOUT_CONFIG as unknown as Prisma.InputJsonValue;
   const payment = INITIAL_PAYMENT_CONFIG as unknown as Prisma.InputJsonValue;
