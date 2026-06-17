@@ -5,69 +5,71 @@
 
 /**
  * Logotipos do FalaInstrutor recriados em SVG (vetor), fiéis à marca:
- * faixa "FALA INSTRUTOR" + triângulo (escudo) + monograma "FI" em verde.
+ * um escudo verde com cruz branca (saúde) e chapéu amarelo (segurança),
+ * acompanhado do lockup "Higiene Ocupacional / FALA INSTRUTOR /
+ * Segurança do Trabalho".
  *
- * Renderizam de forma nítida em qualquer tamanho e também na exportação em
- * PDF do certificado (html2canvas).
+ * Renderizam nítidos em qualquer tamanho e também na exportação em PDF
+ * do certificado (html2canvas).
  */
 
 import React from 'react';
 
-const SLATE = '#3b434f';
-const GREEN = '#1e9b46';
+const GREEN_DARK = '#1f9d63';
+const GREEN = '#27b074';
+const GREEN_LINE = '#7fe0b0';
+const YELLOW = '#f5b21a';
+const NAVY = '#1f2a3a';
+const GRAY = '#8a94a6';
 
-// Emblema compacto: faixa + escudo + monograma FI. Usado na coluna esquerda
-// do certificado (acima do QR Code) e dentro do lockup horizontal.
-export function FiEmblem({ className = '' }: { className?: string }) {
+// Escudo (emblema) com cruz branca e chapéu amarelo.
+export function ShieldEmblem({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 200 168" className={className} xmlns="http://www.w3.org/2000/svg">
-      {/* Faixa superior (banner) */}
-      <polygon points="16,6 184,6 169,47 31,47" fill={SLATE} />
-      <text
-        x="100"
-        y="33"
-        textAnchor="middle"
-        fill="#ffffff"
-        fontFamily="Arial, Helvetica, sans-serif"
-        fontWeight="700"
-        fontSize="17"
-        textLength="150"
-        lengthAdjust="spacingAndGlyphs"
-      >
-        FALA INSTRUTOR
-      </text>
-
-      {/* Triângulo (escudo) abaixo da faixa, à esquerda */}
-      <polygon points="33,47 73,47 53,79" fill={SLATE} />
-
-      {/* Monograma "FI" em verde */}
-      {/* F */}
-      <rect x="58" y="49" width="19" height="95" fill={GREEN} />
-      <rect x="58" y="49" width="70" height="19" fill={GREEN} />
-      <rect x="58" y="86" width="52" height="18" fill={GREEN} />
-      {/* I — traço inclinado que desce além do F (dinâmico) */}
-      <polygon points="124,49 150,49 124,162 98,162" fill={GREEN} />
+    <svg viewBox="0 0 120 140" className={className} xmlns="http://www.w3.org/2000/svg" aria-label="FalaInstrutor">
+      {/* Escudo externo (borda mais escura) */}
+      <path
+        d="M18,24 Q18,15 27,15 L93,15 Q102,15 102,24 L102,76 Q102,106 60,132 Q18,106 18,76 Z"
+        fill={GREEN_DARK}
+      />
+      {/* Corpo do escudo */}
+      <path
+        d="M24,28 Q24,21 31,21 L89,21 Q96,21 96,28 L96,74 Q96,99 60,123 Q24,99 24,74 Z"
+        fill={GREEN}
+      />
+      {/* Filete interno claro */}
+      <path
+        d="M31,33 Q31,27 37,27 L83,27 Q89,27 89,33 L89,72 Q89,94 60,114 Q31,94 31,72 Z"
+        fill="none"
+        stroke={GREEN_LINE}
+        strokeWidth="2"
+      />
+      {/* Cruz branca (saúde) */}
+      <rect x="51" y="47" width="18" height="50" rx="1.5" fill="#ffffff" />
+      <rect x="37" y="61" width="46" height="18" rx="1.5" fill="#ffffff" />
+      {/* Chapéu amarelo (segurança) sobre o topo da cruz */}
+      <path d="M42,45 A18,15 0 0 1 78,45 Z" fill={YELLOW} />
+      <ellipse cx="60" cy="45" rx="23" ry="5.5" fill={YELLOW} />
     </svg>
   );
 }
 
-// Lockup horizontal: emblema + divisória + texto. Usado no topo central.
+// Lockup horizontal: escudo + divisória + texto. Usado no topo central.
 export function LogoHorizontal({ className = '' }: { className?: string }) {
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      <FiEmblem className="h-14 w-auto shrink-0" />
-      <div className="w-px self-stretch my-1" style={{ backgroundColor: SLATE }} />
+      <ShieldEmblem className="h-16 w-auto shrink-0" />
+      <div className="w-px self-stretch my-1" style={{ backgroundColor: NAVY }} />
       <div className="flex flex-col leading-none text-left">
-        <span className="text-[7px] tracking-[0.28em] font-bold uppercase" style={{ color: SLATE }}>
+        <span className="text-[8px] tracking-[0.22em] font-extrabold uppercase" style={{ color: GREEN_DARK }}>
           Higiene Ocupacional
         </span>
-        <span className="text-[22px] font-black tracking-tight leading-[0.92]" style={{ color: SLATE }}>
+        <span className="text-[24px] font-black tracking-tight leading-[0.92]" style={{ color: NAVY }}>
           FALA
         </span>
-        <span className="text-[22px] font-black tracking-tight leading-[0.92]" style={{ color: SLATE }}>
+        <span className="text-[24px] font-black tracking-tight leading-[0.92]" style={{ color: NAVY }}>
           INSTRUTOR
         </span>
-        <span className="text-[7px] tracking-[0.2em] font-semibold uppercase mt-0.5" style={{ color: SLATE }}>
+        <span className="text-[8px] tracking-[0.18em] font-bold uppercase mt-0.5" style={{ color: GRAY }}>
           Segurança do Trabalho
         </span>
       </div>
