@@ -192,6 +192,18 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // If the page is opened from a certificate QR Code (?cert=CODE), jump
+  // straight to the public validation screen with the code pre-filled.
+  const [certParam, setCertParam] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    const cert = new URLSearchParams(window.location.search).get('cert');
+    if (cert) {
+      setCertParam(cert);
+      setCurrentScreen('validate-certificate');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load the course catalog from the API. Falls back silently to the locally
   // cached/seed catalog if the backend is unavailable.
   React.useEffect(() => {
@@ -501,7 +513,7 @@ export default function App() {
         )}
 
         {currentScreen === 'validate-certificate' && (
-          <ValidationView />
+          <ValidationView initialCode={certParam ?? undefined} />
         )}
 
         {currentScreen === 'student-dashboard' && currentUser && (

@@ -7,19 +7,21 @@ import React from 'react';
 import { ShieldCheck, Search, FileText, CheckCircle2, User, Key, Calendar, MapPin, Award, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { certificatesApi } from '../api';
 
-export default function ValidationView() {
-  const [searchCode, setSearchCode] = React.useState('');
+interface ValidationViewProps {
+  initialCode?: string;
+}
+
+export default function ValidationView({ initialCode }: ValidationViewProps) {
+  const [searchCode, setSearchCode] = React.useState(initialCode ?? '');
   const [matchedCertificate, setMatchedCertificate] = React.useState<any | null>(null);
   const [performedSearch, setPerformedSearch] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchCode || loading) return;
+  const runSearch = async (rawCode: string) => {
+    const cleanCode = rawCode.trim().toUpperCase();
+    if (!cleanCode || loading) return;
 
     setLoading(true);
-    const cleanCode = searchCode.trim().toUpperCase();
-
     // Validate the certificate against the API (queries the shared database).
     const cert = await certificatesApi.validate(cleanCode);
     setPerformedSearch(true);
@@ -37,6 +39,17 @@ export default function ValidationView() {
     }
     setLoading(false);
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    runSearch(searchCode);
+  };
+
+  // Auto-validate when arriving from a certificate QR Code.
+  React.useEffect(() => {
+    if (initialCode) runSearch(initialCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCode]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 font-sans transition-colors duration-200">
