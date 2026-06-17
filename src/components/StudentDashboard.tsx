@@ -830,12 +830,14 @@ export default function StudentDashboard({
           </div>
         );
 
-        // Coluna esquerda: selo da NR, marca e QR Code real de validação.
+        // Coluna esquerda: selo da NR (losango amarelo), marca e QR Code real.
         const LeftColumn = (
           <div className="w-[19%] flex flex-col items-center justify-between py-[5%] shrink-0">
-            <div className="w-[84px] h-[84px] rounded-full bg-[#d91f26] flex flex-col items-center justify-center text-white shadow-md border-[3px] border-white ring-2 ring-[#d91f26]">
-              {badge.top && <span className="text-sm font-black leading-none">{badge.top}</span>}
-              <span className={`${badge.main.length > 2 ? 'text-base' : 'text-[28px]'} font-black leading-none`}>{badge.main}</span>
+            <div className="w-[74px] h-[74px] bg-[#ffc107] border-[3px] border-slate-900 rotate-45 flex items-center justify-center shadow-md">
+              <div className="-rotate-45 text-center leading-none">
+                {badge.top && <span className="block text-[15px] font-black text-slate-900 leading-none">{badge.top}</span>}
+                <span className={`block ${badge.main.length > 2 ? 'text-base' : 'text-[26px]'} font-black text-[#d91f26] leading-none`}>{badge.main}</span>
+              </div>
             </div>
             <div className="flex flex-col items-center gap-1">
               <span className="bg-[#293452] text-white text-[6px] font-bold uppercase tracking-[0.2em] px-2 py-1">Fala Instrutor</span>
