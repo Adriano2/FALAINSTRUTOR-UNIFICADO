@@ -9,6 +9,7 @@ import { getExamQuestions } from '../data';
 import { Clock, Shield, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import TutorChat from './TutorChat';
 
 interface StudentDashboardProps {
   currentUser: User;
@@ -515,6 +516,9 @@ export default function StudentDashboard({
                               <span className="text-[10px] text-slate-400">6.4 MB</span>
                             </button>
                           </div>
+
+                          {/* AI Tutor chat */}
+                          <TutorChat courseName={course.name} modules={course.modules} />
                         </div>
 
                         {/* Forum Area */}

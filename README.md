@@ -6,9 +6,10 @@ exames com emissão de certificado, validação pública de certificados e um
 painel administrativo robusto (usuários, matrículas, vendas, cupons,
 comentários e configurações).
 
-A aplicação é **100% front-end** (React + Vite + TypeScript + Tailwind CSS).
-Todo o estado é persistido no `localStorage` do navegador — não há back-end nem
-chaves de API necessárias para rodar.
+O front-end (React + Vite + TypeScript + Tailwind CSS) persiste todo o estado
+no `localStorage` do navegador. Há também um **backend Express opcional** que
+fornece o **Tutor de IA** (Google Gemini) — ele existe apenas para manter a
+chave de API protegida no servidor.
 
 ## Stack
 
@@ -17,6 +18,7 @@ chaves de API necessárias para rodar.
 - Tailwind CSS 4
 - lucide-react (ícones)
 - jsPDF + html2canvas (geração do certificado em PDF)
+- Express + @google/genai (backend do Tutor de IA)
 
 ## Rodando localmente
 
@@ -29,12 +31,36 @@ npm run dev
 
 A aplicação ficará disponível em `http://localhost:3000`.
 
+> Sem configurar a chave, todo o app funciona normalmente; apenas o Tutor de
+> IA exibe uma mensagem informando que ainda não foi habilitado.
+
+### Habilitando o Tutor de IA (Gemini)
+
+A chave do Gemini fica **somente no servidor** e nunca é enviada ao navegador.
+
+1. Copie `.env.example` para `.env` e preencha `GEMINI_API_KEY`
+   (obtida em https://aistudio.google.com/apikey).
+2. Em um terminal, suba o backend: `npm run dev:server` (porta `8787`).
+3. Em outro terminal, suba o front-end: `npm run dev` (porta `3000`).
+
+O Vite faz proxy de `/api/*` para o backend automaticamente. Abra um curso no
+"Painel do Aluno" → "Acessar Aulas" para usar o Tutor de IA na sala virtual.
+
+### Produção (servidor único)
+
+```bash
+npm run build   # gera o dist/
+npm start       # Express serve o dist/ e a API na porta 8787
+```
+
 ## Scripts
 
-- `npm run dev` — servidor de desenvolvimento
+- `npm run dev` — front-end (Vite) em modo desenvolvimento
+- `npm run dev:server` — backend do Tutor de IA com hot-reload
 - `npm run build` — build de produção (saída em `dist/`)
-- `npm run preview` — pré-visualiza o build de produção
-- `npm run lint` — checagem de tipos (`tsc --noEmit`)
+- `npm start` — sobe o backend servindo o build + a API
+- `npm run preview` — pré-visualiza o build de produção (sem API)
+- `npm run lint` — checagem de tipos do front-end e do servidor
 
 ## Acesso de teste
 
