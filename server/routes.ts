@@ -70,13 +70,107 @@ apiRouter.post(
 
 // --- Dados do próprio aluno autenticado ---
 
+const enrollInclude = { course: { include: { instructors: true } } } as const;
+
 apiRouter.get('/enrollments/me', authenticate, async (req: AuthedRequest, res: Response) => {
   const enrollments = await prisma.enrollment.findMany({
     where: { userId: req.user!.sub },
-    include: { course: { include: { instructors: true } } },
+    include: enrollInclude,
     orderBy: { enrolledAt: 'desc' },
   });
   res.json({ enrollments });
+});
+
+// Matricula o aluno autenticado em um curso (ponte até o pagamento real).
+apiRouter.post('/enrollments', authenticate, async (req: AuthedRequest, res: Response) => {
+  const parsed = z.object({ courseId: z.string().min(1) }).safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Curso inválido.' });
+  }
+  const course = await prisma.course.findUnique({ where: { id: parsed.data.courseId } });
+  if (!course) return res.status(404).json({ error: 'Curso não encontrado.' });
+
+  const existing = await prisma.enrollment.findUnique({
+    where: { userId_courseId: { userId: req.user!.sub, courseId: course.id } },
+    include: enrollInclude,
+  });
+  if (existing) return res.json({ enrollment: existing });
+
+  const enrollment = await prisma.enrollment.create({
+    data: { userId: req.user!.sub, courseId: course.id },
+    include: enrollInclude,
+  });
+  res.status(201).json({ enrollment });
+});
+
+// Atualiza o progresso (0-100) de uma matrícula do próprio aluno.
+apiRouter.patch('/enrollments/:id/progress', authenticate, async (req: AuthedRequest, res: Response) => {
+  const parsed = z.object({ progress: z.number().int().min(0).max(100) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Progresso inválido.' });
+
+  const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+  if (!enr || enr.userId !== req.user!.sub) {
+    return res.status(404).json({ error: 'Matrícula não encontrada.' });
+  }
+  const enrollment = await prisma.enrollment.update({
+    where: { id: enr.id },
+    data: { progress: parsed.data.progress },
+    include: enrollInclude,
+  });
+  res.json({ enrollment });
+});
+
+// Submete o exame final: grava nota, aprovação, certificado e o registro.
+apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest, res: Response) => {
+  const parsed = z
+    .object({
+      score: z.number().int().min(0).max(100),
+      passed: z.boolean(),
+      answers: z.record(z.string(), z.number()).optional(),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do exame inválidos.' });
+
+  const enr = await prisma.enrollment.findUnique({
+    where: { id: req.params.id },
+    include: { course: true, user: true },
+  });
+  if (!enr || enr.userId !== req.user!.sub) {
+    return res.status(404).json({ error: 'Matrícula não encontrada.' });
+  }
+
+  const { score, passed, answers } = parsed.data;
+
+  // Gera o código do certificado no servidor (autoritativo).
+  let certificateCode = enr.certificateCode;
+  if (passed && !certificateCode) {
+    const firstName = (enr.user.name.split(' ')[0] || 'ALUNO').toUpperCase();
+    const code = enr.course.code.replace(/\s+/g, '');
+    certificateCode = `CERT-${code}-${firstName}-${Math.floor(Math.random() * 899 + 100)}`;
+  }
+
+  const enrollment = await prisma.enrollment.update({
+    where: { id: enr.id },
+    data: {
+      examScore: score,
+      passed,
+      progress: 100,
+      certificateCode: passed ? certificateCode : null,
+    },
+    include: enrollInclude,
+  });
+
+  await prisma.examSubmission.create({
+    data: {
+      userId: enr.userId,
+      courseId: enr.courseId,
+      score,
+      passed,
+      answers: (answers ?? {}) as Prisma.InputJsonValue,
+    },
+  });
+
+  res.json({ enrollment });
 });
 
 // --- Validação pública de certificado ---

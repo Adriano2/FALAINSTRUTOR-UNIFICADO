@@ -27,7 +27,7 @@ import {
 } from './data';
 
 import { User, Course, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission } from './types';
-import { authApi, coursesApi, clearToken, getToken } from './api';
+import { authApi, coursesApi, enrollmentsApi, mapApiEnrollment, clearToken, getToken } from './api';
 import { Lock, Mail, UserPlus, Key, Info, HelpCircle, Check, AlertCircle } from 'lucide-react';
 
 export default function App() {
@@ -86,6 +86,9 @@ export default function App() {
     const saved = localStorage.getItem('fil_enrollments');
     return saved ? JSON.parse(saved) : SEED_ENROLLMENTS;
   });
+
+  // Matrículas do aluno autenticado, carregadas da API (banco compartilhado).
+  const [myEnrollments, setMyEnrollments] = React.useState<Enrollment[]>([]);
 
   const [transactions, setTransactions] = React.useState<SalesTransaction[]>(() => {
     const saved = localStorage.getItem('fil_transactions');
@@ -177,6 +180,20 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // Carrega as matrículas do aluno autenticado a partir da API.
+  const refreshMyEnrollments = React.useCallback(async (user: User | null) => {
+    if (!user || !getToken()) {
+      setMyEnrollments([]);
+      return;
+    }
+    try {
+      const list = await enrollmentsApi.listMine();
+      setMyEnrollments(list.map((e) => mapApiEnrollment(e, user)));
+    } catch {
+      setMyEnrollments([]);
+    }
+  }, []);
+
   // Restore the session on load: if a JWT exists, validate it against the API.
   // An invalid/expired token is cleared. Evaluator shortcuts (local, no token)
   // are left untouched.
@@ -184,7 +201,10 @@ export default function App() {
     if (!getToken()) return;
     authApi
       .me()
-      .then((freshUser) => setCurrentUser(freshUser))
+      .then((freshUser) => {
+        setCurrentUser(freshUser);
+        refreshMyEnrollments(freshUser);
+      })
       .catch(() => {
         clearToken();
         setCurrentUser(null);
@@ -275,6 +295,7 @@ export default function App() {
   const handleLogout = () => {
     clearToken();
     setCurrentUser(null);
+    setMyEnrollments([]);
     handleNavigate('home');
     alert("Sessão finalizada com sucesso. Até breve!");
   };
@@ -285,6 +306,7 @@ export default function App() {
     try {
       const user = await authApi.login(loginEmail, loginPassword);
       setCurrentUser(user);
+      refreshMyEnrollments(user);
       setLoginEmail('');
       setLoginPassword('');
       handleNavigate(user.role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
@@ -294,18 +316,27 @@ export default function App() {
     }
   };
 
-  // Evaluator Quick Login shortcut helper
-  const handleEvaluatorShortcut = (role: 'admin' | 'student') => {
-    if (role === 'admin') {
-      const adminAcc = users.find((u) => u.role === 'admin') || SEED_USERS[0];
-      setCurrentUser(adminAcc);
-      handleNavigate('admin-dashboard');
-      alert(`Sessão Administrador Simulada: ${adminAcc.name}`);
-    } else {
-      const studentAcc = users.find((u) => u.role === 'student' && u.email === 'jessica@gmail.com') || SEED_USERS[1];
-      setCurrentUser(studentAcc);
-      handleNavigate('student-dashboard');
-      alert(`Sessão Aluno Simulada: ${studentAcc.name}`);
+  // Evaluator Quick Login shortcut — faz login real (token) com as contas
+  // semente para que os dados venham do banco. Cai para sessão local apenas
+  // se o backend estiver indisponível.
+  const handleEvaluatorShortcut = async (role: 'admin' | 'student') => {
+    const creds = role === 'admin'
+      ? { email: 'adriano.ricardo01@gmail.com', password: 'Anthony9936#' }
+      : { email: 'jessica@gmail.com', password: 'aluno123' };
+    try {
+      const user = await authApi.login(creds.email, creds.password);
+      setCurrentUser(user);
+      await refreshMyEnrollments(user);
+      handleNavigate(user.role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
+      alert(`Sessão ${user.role === 'admin' ? 'Administrador' : 'Aluno'}: ${user.name}`);
+    } catch {
+      // Fallback local (offline / sem backend)
+      const acc = role === 'admin'
+        ? users.find((u) => u.role === 'admin') || SEED_USERS[0]
+        : users.find((u) => u.email === 'jessica@gmail.com') || SEED_USERS[1];
+      setCurrentUser(acc);
+      handleNavigate(role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
+      alert(`Sessão ${role === 'admin' ? 'Administrador' : 'Aluno'} (local): ${acc.name}`);
     }
   };
 
@@ -330,6 +361,7 @@ export default function App() {
         dob: regDob || undefined,
       });
       setCurrentUser(newUser);
+      refreshMyEnrollments(newUser);
 
       // Clear registration fields
       setRegName('');
@@ -366,11 +398,11 @@ export default function App() {
   };
 
   // Checkout completions
-  const handleCheckoutComplete = (
-    txDetails: Omit<SalesTransaction, 'id' | 'date'>, 
+  const handleCheckoutComplete = async (
+    txDetails: Omit<SalesTransaction, 'id' | 'date'>,
     newEnrollments: Array<Omit<Enrollment, 'id' | 'enrolledAt'>>
   ) => {
-    // Save transaction
+    // Save transaction log (localStorage; admin dashboard — Fase 2.4 via API)
     const newTx: SalesTransaction = {
       ...txDetails,
       id: "TX-" + Math.floor(Math.random() * 89999 + 10000),
@@ -378,7 +410,20 @@ export default function App() {
     };
     setTransactions([newTx, ...transactions]);
 
-    // Save Enrollments
+    // Matricula de verdade no banco (ponte até o pagamento real — Fase 3).
+    if (getToken() && currentUser) {
+      try {
+        for (const env of newEnrollments) {
+          await enrollmentsApi.enroll(env.courseId);
+        }
+        await refreshMyEnrollments(currentUser);
+      } catch {
+        /* mantém a transação registrada mesmo se a matrícula falhar */
+      }
+      return;
+    }
+
+    // Fallback local (sessão sem token)
     const addedEnrollments: Enrollment[] = newEnrollments.map((env) => ({
       ...env,
       id: "enr-" + Math.floor(Math.random() * 89999 + 10000),
@@ -415,55 +460,39 @@ export default function App() {
     setComments([newComment, ...comments]);
   };
 
-  // Student completes exam and gets certified
-  const handleCompleteEnrollment = (
+  // Student completes exam and gets certified — persiste no banco.
+  const handleCompleteEnrollment = async (
     enrollmentId: string,
     score: number,
     passed: boolean,
-    certificateCode: string,
+    _certificateCode: string,
     answers: Record<number, number> = {}
-  ) => {
-    // 1. Update Enrollment record
-    const updatedEnrollments = enrollments.map(e => {
-      if (e.id === enrollmentId) {
-        return {
-          ...e,
-          examScore: score,
-          passed,
-          certificateCode: passed ? certificateCode : null
-        };
+  ): Promise<Enrollment | undefined> => {
+    if (getToken() && currentUser) {
+      try {
+        const updated = await enrollmentsApi.submitExam(enrollmentId, { score, passed, answers });
+        const mapped = mapApiEnrollment(updated, currentUser);
+        setMyEnrollments((prev) => prev.map((e) => (e.id === enrollmentId ? mapped : e)));
+        return mapped;
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Não foi possível registrar o exame.');
+        return undefined;
       }
-      return e;
-    });
-    setEnrollments(updatedEnrollments);
-
-    // 2. Add Exam Submission
-    const targetEnrollment = enrollments.find(e => e.id === enrollmentId);
-    if (targetEnrollment) {
-      const newExam: StudentExamSubmission = {
-        id: "exam-" + Date.now(),
-        userId: targetEnrollment.userId,
-        userName: targetEnrollment.userName,
-        courseId: targetEnrollment.courseId,
-        courseCode: targetEnrollment.courseCode,
-        courseName: targetEnrollment.courseName,
-        score,
-        answers, // selected answers from the classroom exam (question index -> option index)
-        passed,
-        date: new Date().toLocaleDateString('pt-BR')
-      };
-      setStudentExams([newExam, ...studentExams]);
     }
+    return undefined;
   };
 
-  // Watch classroom studies and save progress rate
-  const handleUpdateEnrollmentProgress = (enrollmentId: string, progressFraction: number) => {
-    setEnrollments(enrollments.map(e => {
-      if (e.id === enrollmentId) {
-        return { ...e, progress: progressFraction };
+  // Watch classroom studies and save progress rate — persiste no banco.
+  const handleUpdateEnrollmentProgress = async (enrollmentId: string, progressFraction: number) => {
+    if (getToken() && currentUser) {
+      try {
+        const updated = await enrollmentsApi.updateProgress(enrollmentId, progressFraction);
+        const mapped = mapApiEnrollment(updated, currentUser);
+        setMyEnrollments((prev) => prev.map((e) => (e.id === enrollmentId ? mapped : e)));
+      } catch {
+        /* progresso é atualizado de forma otimista no componente */
       }
-      return e;
-    }));
+    }
   };
 
   return (
@@ -517,10 +546,10 @@ export default function App() {
         )}
 
         {currentScreen === 'student-dashboard' && currentUser && (
-          <StudentDashboard 
+          <StudentDashboard
             currentUser={currentUser}
             courses={courses}
-            enrollments={enrollments}
+            enrollments={myEnrollments}
             comments={comments}
             studentExams={studentExams}
             onUpdateProfile={handleUpdateStudentProfile}

@@ -44,7 +44,7 @@ interface StudentDashboardProps {
   studentExams: StudentExamSubmission[];
   onUpdateProfile: (updated: Partial<User>) => void;
   onPostComment: (comment: Omit<Comment, 'id' | 'date'>) => void;
-  onCompleteEnrollment: (enrollmentId: string, score: number, passed: boolean, certificateCode: string, answers: Record<number, number>) => void;
+  onCompleteEnrollment: (enrollmentId: string, score: number, passed: boolean, certificateCode: string, answers: Record<number, number>) => Promise<Enrollment | undefined>;
   onUpdateProgress: (enrollmentId: string, progress: number) => void;
 }
 
@@ -220,7 +220,7 @@ export default function StudentDashboard({
   };
 
   // Exam Submission handler
-  const handleExamSubmit = (courseId: string, questions: ExamQuestion[]) => {
+  const handleExamSubmit = async (courseId: string, questions: ExamQuestion[]) => {
     // Guard against an empty question bank (should not happen with the fallback)
     if (questions.length === 0) {
       alert("Nenhuma questão disponível para este exame no momento. Tente novamente mais tarde.");
@@ -246,16 +246,17 @@ export default function StudentDashboard({
     const passed = scorePercentage >= 75;
 
     if (activeEnrollment) {
-      const generatedCode = `CERT-${activeEnrollment.courseCode}-${currentUser.name.split(' ')[0].toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
-      onCompleteEnrollment(activeEnrollment.id, scorePercentage, passed, generatedCode, { ...examAnswers });
-      
-      // Update localized active state to reflect completion logs
-      setActiveEnrollment({
+      const localCode = `CERT-${activeEnrollment.courseCode}-${currentUser.name.split(' ')[0].toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+      // Persiste no banco; o código do certificado é gerado no servidor.
+      const updated = await onCompleteEnrollment(activeEnrollment.id, scorePercentage, passed, localCode, { ...examAnswers });
+
+      // Reflete a conclusão usando os dados autoritativos do banco quando houver.
+      setActiveEnrollment(updated ?? {
         ...activeEnrollment,
         progress: 100,
         examScore: scorePercentage,
         passed,
-        certificateCode: passed ? generatedCode : null
+        certificateCode: passed ? localCode : null
       });
 
       if (passed) {

@@ -8,7 +8,7 @@
  * Centraliza o token JWT (em localStorage) e o tratamento de erros.
  */
 
-import { User, Course } from './types';
+import { User, Course, Enrollment } from './types';
 
 const TOKEN_KEY = 'fil_token';
 
@@ -130,6 +130,71 @@ export const certificatesApi = {
     } catch {
       return null;
     }
+  },
+};
+
+// Matrícula retornada pela API (com o curso embutido).
+interface ApiEnrollment {
+  id: string;
+  userId: string;
+  courseId: string;
+  progress: number;
+  startDate: string;
+  examScore: number | null;
+  passed: boolean;
+  certificateCode: string | null;
+  enrolledAt: string;
+  course: ApiCourse;
+}
+
+// Converte a matrícula da API para o formato do front-end (denormaliza os
+// dados do aluno a partir do usuário autenticado).
+export function mapApiEnrollment(e: ApiEnrollment, user: User): Enrollment {
+  return {
+    id: e.id,
+    userId: e.userId,
+    userName: user.name,
+    userEmail: user.email,
+    courseId: e.courseId,
+    courseName: e.course?.name ?? '',
+    courseCode: e.course?.code ?? '',
+    progress: e.progress,
+    startDate: (e.startDate || '').split('T')[0],
+    examScore: e.examScore,
+    passed: e.passed,
+    certificateCode: e.certificateCode,
+    enrolledAt: (e.enrolledAt || '').split('T')[0],
+  };
+}
+
+export const enrollmentsApi = {
+  async listMine(): Promise<ApiEnrollment[]> {
+    const data = await apiFetch<{ enrollments: ApiEnrollment[] }>('/enrollments/me');
+    return data.enrollments ?? [];
+  },
+  async enroll(courseId: string): Promise<ApiEnrollment> {
+    const data = await apiFetch<{ enrollment: ApiEnrollment }>('/enrollments', {
+      method: 'POST',
+      body: JSON.stringify({ courseId }),
+    });
+    return data.enrollment;
+  },
+  async updateProgress(id: string, progress: number): Promise<ApiEnrollment> {
+    const data = await apiFetch<{ enrollment: ApiEnrollment }>(`/enrollments/${id}/progress`, {
+      method: 'PATCH',
+      body: JSON.stringify({ progress }),
+    });
+    return data.enrollment;
+  },
+  async submitExam(
+    id: string,
+    payload: { score: number; passed: boolean; answers?: Record<number, number> },
+  ): Promise<ApiEnrollment> {
+    const data = await apiFetch<{ enrollment: ApiEnrollment }>(`/enrollments/${id}/exam`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return data.enrollment;
   },
 };
 
