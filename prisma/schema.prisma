@@ -1,0 +1,179 @@
+// FalaInstrutor — modelo de dados de produção (PostgreSQL).
+// Substitui a persistência em localStorage por um banco compartilhado.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+enum TransactionStatus {
+  OPEN
+  ACTIVE
+  CANCELED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  dob          String?
+  cpf          String   @unique
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  isActive     Boolean  @default(true)
+  avatar       String?
+  registeredAt DateTime @default(now())
+  asaasCustomerId String?
+
+  enrollments  Enrollment[]
+  transactions Transaction[]
+  comments     Comment[]
+  examSubmissions ExamSubmission[]
+  orders       Order[]
+}
+
+model Course {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String
+  description      String
+  duration         Int
+  price            Float
+  coverImage       String?
+  isActive         Boolean  @default(true)
+  isFeatured       Boolean  @default(false)
+  modules          String[]
+  manualActivities String[]
+
+  instructors     Instructor[]
+  enrollments     Enrollment[]
+  comments        Comment[]
+  examSubmissions ExamSubmission[]
+}
+
+model Instructor {
+  id           String  @id @default(cuid())
+  name         String
+  formation    String
+  mte          String?
+  signatureUrl String? // imagem da assinatura (scan), opcional
+  icpEnabled   Boolean @default(false) // assinatura digital ICP-Brasil habilitada
+  course       Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId     String
+}
+
+model Enrollment {
+  id              String   @id @default(cuid())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId        String
+  progress        Int      @default(0)
+  startDate       DateTime @default(now())
+  examScore       Int?
+  passed          Boolean  @default(false)
+  certificateCode String?  @unique
+  enrolledAt      DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+model Transaction {
+  id           String            @id @default(cuid())
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  courseName   String
+  total        Float
+  discount     Float             @default(0)
+  status       TransactionStatus @default(ACTIVE)
+  installments Int               @default(1)
+  couponCode   String?
+  date         DateTime          @default(now())
+}
+
+model Coupon {
+  id                 String     @id @default(cuid())
+  code               String     @unique
+  description        String
+  value              Float
+  type               CouponType @default(PERCENTAGE)
+  isActive           Boolean    @default(true)
+  associatedProducts String[]
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId   String
+  text       String
+  reply      String?
+  isPublic   Boolean  @default(true)
+  date       DateTime @default(now())
+}
+
+model ContactMessage {
+  id      String   @id @default(cuid())
+  name    String
+  email   String
+  phone   String?
+  subject String
+  message String
+  date    DateTime @default(now())
+}
+
+model ExamSubmission {
+  id       String   @id @default(cuid())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId String
+  score    Int
+  answers  Json
+  passed   Boolean
+  date     DateTime @default(now())
+}
+
+// Pedido de compra (rastreado até a confirmação do pagamento via webhook).
+model Order {
+  id         String      @id @default(cuid())
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  courseIds  String[]
+  total      Float
+  discount   Float       @default(0)
+  status     OrderStatus @default(PENDING)
+  paymentId  String? // id da cobrança no gateway (Asaas)
+  paymentUrl String? // invoiceUrl do gateway
+  couponCode String?
+  createdAt  DateTime    @default(now())
+}
+
+// Configurações globais da aplicação (layout + pagamento) como linha única.
+model AppConfig {
+  id        String   @id @default("singleton")
+  layout    Json
+  payment   Json
+  updatedAt DateTime @updatedAt
+}

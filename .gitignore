@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Scripts temporários de teste (Playwright)
+_*.mjs

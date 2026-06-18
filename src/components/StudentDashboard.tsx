@@ -4,11 +4,37 @@
  */
 
 import React from 'react';
-import { User, Course, Enrollment, Comment, StudentExamSubmission, ExamQuestion } from '../types';
+import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion } from '../types';
 import { getExamQuestions } from '../data';
-import { Clock, Shield, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
+import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
+import TutorChat from './TutorChat';
+import { ShieldEmblem, LogoHorizontal, RosetteSeal } from './BrandLogo';
+
+// Formata uma data (ISO ou yyyy-mm-dd) por extenso em português: "10 de junho de 2024".
+function formatLongDatePt(value: string): string {
+  if (!value) return '';
+  const iso = value.length <= 10 ? `${value}T00:00:00Z` : value;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return value;
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(d);
+}
+
+// Deriva o rótulo do selo do certificado a partir do código do curso.
+// Ex.: "NR 35" -> { top: "NR", main: "35" }; "LOTO" -> { top: "", main: "LOTO" }.
+function certificateBadge(code: string): { top: string; main: string } {
+  const nr = code.match(/NR\s*0*(\d+\.?\d*)/i);
+  if (nr) return { top: 'NR', main: nr[1] };
+  const compact = code.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+  return { top: '', main: compact.slice(0, 6) };
+}
 
 interface StudentDashboardProps {
   currentUser: User;
@@ -18,7 +44,7 @@ interface StudentDashboardProps {
   studentExams: StudentExamSubmission[];
   onUpdateProfile: (updated: Partial<User>) => void;
   onPostComment: (comment: Omit<Comment, 'id' | 'date'>) => void;
-  onCompleteEnrollment: (enrollmentId: string, score: number, passed: boolean, certificateCode: string, answers: Record<number, number>) => void;
+  onCompleteEnrollment: (enrollmentId: string, score: number, passed: boolean, certificateCode: string, answers: Record<number, number>) => Promise<Enrollment | undefined>;
   onUpdateProgress: (enrollmentId: string, progress: number) => void;
 }
 
@@ -55,6 +81,20 @@ export default function StudentDashboard({
   // Certificate Modal State
   const [viewingCertificate, setViewingCertificate] = React.useState<Enrollment | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = React.useState(false);
+  const [certQrUrl, setCertQrUrl] = React.useState('');
+
+  // Generates a real, scannable QR Code pointing to the public certificate
+  // validation page (anti-fraud). Regenerated whenever the certificate changes.
+  React.useEffect(() => {
+    if (!viewingCertificate?.certificateCode) {
+      setCertQrUrl('');
+      return;
+    }
+    const url = `${window.location.origin}/?cert=${encodeURIComponent(viewingCertificate.certificateCode)}`;
+    QRCode.toDataURL(url, { margin: 1, width: 240, errorCorrectionLevel: 'M' })
+      .then(setCertQrUrl)
+      .catch(() => setCertQrUrl(''));
+  }, [viewingCertificate]);
 
   const handleDownloadPDF = async (courseName: string) => {
     setIsGeneratingPDF(true);
@@ -180,7 +220,7 @@ export default function StudentDashboard({
   };
 
   // Exam Submission handler
-  const handleExamSubmit = (courseId: string, questions: ExamQuestion[]) => {
+  const handleExamSubmit = async (courseId: string, questions: ExamQuestion[]) => {
     // Guard against an empty question bank (should not happen with the fallback)
     if (questions.length === 0) {
       alert("Nenhuma questão disponível para este exame no momento. Tente novamente mais tarde.");
@@ -206,16 +246,17 @@ export default function StudentDashboard({
     const passed = scorePercentage >= 75;
 
     if (activeEnrollment) {
-      const generatedCode = `CERT-${activeEnrollment.courseCode}-${currentUser.name.split(' ')[0].toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
-      onCompleteEnrollment(activeEnrollment.id, scorePercentage, passed, generatedCode, { ...examAnswers });
-      
-      // Update localized active state to reflect completion logs
-      setActiveEnrollment({
+      const localCode = `CERT-${activeEnrollment.courseCode}-${currentUser.name.split(' ')[0].toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+      // Persiste no banco; o código do certificado é gerado no servidor.
+      const updated = await onCompleteEnrollment(activeEnrollment.id, scorePercentage, passed, localCode, { ...examAnswers });
+
+      // Reflete a conclusão usando os dados autoritativos do banco quando houver.
+      setActiveEnrollment(updated ?? {
         ...activeEnrollment,
         progress: 100,
         examScore: scorePercentage,
         passed,
-        certificateCode: passed ? generatedCode : null
+        certificateCode: passed ? localCode : null
       });
 
       if (passed) {
@@ -515,6 +556,9 @@ export default function StudentDashboard({
                               <span className="text-[10px] text-slate-400">6.4 MB</span>
                             </button>
                           </div>
+
+                          {/* AI Tutor chat */}
+                          <TutorChat courseName={course.name} modules={course.modules} />
                         </div>
 
                         {/* Forum Area */}
@@ -761,10 +805,49 @@ export default function StudentDashboard({
         const course = courses.find((c) => c.id === viewingCertificate.courseId);
         if (!course) return null;
         
-        const firstInstructor = course.instructors[0] || { name: 'Instrutor Qualificado', formation: 'Engenheiro de Segurança / Civil' };
-        
-        const courseCodeMatch = course.name.match(/NR[- ]?(\d+[\.\d]*)/i);
-        const courseCode = courseCodeMatch ? courseCodeMatch[1] : "XX";
+        const firstInstructor: Instructor = course.instructors[0] || { id: 'inst-default', name: 'Adriano Aparecido Ribas Ricardo', formation: 'Técnico de Segurança do Trabalho', mte: '0124684/SP', icpEnabled: true };
+        const longDate = formatLongDatePt(viewingCertificate.startDate);
+        const badge = certificateBadge(course.code);
+
+        // Moldura: textura diagonal sutil, borda fina e cantos angulares
+        // (verde + azul-marinho) no topo-esquerdo e na base-direita.
+        const Frame = (
+          <>
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.05]"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(45deg, #1f2a44 0, #1f2a44 1px, transparent 1px, transparent 9px)',
+              }}
+            />
+            <div className="absolute inset-[9px] border border-slate-300 pointer-events-none" />
+            {/* Canto superior esquerdo */}
+            <div className="absolute top-0 left-0 w-[26%] h-[18%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+            <div className="absolute top-0 left-0 w-[16%] h-[11%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            {/* Canto inferior direito */}
+            <div className="absolute bottom-0 right-0 w-[19%] h-[13%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            <div className="absolute bottom-0 right-0 w-[11%] h-[8%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+          </>
+        );
+
+        // Logo central "Fala Instrutor / Higiene Ocupacional" (SVG vetorial).
+        const LogoBlock = <LogoHorizontal />;
+
+        // Coluna esquerda: selo da NR (losango amarelo), emblema FI e QR real.
+        const LeftColumn = (
+          <div className="w-[19%] flex flex-col items-center justify-between pt-[15%] pb-[6%] shrink-0">
+            <div className="w-[78px] h-[78px] bg-[#f5c518] border-[3px] border-slate-900 rounded-[14px] rotate-45 flex items-center justify-center shadow-md">
+              <div className="-rotate-45 text-center leading-none">
+                {badge.top && <span className="block text-[16px] font-black text-slate-900 leading-none">{badge.top}</span>}
+                <span className={`block ${badge.main.length > 2 ? 'text-base' : 'text-[28px]'} font-black text-[#d91f26] leading-none`}>{badge.main}</span>
+              </div>
+            </div>
+            <ShieldEmblem className="w-[72px] h-auto" />
+            {certQrUrl
+              ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[78px] h-[78px]" />
+              : <div className="w-[78px] h-[78px] bg-slate-100 border border-slate-300" />}
+          </div>
+        );
 
         return (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm p-4 sm:p-6 lg:p-8 flex items-center justify-center">
@@ -814,154 +897,91 @@ export default function StudentDashboard({
               <div className="space-y-8" id="printable-certificate-area">
                 
                     {/* PAGE 1: FRONT SIDE */}
-                <div id="certificate-page-1" className="relative bg-white aspect-[1.414] shadow-sm select-all font-sans text-slate-900 border border-slate-200 overflow-hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
-                  
-                  {/* Decorative background vectors mock */}
-                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#slate-800_1px,transparent_1px),linear-gradient(to_bottom,#slate-800_1px,transparent_1px)] [background-size:20px_20px]" />
+                <div id="certificate-page-1" className="relative bg-white aspect-[1.414] shadow-sm select-all font-sans text-slate-900 overflow-hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  {Frame}
 
-                  {/* Left Side Shapes & Branding - Simple Full Height Green Bar */}
-                  <div className="absolute top-0 left-0 w-[24%] h-full bg-[#008e39] z-0 shadow-lg border-r-[8px] border-[#293452]" />
-
-                  <div className="relative z-10 flex w-full h-full">
-                    
-                    {/* Sidebar / Left Column Content */}
-                    <div className="w-[24%] h-full pt-[8%] pb-[8%] flex flex-col items-center justify-between z-20">
-                      <div className="relative flex flex-col items-center">
-                        <div className="w-28 h-28 bg-[#ffc107] border-[4px] border-slate-900 rounded-2xl transform rotate-45 flex items-center justify-center shadow-lg">
-                          <div className="transform -rotate-45 text-center leading-[0.85]">
-                            <span className="block text-2xl font-black text-slate-900 ml-[1px]">NR</span>
-                            <span className="block text-[36px] font-black text-[#d91f26] -mb-1 shrink-0">{courseCode}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-center">
-                        <div className="bg-slate-900 text-white text-[9px] font-bold uppercase tracking-widest px-4 py-1.5 mb-2 w-full text-center">FALA INSTRUTOR</div>
-                        <div className="text-white font-black italic text-6xl leading-none pt-2 drop-shadow-md">
-                           FI
-                        </div>
-                      </div>
-
-                      {/* QR Mock */}
-                      <div className="bg-white p-1.5 w-24 h-24 shadow-md rounded">
-                         <div className="w-full h-full bg-slate-900" style={{ backgroundImage: 'linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff), linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff)', backgroundSize: '10px 10px', backgroundPosition: '0 0, 5px 5px' }} />
-                      </div>
-                    </div>
+                  <div className="relative z-10 flex w-full h-full px-[3%] py-[2.5%]">
+                    {LeftColumn}
 
                     {/* Main Content Pane */}
-                    <div className="w-[76%] h-full pl-12 pr-16 pt-12 flex flex-col items-center text-center">
-                      
-                      <div className="w-full flex justify-end mb-6">
-                         <h1 className="text-5xl font-black text-[#008e39] tracking-tighter" style={{ fontFamily: 'Arial Black, sans-serif'}}>
-                           CERTIFICADO
-                         </h1>
+                    <div className="flex-1 flex flex-col items-center text-center pr-[2%] pt-[1.5%]">
+                      {LogoBlock}
+
+                      {/* Título "Certificado" com selo de roseta */}
+                      <div className="flex items-center justify-center gap-3 mt-2 mb-1">
+                        <h1 className="text-[48px] leading-none font-extrabold tracking-tight" style={{ fontFamily: '"Baloo 2", system-ui, sans-serif' }}>
+                          <span style={{ color: '#1e9b46' }}>Cert</span>
+                          <span style={{ color: '#1f2a44' }}>ificado</span>
+                        </h1>
+                        <RosetteSeal className="h-[68px] w-auto" />
                       </div>
 
-                      <div className="mt-4 mb-8">
-                         <div className="flex items-center gap-1 justify-center">
-                           <div className="text-4xl font-black italic text-[#008e39] border-t-4 border-l-4 border-slate-900 pt-1 pl-1 leading-none">FI</div>
-                           <div className="flex flex-col text-left leading-[0.9]">
-                             <span className="text-3xl font-black text-slate-900 tracking-tight">FALA</span>
-                             <span className="text-3xl font-black text-slate-900 tracking-tight">INSTRUTOR</span>
-                           </div>
-                         </div>
-                         <span className="block text-[11px] text-slate-600 tracking-widest font-bold mt-2 uppercase">Segurança do Trabalho</span>
-                      </div>
-
-                      <div className="space-y-6 w-full flex-1 flex flex-col justify-center mb-8">
-                        <h2 className="text-2xl sm:text-3xl font-bold text-[#008e39] uppercase tracking-wide">
+                      {/* Corpo */}
+                      <div className="flex-1 flex flex-col justify-center w-full max-w-2xl mx-auto">
+                        <h2 className="text-2xl sm:text-[26px] font-bold text-[#1f2a44] uppercase tracking-wide mb-4">
                           {viewingCertificate.userName}
                         </h2>
-                        
-                        <p className="text-[13px] sm:text-[15px] text-slate-800 text-center leading-relaxed mx-auto max-w-2xl font-medium">
-                          Portador (a) do CPF nº {currentUser.cpf} participou do <strong>TREINAMENTO DE {course.name}</strong>, realizado no dia {viewingCertificate.startDate}, 
-                          com carga horária total de <strong>{course.duration} horas</strong>.
+                        <p className="text-[13px] sm:text-[14px] text-slate-800 leading-relaxed font-medium">
+                          Portador (a) do CPF nº {currentUser.cpf} participou do <strong>TREINAMENTO DE {course.name.toUpperCase()}</strong>, realizado no dia {longDate}, com carga horária total de <strong>{course.duration} horas</strong>.
                         </p>
+                        <div className="text-right text-[13px] text-slate-800 font-bold mt-6 pr-1">
+                          São Paulo, {longDate}
+                        </div>
                       </div>
 
-                      <div className="w-full flex flex-col justify-between h-36">
-                         <div className="text-right text-[13px] sm:text-[15px] text-slate-800 font-bold mb-4">
-                           São Paulo, {viewingCertificate.startDate}
-                         </div>
-
-                         <div className="flex items-end justify-between w-full mt-auto">
-                           <div className="text-left w-64 flex flex-col items-center">
-                             <div className="w-full h-px bg-slate-900 mb-2" />
-                             <span className="text-xs text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
-                           </div>
-
-                           <div className="text-center w-72 flex flex-col items-center">
-                             <span className="font-serif italic text-3xl mb-1 border-b border-slate-400 text-slate-800 w-full pb-1 mt-[-20px]">
-                               {firstInstructor.name.split(' ')[0]} {firstInstructor.name.split(' ').slice(1).join(' ')}
-                             </span>
-                             <div className="text-[11px] text-left w-full leading-tight font-bold text-slate-900 mt-2 uppercase tracking-wide">
-                               Instrutor: {firstInstructor.name}<br/>
-                               {firstInstructor.formation}<br/>
-                               MTE nº: 0124684/SP
-                             </div>
-                           </div>
-                         </div>
+                      {/* Assinaturas */}
+                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-[5%] gap-6">
+                        <div className="w-44 flex flex-col items-center">
+                          <div className="w-full h-px bg-slate-900 mb-1.5" />
+                          <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
+                        </div>
+                        <div className="w-72 flex flex-col items-center">
+                          {firstInstructor.signatureUrl ? (
+                            <img src={firstInstructor.signatureUrl} alt="Assinatura do instrutor" className="h-9 object-contain mb-0.5" referrerPolicy="no-referrer" />
+                          ) : (
+                            <span className="text-[20px] text-slate-800 leading-tight mb-0.5 text-center" style={{ fontFamily: '"Great Vibes", cursive' }}>
+                              {firstInstructor.name}
+                            </span>
+                          )}
+                          <div className="w-full h-px bg-slate-900 mb-1.5" />
+                          <div className="text-[10px] leading-tight font-bold text-slate-900 uppercase tracking-wide text-center">
+                            Instrutor: {firstInstructor.name}<br />
+                            {firstInstructor.formation}<br />
+                            MTE nº: {firstInstructor.mte || '0124684/SP'}
+                          </div>
+                          {firstInstructor.icpEnabled && viewingCertificate.certificateCode && (
+                            <div className="mt-1.5 w-full flex items-center gap-1.5 border border-[#1f2a44]/40 rounded px-2 py-1 bg-[#1f2a44]/[0.04]">
+                              <ShieldCheck className="w-4 h-4 text-[#1f2a44] shrink-0" />
+                              <div className="text-[7px] leading-snug text-[#1f2a44] text-left min-w-0">
+                                <span className="font-extrabold uppercase tracking-wide block">Assinado digitalmente • ICP-Brasil</span>
+                                <span className="font-mono block truncate">{viewingCertificate.certificateCode}</span>
+                                <span className="block">MP 2.200-2/2001</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-
                     </div>
                   </div>
                 </div>
 
                 {/* PAGE 2: BACK SIDE */}
-                <div id="certificate-page-2" className="relative bg-white aspect-[1.414] shadow-sm select-all font-sans text-slate-900 border border-slate-200 mt-8 overflow-hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
-                  
-                  {/* Decorative background vectors mock */}
-                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#slate-800_1px,transparent_1px),linear-gradient(to_bottom,#slate-800_1px,transparent_1px)] [background-size:20px_20px]" />
+                <div id="certificate-page-2" className="relative bg-white aspect-[1.414] shadow-sm select-all font-sans text-slate-900 mt-8 overflow-hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  {Frame}
 
-                  {/* Left Side Shapes & Branding - Simple Full Height Green Bar */}
-                  <div className="absolute top-0 left-0 w-[24%] h-full bg-[#008e39] z-0 shadow-lg border-r-[8px] border-[#293452]" />
-
-                  <div className="relative z-10 flex w-full h-full">
-                    
-                    {/* Sidebar / Left Column Content */}
-                    <div className="w-[24%] h-full pt-[8%] pb-[8%] flex flex-col items-center justify-between z-20">
-                     <div className="relative flex flex-col items-center">
-                        <div className="w-28 h-28 bg-[#ffc107] border-[4px] border-slate-900 rounded-2xl transform rotate-45 flex items-center justify-center shadow-lg">
-                          <div className="transform -rotate-45 text-center leading-[0.85]">
-                            <span className="block text-2xl font-black text-slate-900 ml-[1px]">NR</span>
-                            <span className="block text-[36px] font-black text-[#d91f26] -mb-1 shrink-0">{courseCode}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-center">
-                        <div className="bg-slate-900 text-white text-[9px] font-bold uppercase tracking-widest px-4 py-1.5 mb-2 w-full text-center">FALA INSTRUTOR</div>
-                        <div className="text-white font-black italic text-6xl leading-none pt-2 drop-shadow-md">
-                           FI
-                        </div>
-                      </div>
-
-                      {/* QR Mock */}
-                      <div className="bg-white p-1.5 w-24 h-24 shadow-md rounded">
-                         <div className="w-full h-full bg-slate-900" style={{ backgroundImage: 'linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff), linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff)', backgroundSize: '10px 10px', backgroundPosition: '0 0, 5px 5px' }} />
-                      </div>
-                    </div>
+                  <div className="relative z-10 flex w-full h-full px-[3%] py-[2.5%]">
+                    {LeftColumn}
 
                     {/* Main Content Pane */}
-                    <div className="w-[76%] h-full pl-12 pr-12 pt-12 pb-12 flex flex-col text-left">
-                      
-                      <div className="mb-6 flex flex-col items-center">
-                         <div className="flex items-center gap-1 justify-center">
-                           <div className="text-4xl font-black italic text-[#008e39] border-t-4 border-l-4 border-slate-900 pt-1 pl-1 leading-none">FI</div>
-                           <div className="flex flex-col text-left leading-[0.9]">
-                             <span className="text-3xl font-black text-slate-900 tracking-tight">FALA</span>
-                             <span className="text-3xl font-black text-slate-900 tracking-tight">INSTRUTOR</span>
-                           </div>
-                         </div>
-                         <span className="block text-[11px] text-slate-600 tracking-widest font-bold mt-2 uppercase">Segurança do Trabalho</span>
-                      </div>
+                    <div className="flex-1 flex flex-col pr-[2%] pt-[1.5%]">
+                      <div className="flex justify-center">{LogoBlock}</div>
 
-                      <h3 className="text-[15px] max-w-xl mx-auto text-center font-bold text-slate-900 mb-6 border-b-2 border-slate-900 pb-2 uppercase tracking-wide">
+                      <h3 className="text-[14px] max-w-2xl mx-auto text-center font-bold text-[#1f2a44] mt-3 mb-4 border-b-2 border-[#1e9b46] pb-2">
                         Conteúdo Programático do Treinamento de {course.name}
                       </h3>
-                      
-                      <div className="flex-1 w-full text-[12px] leading-relaxed text-slate-800 px-4 mt-2 columns-2 gap-8">
-                        <ul className="list-disc pl-4 space-y-1 font-medium">
+
+                      <div className="flex-1 w-full text-[11px] leading-relaxed text-slate-800 px-2 columns-2 gap-8">
+                        <ul className="list-disc pl-4 space-y-1 font-medium [&>li]:break-inside-avoid">
                           {course.modules.map((mod, mi) => (
                             <li key={mi}>{mod}</li>
                           ))}
@@ -972,7 +992,7 @@ export default function StudentDashboard({
                       </div>
 
                       {/* Footer URL */}
-                      <div className="mt-auto pt-6 flex justify-center text-[12px] text-[#008e39] font-black tracking-[0.2em] w-full z-20">
+                      <div className="mt-auto pt-4 flex justify-center text-[12px] text-[#1e9b46] font-black tracking-[0.2em] w-full">
                         WWW.FALAINSTRUTOR.COM.BR
                       </div>
                     </div>

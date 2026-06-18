@@ -22,6 +22,9 @@ export interface Instructor {
   id: string;
   name: string;
   formation: string;
+  mte?: string; // Registro MTE do instrutor (ex.: "0124684/SP")
+  signatureUrl?: string; // imagem da assinatura (scan), opcional
+  icpEnabled?: boolean; // assinatura digital ICP-Brasil habilitada
 }
 
 export interface Course {

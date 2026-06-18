@@ -5,55 +5,51 @@
 
 import React from 'react';
 import { ShieldCheck, Search, FileText, CheckCircle2, User, Key, Calendar, MapPin, Award, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
-import { Enrollment, User as UserType, Course } from '../types';
+import { certificatesApi } from '../api';
 
 interface ValidationViewProps {
-  enrollments: Enrollment[];
-  users: UserType[];
-  courses: Course[];
+  initialCode?: string;
 }
 
-export default function ValidationView({ enrollments, users, courses }: ValidationViewProps) {
-  const [searchCode, setSearchCode] = React.useState('');
+export default function ValidationView({ initialCode }: ValidationViewProps) {
+  const [searchCode, setSearchCode] = React.useState(initialCode ?? '');
   const [matchedCertificate, setMatchedCertificate] = React.useState<any | null>(null);
   const [performedSearch, setPerformedSearch] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchCode) return;
+  const runSearch = async (rawCode: string) => {
+    const cleanCode = rawCode.trim().toUpperCase();
+    if (!cleanCode || loading) return;
 
+    setLoading(true);
+    // Validate the certificate against the API (queries the shared database).
+    const cert = await certificatesApi.validate(cleanCode);
     setPerformedSearch(true);
-    const cleanCode = searchCode.trim().toUpperCase();
 
-    // Find enrollment matching certificate code
-    const enrollment = enrollments.find((en) => en.certificateCode?.toUpperCase() === cleanCode);
-    
-    if (enrollment) {
-      // retrieve related user info
-      const student = users.find((u) => u.id === enrollment.userId);
-      // retrieve course info
-      const course = courses.find((c) => c.id === enrollment.courseId);
-
+    if (cert) {
       setMatchedCertificate({
-        code: enrollment.certificateCode,
-        studentName: enrollment.userName,
-        studentCpf: student?.cpf || "Não cadastrado",
-        studentDob: student?.dob || "Não cadastrada",
-        courseName: enrollment.courseName,
-        courseCode: enrollment.courseCode,
-        workload: course?.duration || 8,
-        startDate: enrollment.startDate,
-        completionDate: enrollment.startDate, // assuming same-day completion for simplicity
-        instructor: course?.instructors[0]?.name || "Instrutor Qualificado",
-        instructorFormation: course?.instructors[0]?.formation || "Engenheiro de Segurança / Civil",
-        manualActivities: course?.manualActivities || [],
-        status: "VÁLIDO & AUTENTICADO",
-        digitalSeal: "SH-SHA256-" + enrollment.certificateCode + "-892EF0"
+        ...cert,
+        // Formatted completion date for display.
+        completionDate: (cert.completionDate || '').split('T')[0] || cert.completionDate,
+        status: 'VÁLIDO & AUTENTICADO',
+        digitalSeal: 'SH-SHA256-' + cert.code + '-892EF0',
       });
     } else {
       setMatchedCertificate(null);
     }
+    setLoading(false);
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    runSearch(searchCode);
+  };
+
+  // Auto-validate when arriving from a certificate QR Code.
+  React.useEffect(() => {
+    if (initialCode) runSearch(initialCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCode]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 font-sans transition-colors duration-200">
@@ -89,12 +85,13 @@ export default function ValidationView({ enrollments, users, courses }: Validati
                 required
               />
             </div>
-            <button 
+            <button
               type="submit"
-              className="sm:w-36 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm uppercase tracking-wide rounded-xl shadow-xs cursor-pointer select-none flex items-center justify-center gap-1.5 shrink-0 font-display"
+              disabled={loading}
+              className="sm:w-36 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm uppercase tracking-wide rounded-xl shadow-xs cursor-pointer select-none flex items-center justify-center gap-1.5 shrink-0 font-display"
               id="certificate-search-btn"
             >
-              <Search className="w-4 h-4" /> Validar
+              <Search className="w-4 h-4" /> {loading ? 'Validando...' : 'Validar'}
             </button>
           </div>
           <span className="text-[10px] text-slate-400 leading-normal block font-sans">

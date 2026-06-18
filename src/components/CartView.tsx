@@ -6,6 +6,7 @@
 import React from 'react';
 import { ShoppingCart, Trash2, Tag, CreditCard, Receipt, Milestone, ShieldCheck, CheckCircle2, Lock, ArrowRight } from 'lucide-react';
 import { Course, User, Coupon, SalesTransaction, Enrollment } from '../types';
+import { paymentsApi } from '../api';
 
 interface CartViewProps {
   cartItems: Course[];
@@ -80,7 +81,7 @@ export default function CartView({
     setActiveCoupon(null);
   };
 
-  const handleCheckoutSubmit = () => {
+  const handleCheckoutSubmit = async () => {
     if (cartItems.length === 0) {
       alert("Seu carrinho de compras está vazio!");
       return;
@@ -93,6 +94,21 @@ export default function CartView({
 
     setCheckoutStep('processing');
 
+    // 1) Tenta o checkout real (Asaas). Se configurado, redireciona para a
+    //    página de pagamento (PIX/Boleto/Cartão).
+    try {
+      const result = await paymentsApi.checkout(cartItems.map((c) => c.id), activeCoupon?.code);
+      if (result?.url) {
+        window.location.href = result.url;
+        return;
+      }
+    } catch (err) {
+      setCheckoutStep('cart');
+      alert(err instanceof Error ? err.message : 'Falha ao iniciar o pagamento.');
+      return;
+    }
+
+    // 2) Pagamento não configurado: mantém o fluxo de matrícula direta (bridge).
     setTimeout(() => {
       // Create transaction logs
       const cleanTx: Omit<SalesTransaction, 'id' | 'date'> = {

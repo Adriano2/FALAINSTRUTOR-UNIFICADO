@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Course, User, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission, ExamQuestion } from './types';
+import { Course, Instructor, User, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission, ExamQuestion } from './types';
 
 export const INITIAL_LAYOUT_CONFIG: LayoutConfig = {
   companyName: "FalaInstrutor",
@@ -92,150 +92,131 @@ export const SEED_USERS: User[] = [
   }
 ];
 
+// Instrutor responsável padrão (pode ser ajustado por curso no painel admin).
+const INSTRUTOR_PADRAO: Instructor = {
+  id: "inst-adriano",
+  name: "Adriano Aparecido Ribas Ricardo",
+  formation: "Técnico de Segurança do Trabalho",
+  mte: "0124684/SP",
+  icpEnabled: true,
+};
+
+const IMG = {
+  eletric: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&h=350&q=80",
+  empilhadeira: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&h=350&q=80",
+  altura: "https://images.unsplash.com/photo-1541535650810-10d26f5c2ab3?auto=format&fit=crop&w=600&h=350&q=80",
+  fogo: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&h=350&q=80",
+  maquinas: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&h=350&q=80",
+  construcao: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=600&h=350&q=80",
+  geral: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&h=350&q=80",
+};
+
 export const SEED_COURSES: Course[] = [
   {
-    id: "course-nr10",
-    code: "NR 10",
-    name: "NR 10 - Básico - Segurança em Instalações e Serviços em Eletricidade",
-    description: "Treinamento normativo essencial focado em segurança elétrica, prevenção de acidentes, riscos elétricos, aterramento seguro e procedimentos técnicos com base na NR10.",
-    duration: 40,
-    price: 250,
-    isActive: true,
-    isFeatured: true,
-    coverImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&h=350&q=80",
-    modules: [
-      "Módulo 01 - Introdução à segurança com eletricidade",
-      "Módulo 02 - Riscos em instalações e serviços",
-      "Módulo 03 - Técnicas de análise de risco elétrico",
-      "Módulo 04 - Medidas de controle de risco",
-      "Módulo 05 - Normas técnicas brasileiras aplicáveis",
-      "Módulo 06 - Regulamentos do Ministério do Trabalho",
-      "Módulo 07 - Equipamentos de proteção coletiva (EPC)",
-      "Módulo 08 - Equipamentos de proteção individual (EPI)",
-      "Módulo 09 - Rotinas e procedimentos de trabalho",
-      "Módulo 10 - Documentação de instalações elétricas",
-      "Módulo 11 - Riscos adicionais (altura, umidade, etc.)",
-      "Módulo 12 - Proteção e combate a incêndio",
-      "Módulo 13 - Acidentes de origem elétrica",
-      "Módulo 14 - Primeiros socorros e RCP",
-      "Módulo 15 - Responsabilidades e deveres"
-    ],
-    instructors: [
-      { id: "inst-1", name: "José Ronaldo Mérida", formation: "Engenheiro Eletricista" }
-    ],
-    manualActivities: ["Instalação com Linha Viva", "Bloqueio e Travamento de Disjuntores"]
+    id: "course-nr01", code: "NR 01", name: "NR 01 - Integração de Segurança do Trabalho",
+    description: "Treinamento admissional obrigatório: disposições gerais, gerenciamento de riscos ocupacionais, ordens de serviço, direitos e deveres em SST.",
+    duration: 4, price: 40, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: ["Módulo 01 - Disposições Gerais da NR 01", "Módulo 02 - Gerenciamento de Riscos Ocupacionais (GRO/PGR)", "Módulo 03 - Ordens de Serviço e Direitos e Deveres", "Módulo 04 - Integração ao Ambiente de Trabalho"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
   },
   {
-    id: "course-nr11",
-    code: "NR 11",
-    name: "NR 11 - Segurança na Operação de Empilhadeira",
-    description: "Formação completa para operadores de empilhadeiras. Aborda técnicas de movimentação, carregamento, transporte estável e movimentação segura de cargas industriais.",
-    duration: 16,
-    price: 226,
-    isActive: true,
-    isFeatured: true,
-    coverImage: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&h=350&q=80",
-    modules: [
-      "Módulo 01 - Legislação, NR 11 e Conceitos Básicos",
-      "Módulo 02 - Tipos de Empilhadeiras e Componentes",
-      "Módulo 03 - Estabilidade Física e Equilíbrio de Carga",
-      "Módulo 04 - Checklists antes do início de turno",
-      "Módulo 05 - Técnicas Seguras de Empilhamento e Desempilhamento",
-      "Módulo 06 - Prática de Circulação e Desvios de Obstáculos"
-    ],
-    instructors: [
-      { id: "inst-2", name: "Instrutor Qualificado", formation: "Engenheiro de Segurança / Civil" }
-    ],
-    manualActivities: ["Operação e Manobra em Rampa com Carga Seca", "Curvas em Ângulo de 90 com Palette de Madeira"]
+    id: "course-nr05", code: "NR 05", name: "NR 05 - CIPA - Comissão Interna de Prevenção de Acidentes",
+    description: "Capacitação para membros da CIPA: prevenção de acidentes e doenças, mapa de riscos, investigação de acidentes e a Comissão Interna de Prevenção de Acidentes e Assédio.",
+    duration: 20, price: 180, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: ["Módulo 01 - Organização e Atribuições da CIPA", "Módulo 02 - Mapa de Riscos Ambientais", "Módulo 03 - Investigação e Análise de Acidentes", "Módulo 04 - Prevenção de Doenças Ocupacionais", "Módulo 05 - Noções de Combate a Incêndio e Primeiros Socorros"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
   },
   {
-    id: "course-nr345",
-    code: "NR 34.5",
-    name: "NR 34.5 - Segurança para Trabalho a Quente",
-    description: "Estudo detalhado de riscos e medidas preventivas em operações a quente, soldagem, corte térmico e outras atividades afins que produzem fagulhas e calor intenso.",
-    duration: 8,
-    price: 159,
-    isActive: true,
-    isFeatured: false,
-    coverImage: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&h=350&q=80",
-    modules: [
-      "Módulo 01 - Introdução aos Fundamentos do Trabalho a Quente",
-      "Módulo 02 - Riscos de Incêndio e Explosão em Atmosferas Inflamáveis",
-      "Módulo 03 - Medidas e Sistemas de Linha de Contenção de Fagulhas",
-      "Módulo 04 - Equipamentos Críticos e Monitoramento de Gases"
-    ],
-    instructors: [
-      { id: "inst-2", name: "Instrutor Qualificado", formation: "Engenheiro de Segurança / Civil" }
-    ],
-    manualActivities: ["Controle de Atmosfera e Permissão de Trabalho (PET)"]
+    id: "course-nr06", code: "NR 06", name: "NR 06 - Equipamentos de Proteção Individual (EPI)",
+    description: "Seleção, uso, guarda e conservação dos EPI; responsabilidades do empregador e do trabalhador e fichas de controle de entrega.",
+    duration: 4, price: 40, isActive: true, isFeatured: true, coverImage: IMG.geral,
+    modules: ["Módulo 01 - O que é o Equipamento de Proteção Individual", "Módulo 02 - Responsabilidades (Empregador, Trabalhador e Fabricante)", "Módulo 03 - Tipos de EPI por Região do Corpo", "Módulo 04 - Higienização, Guarda e Ficha de Controle de EPI"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
   },
   {
-    id: "course-nr35",
-    code: "NR 35",
-    name: "NR 35 - Segurança no Trabalho em Altura",
-    description: "Capacitação completa para profissionais que executam tarefas acima de 2 metros de altura utilizando ancoragens, cinturões antiqueda e cabos de segurança.",
-    duration: 8,
-    price: 199,
-    isActive: true,
-    isFeatured: true,
-    coverImage: "https://images.unsplash.com/photo-1541535650810-10d26f5c2ab3?auto=format&fit=crop&w=600&h=350&q=80",
-    modules: [
-      "Módulo 01 - Regulamentação jurídica aplicável - NR 35",
-      "Módulo 02 - Análise de Riscos e Condições Impeditivas",
-      "Módulo 03 - Sistemas, Equipamentos e Procedimentos de Proteção Coletiva",
-      "Módulo 04 - Linha de Vida, Cabo de Aço e Pontos de Ancoragem Seguros",
-      "Módulo 05 - EPI para Trabalho em Altura: Seleção, Uso e Critérios de Inspeção",
-      "Módulo 06 - Resgate Emergencial em Altura e Primeiros Socorros"
-    ],
-    instructors: [
-      { id: "inst-2", name: "Instrutor Qualificado", formation: "Engenheiro de Segurança / Civil" },
-      { id: "inst-3", name: "Wanderson Lírio", formation: "Engenheiro de Segurança do Trabalho" }
-    ],
-    manualActivities: ["Instalação com Ancoragem de Cabos Recartilhados", "Inspeção e Descarte de Cinto de Segurança"]
+    id: "course-nr10", code: "NR 10", name: "NR 10 e SEP - Segurança em Instalações e Serviços em Eletricidade",
+    description: "Segurança em instalações e serviços em eletricidade e Sistema Elétrico de Potência (SEP): riscos elétricos, medidas de controle, aterramento e procedimentos.",
+    duration: 40, price: 350, isActive: true, isFeatured: true, coverImage: IMG.eletric,
+    modules: ["Módulo 01 - Introdução à Segurança com Eletricidade", "Módulo 02 - Riscos em Instalações e Serviços", "Módulo 03 - Técnicas de Análise de Risco Elétrico", "Módulo 04 - Medidas de Controle (EPC e EPI)", "Módulo 05 - Sistema Elétrico de Potência (SEP) e Proximidades", "Módulo 06 - Procedimentos, Acidentes e Primeiros Socorros"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: ["Bloqueio e Travamento de Disjuntores", "Aterramento Temporário"],
   },
   {
-    id: "course-dirdef-16",
-    code: "DIR-DEF-16",
-    name: "Direção Defensiva - 16 Horas (SEMIPRESENCIAL)",
-    description: "Métodos modernos de segurança no trânsito para motoristas profissionais, condutores de veículos de emergência e transporte pesado. Formato híbrido: EAD + Prática.",
-    duration: 16,
-    price: 299,
-    isActive: true,
-    isFeatured: false,
-    coverImage: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=600&h=350&q=80",
-    modules: [
-      "Módulo 01 - Fundamentos Conceituais do Trânsito",
-      "Módulo 02 - Condições Adversas e Prevenção de Colisões",
-      "Módulo 03 - Legislação, Álcool, Drogas e Direção Segura",
-      "Módulo 04 - Manutenção Preventiva do Veículo",
-      "Módulo 05 - Primeiros Socorros em Vias Públicas"
-    ],
-    instructors: [
-      { id: "inst-2", name: "Instrutor Qualificado", formation: "Engenheiro de Segurança / Civil" }
-    ],
-    manualActivities: ["Manobra de Slalom para Controle de Tração", "Frenagem e Desvio de Emergência com ABS"]
+    id: "course-nr11", code: "NR 11", name: "NR 11 - Transporte, Movimentação, Armazenagem e Manuseio de Materiais",
+    description: "Operação segura de equipamentos de transporte e movimentação de cargas (empilhadeiras), estabilidade, sinalização e armazenagem.",
+    duration: 16, price: 226, isActive: true, isFeatured: true, coverImage: IMG.empilhadeira,
+    modules: ["Módulo 01 - Legislação e Conceitos da NR 11", "Módulo 02 - Tipos de Equipamentos e Componentes", "Módulo 03 - Estabilidade e Equilíbrio de Carga", "Módulo 04 - Checklist e Inspeção", "Módulo 05 - Técnicas de Movimentação e Armazenagem"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: ["Operação e Manobra em Rampa com Carga", "Empilhamento e Desempilhamento Seguro"],
   },
   {
-    id: "course-loto",
-    code: "LOTO",
-    name: "Loto - Lockout e Tagout - Isolamento de Fontes de Energia Perigosas",
-    description: "Treinamento especializado em sistemas de bloqueio e identificação (travas e cadeados) de energia em reformas, manutenções e reparos mecânicos/elétricos.",
-    duration: 4,
-    price: 14,
-    isActive: true,
-    isFeatured: false,
-    coverImage: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&h=350&q=80",
-    modules: [
-      "Módulo 01 - Conceitos Básicos de Energias Perigosas",
-      "Módulo 02 - Dispositivos de Bloqueio Físico (Cadeados, Garras, Dispositivos)",
-      "Módulo 03 - Cartões de Etiquetagem e Procedimentos de Trabalho",
-      "Módulo 04 - Zero Energia e Testes de Confirmação"
-    ],
-    instructors: [
-      { id: "inst-2", name: "Instrutor Qualificado", formation: "Engenheiro de Segurança / Civil" }
-    ],
-    manualActivities: ["Etiquetagem com Tag de Identificação Individual", "Travamento Mecânico de Válvula Globo"]
-  }
+    id: "course-nr12", code: "NR 12", name: "NR 12 - Segurança no Trabalho em Máquinas e Equipamentos",
+    description: "Princípios e medidas de proteção em máquinas e equipamentos: dispositivos de segurança, proteções fixas e móveis, manutenção e procedimentos de trabalho.",
+    duration: 8, price: 199, isActive: true, isFeatured: true, coverImage: IMG.maquinas,
+    modules: ["Módulo 01 - Princípios Gerais da NR 12", "Módulo 02 - Arranjo Físico e Dispositivos de Segurança", "Módulo 03 - Proteções Fixas e Móveis", "Módulo 04 - Manutenção, Inspeção e Procedimentos de Trabalho"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-nr13", code: "NR 13", name: "NR 13 - Caldeiras, Vasos de Pressão e Tubulações",
+    description: "Segurança na operação de caldeiras, vasos de pressão e tubulações: inspeção, dispositivos de segurança, riscos e procedimentos operacionais.",
+    duration: 16, price: 280, isActive: true, isFeatured: false, coverImage: IMG.maquinas,
+    modules: ["Módulo 01 - Conceitos e Classificação", "Módulo 02 - Dispositivos de Segurança", "Módulo 03 - Operação e Inspeção de Segurança", "Módulo 04 - Riscos e Procedimentos de Emergência"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-nr17", code: "NR 17", name: "NR 17 - Ergonomia",
+    description: "Adaptação das condições de trabalho às características psicofisiológicas dos trabalhadores: levantamento de carga, mobiliário, organização e AET.",
+    duration: 8, price: 159, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: ["Módulo 01 - Fundamentos de Ergonomia", "Módulo 02 - Levantamento e Transporte de Cargas", "Módulo 03 - Mobiliário e Posto de Trabalho", "Módulo 04 - Organização do Trabalho e AET"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-nr18", code: "NR 18", name: "NR 18 - Condições e Meio Ambiente de Trabalho na Indústria da Construção",
+    description: "Diretrizes de segurança e saúde na construção civil: PCMAT/PGR, áreas de vivência, proteções coletivas, escavações e trabalho em andaimes.",
+    duration: 8, price: 189, isActive: true, isFeatured: false, coverImage: IMG.construcao,
+    modules: ["Módulo 01 - Programa de Gerenciamento de Riscos na Construção", "Módulo 02 - Áreas de Vivência e Sinalização", "Módulo 03 - Proteções Coletivas (Guarda-corpo e Plataformas)", "Módulo 04 - Andaimes, Escavações e Demolições"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-nr20", code: "NR 20", name: "NR 20 - Segurança e Saúde no Trabalho com Inflamáveis e Combustíveis",
+    description: "Trabalho seguro com líquidos e gases inflamáveis e combustíveis: classificação das instalações, riscos, prevenção e resposta a emergências.",
+    duration: 8, price: 199, isActive: true, isFeatured: false, coverImage: IMG.fogo,
+    modules: ["Módulo 01 - Classificação das Instalações", "Módulo 02 - Propriedades dos Inflamáveis e Combustíveis", "Módulo 03 - Riscos e Medidas de Controle", "Módulo 04 - Prevenção e Combate a Emergências"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-nr23", code: "NR 23", name: "NR 23 - Proteção Contra Incêndios",
+    description: "Prevenção e combate a princípios de incêndio: classes de fogo, equipamentos de extinção, saídas de emergência e plano de abandono.",
+    duration: 4, price: 120, isActive: true, isFeatured: false, coverImage: IMG.fogo,
+    modules: ["Módulo 01 - Teoria do Fogo e Classes de Incêndio", "Módulo 02 - Equipamentos de Combate (Extintores e Hidrantes)", "Módulo 03 - Saídas de Emergência e Sinalização", "Módulo 04 - Plano de Abandono e Brigada"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: ["Manuseio de Extintores por Classe de Fogo"],
+  },
+  {
+    id: "course-nr31", code: "NR 31", name: "NR 31 - Segurança e Saúde no Trabalho na Agricultura, Pecuária, Silvicultura, Exploração Florestal e Aquicultura",
+    description: "Segurança nas atividades agrárias: agrotóxicos, máquinas agrícolas, ergonomia rural e gerenciamento de riscos no campo.",
+    duration: 8, price: 189, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: ["Módulo 01 - Gestão de SST no Meio Rural", "Módulo 02 - Agrotóxicos e Produtos Químicos", "Módulo 03 - Máquinas e Implementos Agrícolas", "Módulo 04 - Ergonomia e Condições de Trabalho Rural"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-nr33", code: "NR 33", name: "NR 33 - Segurança e Saúde nos Trabalhos em Espaços Confinados",
+    description: "Capacitação para trabalho em espaços confinados: identificação, monitoramento atmosférico, permissão de entrada e trabalho (PET) e resgate.",
+    duration: 16, price: 280, isActive: true, isFeatured: false, coverImage: IMG.maquinas,
+    modules: ["Módulo 01 - Definições e Reconhecimento de Espaços Confinados", "Módulo 02 - Riscos e Monitoramento Atmosférico", "Módulo 03 - Permissão de Entrada e Trabalho (PET)", "Módulo 04 - Resgate e Primeiros Socorros"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: ["Monitoramento de Gases e Ventilação", "Simulado de Resgate"],
+  },
+  {
+    id: "course-nr35", code: "NR 35", name: "NR 35 - Segurança no Trabalho em Altura",
+    description: "Capacitação para trabalho acima de 2 metros: análise de risco, sistemas de ancoragem, EPI antiqueda e resgate em altura.",
+    duration: 8, price: 199, isActive: true, isFeatured: true, coverImage: IMG.altura,
+    modules: ["Módulo 01 - Regulamentação Jurídica Aplicável - NR 35", "Módulo 02 - Análise de Riscos e Condições Impeditivas", "Módulo 03 - Sistemas, Equipamentos e Procedimentos de Proteção Coletiva", "Módulo 04 - Linha de Vida, Cabo de Aço e Pontos de Ancoragem Seguros", "Módulo 05 - EPI Para Trabalho em Altura: Seleção, Uso e Critérios de Inspeção", "Módulo 06 - Resgate Emergencial em Altura e Primeiros Socorros"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: ["Instalação com Ancoragem de Cabos Recartilhados", "Inspeção e Descarte de Cinto de Segurança"],
+  },
+  {
+    id: "course-nr38", code: "NR 38", name: "NR 38 - Segurança e Saúde no Trabalho nas Atividades de Limpeza Urbana e Manejo de Resíduos Sólidos",
+    description: "Segurança na limpeza urbana e manejo de resíduos sólidos: riscos biológicos e de trânsito, coleta, EPI e procedimentos operacionais.",
+    duration: 8, price: 169, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: ["Módulo 01 - Disposições Gerais da NR 38", "Módulo 02 - Riscos Biológicos, Químicos e de Trânsito", "Módulo 03 - Coleta, Varrição e Manejo de Resíduos", "Módulo 04 - EPI e Procedimentos Operacionais Seguros"],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
 ];
 
 export const SEED_COUPONS: Coupon[] = [
