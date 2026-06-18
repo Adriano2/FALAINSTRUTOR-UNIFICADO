@@ -91,6 +91,8 @@ export default function AdminDashboard({
   const [newInstructorName, setNewInstructorName] = React.useState('');
   const [newInstructorFormation, setNewInstructorFormation] = React.useState('');
   const [newInstructorMte, setNewInstructorMte] = React.useState('');
+  const [newInstructorSignatureUrl, setNewInstructorSignatureUrl] = React.useState('');
+  const [newInstructorIcp, setNewInstructorIcp] = React.useState(true);
   const [newModuleText, setNewModuleText] = React.useState('');
 
   // Coupon manager states
@@ -160,7 +162,7 @@ export default function AdminDashboard({
       if (c.id === managingCourse.id) {
         return {
           ...c,
-          instructors: [...c.instructors, { id: 'inst-' + Date.now(), name: newInstructorName, formation: newInstructorFormation, mte: newInstructorMte || undefined }]
+          instructors: [...c.instructors, { id: 'inst-' + Date.now(), name: newInstructorName, formation: newInstructorFormation, mte: newInstructorMte || undefined, signatureUrl: newInstructorSignatureUrl || undefined, icpEnabled: newInstructorIcp }]
         };
       }
       return c;
@@ -169,6 +171,8 @@ export default function AdminDashboard({
     setNewInstructorName('');
     setNewInstructorFormation('');
     setNewInstructorMte('');
+    setNewInstructorSignatureUrl('');
+    setNewInstructorIcp(true);
     setManagingCourse(null);
     setCourseModalType(null);
     alert("Instrutor associado com sucesso!");
@@ -1296,6 +1300,22 @@ export default function AdminDashboard({
                   onChange={(e) => setNewInstructorMte(e.target.value)}
                   className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
                 />
+                <input
+                  type="text"
+                  placeholder="URL da imagem da assinatura (opcional)"
+                  value={newInstructorSignatureUrl}
+                  onChange={(e) => setNewInstructorSignatureUrl(e.target.value)}
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                />
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 cursor-pointer select-none p-1">
+                  <input
+                    type="checkbox"
+                    checked={newInstructorIcp}
+                    onChange={(e) => setNewInstructorIcp(e.target.checked)}
+                    className="accent-emerald-600"
+                  />
+                  Assinar digitalmente o certificado com ICP-Brasil (MP 2.200-2/2001)
+                </label>
                 <button
                   onClick={handleAddInstructor}
                   className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer select-none"

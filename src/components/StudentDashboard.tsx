@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { User, Course, Enrollment, Comment, StudentExamSubmission, ExamQuestion } from '../types';
+import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion } from '../types';
 import { getExamQuestions } from '../data';
-import { Clock, Shield, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
+import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
@@ -805,7 +805,7 @@ export default function StudentDashboard({
         const course = courses.find((c) => c.id === viewingCertificate.courseId);
         if (!course) return null;
         
-        const firstInstructor = course.instructors[0] || { name: 'Adriano Aparecido Ribas Ricardo', formation: 'Técnico de Segurança do Trabalho', mte: '0124684/SP' };
+        const firstInstructor: Instructor = course.instructors[0] || { id: 'inst-default', name: 'Adriano Aparecido Ribas Ricardo', formation: 'Técnico de Segurança do Trabalho', mte: '0124684/SP', icpEnabled: true };
         const longDate = formatLongDatePt(viewingCertificate.startDate);
         const badge = certificateBadge(course.code);
 
@@ -825,8 +825,8 @@ export default function StudentDashboard({
             <div className="absolute top-0 left-0 w-[26%] h-[18%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
             <div className="absolute top-0 left-0 w-[16%] h-[11%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
             {/* Canto inferior direito */}
-            <div className="absolute bottom-0 right-0 w-[22%] h-[15%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
-            <div className="absolute bottom-0 right-0 w-[13%] h-[9%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+            <div className="absolute bottom-0 right-0 w-[19%] h-[13%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            <div className="absolute bottom-0 right-0 w-[11%] h-[8%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
           </>
         );
 
@@ -936,15 +936,29 @@ export default function StudentDashboard({
                           <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
                         </div>
                         <div className="w-72 flex flex-col items-center">
-                          <span className="text-[22px] text-slate-800 leading-none mb-0.5 whitespace-nowrap" style={{ fontFamily: '"Dancing Script", cursive' }}>
-                            {firstInstructor.name}
-                          </span>
+                          {firstInstructor.signatureUrl ? (
+                            <img src={firstInstructor.signatureUrl} alt="Assinatura do instrutor" className="h-9 object-contain mb-0.5" referrerPolicy="no-referrer" />
+                          ) : (
+                            <span className="text-[20px] text-slate-800 leading-tight mb-0.5 text-center" style={{ fontFamily: '"Great Vibes", cursive' }}>
+                              {firstInstructor.name}
+                            </span>
+                          )}
                           <div className="w-full h-px bg-slate-900 mb-1.5" />
                           <div className="text-[10px] leading-tight font-bold text-slate-900 uppercase tracking-wide text-center">
                             Instrutor: {firstInstructor.name}<br />
                             {firstInstructor.formation}<br />
                             MTE nº: {firstInstructor.mte || '0124684/SP'}
                           </div>
+                          {firstInstructor.icpEnabled && viewingCertificate.certificateCode && (
+                            <div className="mt-1.5 w-full flex items-center gap-1.5 border border-[#1f2a44]/40 rounded px-2 py-1 bg-[#1f2a44]/[0.04]">
+                              <ShieldCheck className="w-4 h-4 text-[#1f2a44] shrink-0" />
+                              <div className="text-[7px] leading-snug text-[#1f2a44] text-left min-w-0">
+                                <span className="font-extrabold uppercase tracking-wide block">Assinado digitalmente • ICP-Brasil</span>
+                                <span className="font-mono block truncate">{viewingCertificate.certificateCode}</span>
+                                <span className="block">MP 2.200-2/2001</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

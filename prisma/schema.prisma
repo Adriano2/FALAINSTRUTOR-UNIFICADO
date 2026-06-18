@@ -64,12 +64,14 @@ model Course {
 }
 
 model Instructor {
-  id        String @id @default(cuid())
-  name      String
-  formation String
-  mte       String?
-  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  courseId  String
+  id           String  @id @default(cuid())
+  name         String
+  formation    String
+  mte          String?
+  signatureUrl String? // imagem da assinatura (scan), opcional
+  icpEnabled   Boolean @default(false) // assinatura digital ICP-Brasil habilitada
+  course       Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId     String
 }
 
 model Enrollment {
