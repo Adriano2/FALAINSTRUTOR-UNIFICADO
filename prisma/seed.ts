@@ -75,7 +75,7 @@ async function main() {
         modules: c.modules,
         manualActivities: c.manualActivities,
         instructors: {
-          create: c.instructors.map((i) => ({ name: i.name, formation: i.formation })),
+          create: c.instructors.map((i) => ({ name: i.name, formation: i.formation, mte: i.mte })),
         },
       },
     });

@@ -67,6 +67,7 @@ model Instructor {
   id        String @id @default(cuid())
   name      String
   formation String
+  mte       String?
   course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   courseId  String
 }

@@ -73,7 +73,7 @@ interface ApiCourse {
   isFeatured: boolean;
   modules: string[];
   manualActivities: string[];
-  instructors: { id: string; name: string; formation: string }[];
+  instructors: { id: string; name: string; formation: string; mte: string | null }[];
 }
 
 export function mapApiCourse(c: ApiCourse): Course {
@@ -93,6 +93,7 @@ export function mapApiCourse(c: ApiCourse): Course {
       id: i.id,
       name: i.name,
       formation: i.formation,
+      mte: i.mte ?? undefined,
     })),
   };
 }

@@ -22,6 +22,7 @@ export interface Instructor {
   id: string;
   name: string;
   formation: string;
+  mte?: string; // Registro MTE do instrutor (ex.: "0124684/SP")
 }
 
 export interface Course {

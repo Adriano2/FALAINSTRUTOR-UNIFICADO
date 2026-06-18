@@ -90,6 +90,7 @@ export default function AdminDashboard({
   const [courseModalType, setCourseModalType] = React.useState<'instructors' | 'modules' | null>(null);
   const [newInstructorName, setNewInstructorName] = React.useState('');
   const [newInstructorFormation, setNewInstructorFormation] = React.useState('');
+  const [newInstructorMte, setNewInstructorMte] = React.useState('');
   const [newModuleText, setNewModuleText] = React.useState('');
 
   // Coupon manager states
@@ -159,7 +160,7 @@ export default function AdminDashboard({
       if (c.id === managingCourse.id) {
         return {
           ...c,
-          instructors: [...c.instructors, { id: 'inst-' + Date.now(), name: newInstructorName, formation: newInstructorFormation }]
+          instructors: [...c.instructors, { id: 'inst-' + Date.now(), name: newInstructorName, formation: newInstructorFormation, mte: newInstructorMte || undefined }]
         };
       }
       return c;
@@ -167,6 +168,7 @@ export default function AdminDashboard({
     onUpdateCourses(updatedCourses);
     setNewInstructorName('');
     setNewInstructorFormation('');
+    setNewInstructorMte('');
     setManagingCourse(null);
     setCourseModalType(null);
     alert("Instrutor associado com sucesso!");
@@ -1280,14 +1282,21 @@ export default function AdminDashboard({
                   onChange={(e) => setNewInstructorName(e.target.value)}
                   className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
                 />
-                <input 
-                  type="text" 
-                  placeholder="Formação (ex: Eng. de Segurança / CREA)"
+                <input
+                  type="text"
+                  placeholder="Formação (ex: Técnico de Segurança do Trabalho)"
                   value={newInstructorFormation}
                   onChange={(e) => setNewInstructorFormation(e.target.value)}
                   className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
                 />
-                <button 
+                <input
+                  type="text"
+                  placeholder="Registro MTE (ex: 0124684/SP)"
+                  value={newInstructorMte}
+                  onChange={(e) => setNewInstructorMte(e.target.value)}
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                />
+                <button
                   onClick={handleAddInstructor}
                   className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer select-none"
                 >

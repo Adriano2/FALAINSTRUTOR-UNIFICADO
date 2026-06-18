@@ -804,7 +804,7 @@ export default function StudentDashboard({
         const course = courses.find((c) => c.id === viewingCertificate.courseId);
         if (!course) return null;
         
-        const firstInstructor = course.instructors[0] || { name: 'Instrutor Qualificado', formation: 'Engenheiro de Segurança / Civil' };
+        const firstInstructor = course.instructors[0] || { name: 'Adriano Aparecido Ribas Ricardo', formation: 'Técnico de Segurança do Trabalho', mte: '0124684/SP' };
         const longDate = formatLongDatePt(viewingCertificate.startDate);
         const badge = certificateBadge(course.code);
 
@@ -929,20 +929,20 @@ export default function StudentDashboard({
                       </div>
 
                       {/* Assinaturas */}
-                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-[5%] gap-8">
-                        <div className="w-52 flex flex-col items-center">
+                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-[5%] gap-6">
+                        <div className="w-44 flex flex-col items-center">
                           <div className="w-full h-px bg-slate-900 mb-1.5" />
                           <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
                         </div>
-                        <div className="w-60 flex flex-col items-center">
-                          <span className="text-[24px] text-slate-800 leading-none mb-0.5" style={{ fontFamily: '"Dancing Script", cursive' }}>
+                        <div className="w-72 flex flex-col items-center">
+                          <span className="text-[22px] text-slate-800 leading-none mb-0.5 whitespace-nowrap" style={{ fontFamily: '"Dancing Script", cursive' }}>
                             {firstInstructor.name}
                           </span>
                           <div className="w-full h-px bg-slate-900 mb-1.5" />
                           <div className="text-[10px] leading-tight font-bold text-slate-900 uppercase tracking-wide text-center">
                             Instrutor: {firstInstructor.name}<br />
                             {firstInstructor.formation}<br />
-                            MTE nº: 0124684/SP
+                            MTE nº: {firstInstructor.mte || '0124684/SP'}
                           </div>
                         </div>
                       </div>
