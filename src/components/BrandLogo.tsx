@@ -59,11 +59,11 @@ export function ShieldEmblem({ className = '' }: { className?: string }) {
   );
 }
 
-// Lockup horizontal: emblema + divisória + texto. Usado no topo central.
+// Lockup horizontal: emblema (escudo) + divisória + texto. Usado no topo central.
 export function LogoHorizontal({ className = '' }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <FiEmblem className="h-12 w-auto shrink-0" />
+    <div className={`flex items-center gap-2.5 ${className}`}>
+      <ShieldEmblem className="h-14 w-auto shrink-0" />
       <div className="w-px self-stretch my-1" style={{ backgroundColor: SLATE }} />
       <div className="flex flex-col leading-none text-left">
         <span className="text-[8px] tracking-[0.22em] font-extrabold uppercase" style={{ color: GREEN }}>

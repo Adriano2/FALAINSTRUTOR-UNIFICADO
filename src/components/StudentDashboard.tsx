@@ -11,7 +11,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import TutorChat from './TutorChat';
-import { FiEmblem, LogoHorizontal, RosetteSeal } from './BrandLogo';
+import { ShieldEmblem, LogoHorizontal, RosetteSeal } from './BrandLogo';
 
 // Formata uma data (ISO ou yyyy-mm-dd) por extenso em português: "10 de junho de 2024".
 function formatLongDatePt(value: string): string {
@@ -842,7 +842,7 @@ export default function StudentDashboard({
                 <span className={`block ${badge.main.length > 2 ? 'text-base' : 'text-[28px]'} font-black text-[#d91f26] leading-none`}>{badge.main}</span>
               </div>
             </div>
-            <FiEmblem className="w-[88px] h-auto" />
+            <ShieldEmblem className="w-[72px] h-auto" />
             {certQrUrl
               ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[78px] h-[78px]" />
               : <div className="w-[78px] h-[78px] bg-slate-100 border border-slate-300" />}

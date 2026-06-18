@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+const BASE='http://localhost:8787'; const OUT='/tmp/shots';
+const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
+const b=await chromium.launch();
+const p=await (await b.newContext({viewport:{width:1366,height:1000}})).newPage();
+p.on('dialog',d=>d.accept().catch(()=>{}));
+await p.goto(BASE,{waitUntil:'networkidle'}); await wait(1200);
+await p.locator('#header-login-btn').click(); await wait(400);
+await p.locator('button:has-text("Aluno")').first().click(); await wait(2000);
+await p.locator('button:has-text("Certificado ✓")').first().click(); await wait(2200);
+await p.locator('#certificate-page-1').screenshot({path:`${OUT}/cert-shield-frente.png`});
+await p.locator('#certificate-page-2').screenshot({path:`${OUT}/cert-shield-verso.png`});
+console.log('ok'); await b.close();
