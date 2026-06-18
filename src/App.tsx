@@ -243,6 +243,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Retorno do pagamento (Asaas): ?payment=success. Esvazia o carrinho,
+  // leva ao painel e avisa o aluno; a matrícula é liberada pelo webhook.
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pay = params.get('payment');
+    if (pay) {
+      setCart([]);
+      setCurrentScreen('student-dashboard');
+      if (pay === 'success') {
+        alert('Pagamento recebido! Assim que for confirmado, seus treinamentos aparecerão no painel.');
+      }
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load the course catalog from the API. Falls back silently to the locally
   // cached/seed catalog if the backend is unavailable.
   React.useEffect(() => {

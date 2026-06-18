@@ -26,6 +26,12 @@ enum TransactionStatus {
   CANCELED
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -37,11 +43,13 @@ model User {
   isActive     Boolean  @default(true)
   avatar       String?
   registeredAt DateTime @default(now())
+  asaasCustomerId String?
 
   enrollments  Enrollment[]
   transactions Transaction[]
   comments     Comment[]
   examSubmissions ExamSubmission[]
+  orders       Order[]
 }
 
 model Course {
@@ -145,6 +153,21 @@ model ExamSubmission {
   answers  Json
   passed   Boolean
   date     DateTime @default(now())
+}
+
+// Pedido de compra (rastreado até a confirmação do pagamento via webhook).
+model Order {
+  id         String      @id @default(cuid())
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  courseIds  String[]
+  total      Float
+  discount   Float       @default(0)
+  status     OrderStatus @default(PENDING)
+  paymentId  String? // id da cobrança no gateway (Asaas)
+  paymentUrl String? // invoiceUrl do gateway
+  couponCode String?
+  createdAt  DateTime    @default(now())
 }
 
 // Configurações globais da aplicação (layout + pagamento) como linha única.

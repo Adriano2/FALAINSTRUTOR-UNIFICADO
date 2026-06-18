@@ -305,6 +305,30 @@ export const adminApi = {
   },
 };
 
+export const paymentsApi = {
+  // Inicia o checkout. Retorna a URL de pagamento (Asaas) ou null se o
+  // pagamento ainda não estiver configurado no servidor (403/503).
+  async checkout(courseIds: string[], couponCode?: string): Promise<{ url: string; orderId: string } | null> {
+    try {
+      return await apiFetch<{ url: string; orderId: string }>('/payments/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ courseIds, couponCode }),
+      });
+    } catch (err) {
+      if (err instanceof Error && /não configurado|configurado/i.test(err.message)) return null;
+      throw err;
+    }
+  },
+  async status(): Promise<boolean> {
+    try {
+      const d = await apiFetch<{ configured: boolean }>('/payments/status');
+      return Boolean(d.configured);
+    } catch {
+      return false;
+    }
+  },
+};
+
 export const authApi = {
   async login(email: string, password: string): Promise<User> {
     const data = await apiFetch<{ token: string; user: ApiUser }>('/auth/login', {

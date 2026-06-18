@@ -24,6 +24,7 @@ import { GoogleGenAI } from '@google/genai';
 import { authRouter } from './auth';
 import { apiRouter } from './routes';
 import { adminRouter } from './admin';
+import { paymentsRouter, paymentsConfigured } from './payments';
 import { prisma } from './db';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -53,12 +54,13 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   } catch {
     dbOk = false;
   }
-  res.json({ ok: true, db: dbOk, aiConfigured: Boolean(ai), model: GEMINI_MODEL });
+  res.json({ ok: true, db: dbOk, aiConfigured: Boolean(ai), model: GEMINI_MODEL, paymentsConfigured });
 });
 
 // Authentication + resource routes.
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/payments', paymentsRouter);
 app.use('/api', apiRouter);
 
 // --- Tutor de IA ---
