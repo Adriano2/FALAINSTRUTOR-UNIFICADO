@@ -35,6 +35,8 @@ async function asaas<T = any>(path: string, options: RequestInit = {}): Promise<
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      // O Asaas recomenda um User-Agent identificável nas requisições.
+      'User-Agent': 'FalaInstrutor/1.0',
       access_token: ASAAS_API_KEY as string,
       ...(options.headers as Record<string, string>),
     },
