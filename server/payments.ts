@@ -23,7 +23,10 @@ const ASAAS_BASE_URL =
     ? 'https://api.asaas.com/v3'
     : 'https://sandbox.asaas.com/api/v3');
 const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN;
-const PUBLIC_URL = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 8787}`;
+const PUBLIC_URL =
+  process.env.PUBLIC_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  `http://localhost:${process.env.PORT || 8787}`;
 
 export const paymentsConfigured = Boolean(ASAAS_API_KEY);
 

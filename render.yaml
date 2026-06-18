@@ -33,6 +33,15 @@ services:
       # Senha inicial do admin no seed (troque após o primeiro deploy).
       - key: ADMIN_PASSWORD
         sync: false
+      # --- Pagamentos (Asaas) ---
+      - key: ASAAS_API_KEY
+        sync: false
+      - key: ASAAS_ENV
+        value: sandbox
+      - key: ASAAS_WEBHOOK_TOKEN
+        generateValue: true
+      # PUBLIC_URL não é necessária: o Render injeta RENDER_EXTERNAL_URL
+      # (URL https completa), já usada pelo servidor para retornos e webhook.
 
 databases:
   - name: falainstrutor-db
