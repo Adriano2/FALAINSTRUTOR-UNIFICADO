@@ -34,6 +34,16 @@ interface AdminDashboardProps {
   onUpdateComments: (comments: Comment[]) => void;
   onUpdateLayout: (layout: LayoutConfig) => void;
   onUpdatePayment: (payment: PaymentConfig) => void;
+  // Ações que persistem no banco via API
+  onCreateUser: (input: { name: string; email: string; cpf: string; dob?: string; role?: 'ADMIN' | 'STUDENT' }) => void;
+  onToggleUserActive: (id: string, isActive: boolean) => void;
+  onReplyComment: (id: string, reply: string) => void;
+  onBatchEnroll: (userIds: string[], courseId: string) => void;
+  onCreateCoupon: (input: { code: string; description: string; value: number; type: 'PERCENTAGE' | 'FIXED'; associatedProducts: string[] }) => void;
+  onToggleCoupon: (id: string, isActive: boolean) => void;
+  onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
+  onAddModule: (courseId: string, module: string) => void;
+  onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
 }
 
 export default function AdminDashboard({
@@ -54,7 +64,16 @@ export default function AdminDashboard({
   onUpdateCoupons,
   onUpdateComments,
   onUpdateLayout,
-  onUpdatePayment
+  onUpdatePayment,
+  onCreateUser,
+  onToggleUserActive,
+  onReplyComment,
+  onBatchEnroll,
+  onCreateCoupon,
+  onToggleCoupon,
+  onAddInstructor,
+  onAddModule,
+  onSaveConfig,
 }: AdminDashboardProps) {
   // Sidebar State
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
@@ -158,16 +177,13 @@ export default function AdminDashboard({
   // Add customized instructors
   const handleAddInstructor = () => {
     if (!managingCourse || !newInstructorName || !newInstructorFormation) return;
-    const updatedCourses = courses.map(c => {
-      if (c.id === managingCourse.id) {
-        return {
-          ...c,
-          instructors: [...c.instructors, { id: 'inst-' + Date.now(), name: newInstructorName, formation: newInstructorFormation, mte: newInstructorMte || undefined, signatureUrl: newInstructorSignatureUrl || undefined, icpEnabled: newInstructorIcp }]
-        };
-      }
-      return c;
+    onAddInstructor(managingCourse.id, {
+      name: newInstructorName,
+      formation: newInstructorFormation,
+      mte: newInstructorMte || undefined,
+      signatureUrl: newInstructorSignatureUrl || undefined,
+      icpEnabled: newInstructorIcp,
     });
-    onUpdateCourses(updatedCourses);
     setNewInstructorName('');
     setNewInstructorFormation('');
     setNewInstructorMte('');
@@ -175,26 +191,15 @@ export default function AdminDashboard({
     setNewInstructorIcp(true);
     setManagingCourse(null);
     setCourseModalType(null);
-    alert("Instrutor associado com sucesso!");
   };
 
   // Add customized modules
   const handleAddModule = () => {
     if (!managingCourse || !newModuleText) return;
-    const updatedCourses = courses.map(c => {
-      if (c.id === managingCourse.id) {
-        return {
-          ...c,
-          modules: [...c.modules, newModuleText]
-        };
-      }
-      return c;
-    });
-    onUpdateCourses(updatedCourses);
+    onAddModule(managingCourse.id, newModuleText);
     setNewModuleText('');
     setManagingCourse(null);
     setCourseModalType(null);
-    alert("Módulo de conteúdo adicionado com sucesso!");
   };
 
   // Create manual individual Account
@@ -202,31 +207,19 @@ export default function AdminDashboard({
     e.preventDefault();
     if (!newName || !newEmail || !newCpf) return;
 
-    const exists = users.some(u => u.email.toLowerCase() === newEmail.toLowerCase() || u.cpf === newCpf);
-    if (exists) {
-      alert("Já existe um usuário registrado com este E-mail ou CPF.");
-      return;
-    }
-
-    const newUser: User = {
-      id: "usr-" + Date.now(),
+    onCreateUser({
       name: newName,
       email: newEmail,
       cpf: newCpf,
-      dob: newDob || "1990-01-01",
-      role: newRole,
-      isActive: true,
-      registeredAt: new Date().toISOString().split('T')[0]
-    };
-
-    onUpdateUsers([...users, newUser]);
+      dob: newDob || undefined,
+      role: newRole === 'admin' ? 'ADMIN' : 'STUDENT',
+    });
     setNewName('');
     setNewEmail('');
     setNewCpf('');
     setNewDob('');
     setNewRole('student');
     setNewUserOpen(false);
-    alert("Usuário registrado com sucesso!");
   };
 
   // Download template CSV file
@@ -286,79 +279,26 @@ export default function AdminDashboard({
       alert("Por favor, selecione pelo menos um usuário e informe o curso de destino.");
       return;
     }
-
-    const course = courses.find(c => c.id === batchEnrollCourseId);
-    if (!course) return;
-
-    const newEnrollments: Enrollment[] = [...enrollments];
-
-    selectedEnrollUsers.forEach(userId => {
-      const u = users.find(user => user.id === userId);
-      if (!u) return;
-
-      // Check if already enrolled in this course
-      const already = enrollments.some(e => e.userId === userId && e.courseId === batchEnrollCourseId);
-      if (already) return;
-
-      newEnrollments.push({
-        id: "enr-" + Math.floor(Math.random() * 89999 + 10000),
-        userId: userId,
-        userName: u.name,
-        userEmail: u.email,
-        courseId: course.id,
-        courseName: course.name,
-        courseCode: course.code,
-        progress: 0,
-        startDate: new Date().toISOString().split('T')[0],
-        examScore: null,
-        passed: false,
-        certificateCode: null,
-        enrolledAt: new Date().toISOString().split('T')[0]
-      });
-    });
-
-    onUpdateEnrollments(newEnrollments);
+    onBatchEnroll(selectedEnrollUsers, batchEnrollCourseId);
     setSelectedEnrollUsers([]);
     setBatchEnrollCourseId('');
     setBatchEnrollOpen(false);
-    alert("Usuários selecionados matriculados e integrados com sucesso!");
   };
 
   // Save Settings Config
   const handleSaveSettings = () => {
-    onUpdateLayout({
-      ...layoutConfig,
-      companyName: layoutCompany,
-      phone: layoutPhone,
-      primaryColor: cfgPrimary,
-      secondaryColor: cfgSecondary
-    });
-    onUpdatePayment({
-      ...paymentConfig,
-      cnpj: cfgCnpj,
-      cep: cfgCep,
-      street: cfgStreet,
-      number: cfgNum,
-      complement: cfgComp,
-      city: cfgCity,
-      state: cfgState
-    });
-    alert("Configurações gerais do FalaInstrutor guardadas com sucesso!");
+    onSaveConfig(
+      { ...layoutConfig, companyName: layoutCompany, phone: layoutPhone, primaryColor: cfgPrimary, secondaryColor: cfgSecondary },
+      { ...paymentConfig, cnpj: cfgCnpj, cep: cfgCep, street: cfgStreet, number: cfgNum, complement: cfgComp, city: cfgCity, state: cfgState },
+    );
   };
 
   // Post Administrative reply to comment
   const handleSaveReply = () => {
     if (!replyCommentId || !replyText) return;
-    const updated = comments.map(c => {
-      if (c.id === replyCommentId) {
-        return { ...c, reply: replyText };
-      }
-      return c;
-    });
-    onUpdateComments(updated);
+    onReplyComment(replyCommentId, replyText);
     setReplyCommentId(null);
     setReplyText('');
-    alert("Resposta publicada e transmitida ao e-mail do aluno!");
   };
 
   return (
@@ -778,16 +718,8 @@ export default function AdminDashboard({
                         </td>
                         <td className="p-3 text-center">
                           {/* Active / Inactive switch toggler */}
-                          <button 
-                            onClick={() => {
-                              const updatedUsers = users.map(user => {
-                                if (user.id === u.id) {
-                                  return { ...user, isActive: !user.isActive };
-                                }
-                                return user;
-                              });
-                              onUpdateUsers(updatedUsers);
-                            }}
+                          <button
+                            onClick={() => onToggleUserActive(u.id, !u.isActive)}
                             className="p-1 focus:outline-none"
                             title="Alternar Inativo / Ativo"
                           >
@@ -818,19 +750,15 @@ export default function AdminDashboard({
               <form onSubmit={(e) => {
                 e.preventDefault();
                 if (!newCouponCode) return;
-                const newCp: Coupon = {
-                  id: 'cup-' + Date.now(),
+                onCreateCoupon({
                   code: newCouponCode.toUpperCase(),
                   description: newCouponDesc,
                   value: newCouponVal,
-                  type: newCouponType,
-                  isActive: true,
-                  associatedProducts: courses.map(c => c.id) // initially maps to all courses
-                };
-                onUpdateCoupons([...coupons, newCp]);
+                  type: newCouponType === 'fixed' ? 'FIXED' : 'PERCENTAGE',
+                  associatedProducts: courses.map(c => c.id), // inicialmente todos os cursos
+                });
                 setNewCouponCode('');
                 setNewCouponDesc('');
-                alert("Cupom de promoção registrado e ativo!");
               }} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end bg-slate-50 dark:bg-slate-950 p-4 rounded border border-slate-100 dark:border-slate-800">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Chave Código *</label>
@@ -876,20 +804,20 @@ export default function AdminDashboard({
               <div className="space-y-2">
                 <h3 className="text-xs font-black uppercase text-slate-400">Cupons Ativos no Asaas</h3>
                 {coupons.map(cp => (
-                  <div key={cp.id} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-955 rounded border border-slate-100 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-300">
+                  <div key={cp.id} className={`flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-955 rounded border border-slate-100 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-300 ${cp.isActive ? '' : 'opacity-50'}`}>
                     <div>
                       <strong className="text-amber-505 dark:text-amber-400 font-extrabold pr-2">{cp.code}</strong>
                       <span className="text-slate-450">({cp.type === 'percentage' ? `${cp.value}%` : `R$ ${cp.value}`} de desconto)</span>
                       <p className="text-[10px] text-slate-400 mt-1">{cp.description || 'Disponível em todos os treinamentos do portal.'}</p>
                     </div>
-                    <button 
-                      onClick={() => {
-                        onUpdateCoupons(coupons.filter(c => c.id !== cp.id));
-                        alert("Cupom removido!");
-                      }}
-                      className="p-1 text-slate-400 hover:text-red-500"
+                    <button
+                      onClick={() => onToggleCoupon(cp.id, !cp.isActive)}
+                      title={cp.isActive ? 'Desativar cupom' : 'Ativar cupom'}
+                      className="p-1 focus:outline-none"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {cp.isActive
+                        ? <ToggleRight className="w-6 h-6 text-emerald-500" />
+                        : <ToggleLeft className="w-6 h-6 text-slate-400" />}
                     </button>
                   </div>
                 ))}

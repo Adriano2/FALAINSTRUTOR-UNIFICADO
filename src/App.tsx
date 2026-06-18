@@ -27,7 +27,7 @@ import {
 } from './data';
 
 import { User, Course, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission } from './types';
-import { authApi, coursesApi, enrollmentsApi, mapApiEnrollment, clearToken, getToken } from './api';
+import { authApi, coursesApi, enrollmentsApi, adminApi, mapApiEnrollment, clearToken, getToken } from './api';
 import { Lock, Mail, UserPlus, Key, Info, HelpCircle, Check, AlertCircle } from 'lucide-react';
 
 export default function App() {
@@ -180,6 +180,24 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // Carrega todos os dados do painel administrativo a partir do banco.
+  const loadAdminData = React.useCallback(async () => {
+    try {
+      const data = await adminApi.loadAll();
+      setUsers(data.users);
+      setEnrollments(data.enrollments);
+      setTransactions(data.transactions);
+      setStudentExams(data.exams);
+      setComments(data.comments);
+      setContactMessages(data.contacts);
+      setCoupons(data.coupons);
+      if (data.layout) setLayoutConfig(data.layout);
+      if (data.payment) setPaymentConfig(data.payment);
+    } catch {
+      /* mantém os dados locais se a API falhar */
+    }
+  }, []);
+
   // Carrega as matrículas do aluno autenticado a partir da API.
   const refreshMyEnrollments = React.useCallback(async (user: User | null) => {
     if (!user || !getToken()) {
@@ -204,6 +222,7 @@ export default function App() {
       .then((freshUser) => {
         setCurrentUser(freshUser);
         refreshMyEnrollments(freshUser);
+        if (freshUser.role === 'admin') loadAdminData();
       })
       .catch(() => {
         clearToken();
@@ -307,6 +326,7 @@ export default function App() {
       const user = await authApi.login(loginEmail, loginPassword);
       setCurrentUser(user);
       refreshMyEnrollments(user);
+      if (user.role === 'admin') loadAdminData();
       setLoginEmail('');
       setLoginPassword('');
       handleNavigate(user.role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
@@ -327,6 +347,7 @@ export default function App() {
       const user = await authApi.login(creds.email, creds.password);
       setCurrentUser(user);
       await refreshMyEnrollments(user);
+      if (user.role === 'admin') await loadAdminData();
       handleNavigate(user.role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
       alert(`Sessão ${user.role === 'admin' ? 'Administrador' : 'Aluno'}: ${user.name}`);
     } catch {
@@ -482,6 +503,83 @@ export default function App() {
     return undefined;
   };
 
+  // --- Ações administrativas (persistem no banco via API) ---
+  const refreshCourses = async () => {
+    try {
+      const list = await coursesApi.list();
+      if (list.length) setCourses(list);
+    } catch { /* ignore */ }
+  };
+
+  const handleAdminCreateUser = async (input: { name: string; email: string; cpf: string; dob?: string; role?: 'ADMIN' | 'STUDENT' }) => {
+    try {
+      await adminApi.createUser(input);
+      await loadAdminData();
+      alert("Usuário registrado com sucesso! Senha inicial padrão: falainstrutor123");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Não foi possível registrar o usuário.");
+    }
+  };
+
+  const handleAdminToggleUser = async (id: string, isActive: boolean) => {
+    try { await adminApi.toggleUserActive(id, isActive); await loadAdminData(); } catch { /* ignore */ }
+  };
+
+  const handleAdminReplyComment = async (id: string, reply: string) => {
+    try {
+      await adminApi.replyComment(id, reply);
+      await loadAdminData();
+      alert("Resposta publicada e transmitida ao aluno!");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Não foi possível publicar a resposta.");
+    }
+  };
+
+  const handleAdminBatchEnroll = async (userIds: string[], courseId: string) => {
+    try {
+      const res: any = await adminApi.batchEnroll(userIds, courseId);
+      await loadAdminData();
+      alert(`Matrícula em lote concluída! ${res?.created ?? 0} nova(s) matrícula(s).`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Não foi possível matricular em lote.");
+    }
+  };
+
+  const handleAdminCreateCoupon = async (input: { code: string; description: string; value: number; type: 'PERCENTAGE' | 'FIXED'; associatedProducts: string[] }) => {
+    try { await adminApi.createCoupon(input); await loadAdminData(); alert("Cupom criado com sucesso!"); }
+    catch (err) { alert(err instanceof Error ? err.message : "Não foi possível criar o cupom."); }
+  };
+
+  const handleAdminToggleCoupon = async (id: string, isActive: boolean) => {
+    try { await adminApi.toggleCoupon(id, isActive); await loadAdminData(); } catch { /* ignore */ }
+  };
+
+  const handleAdminAddInstructor = async (courseId: string, input: { name: string; formation: string; mte?: string; signatureUrl?: string; icpEnabled: boolean }) => {
+    try {
+      await adminApi.addInstructor(courseId, input);
+      await refreshCourses();
+      alert("Instrutor associado com sucesso!");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Não foi possível associar o instrutor.");
+    }
+  };
+
+  const handleAdminAddModule = async (courseId: string, module: string) => {
+    try { await adminApi.addModule(courseId, module); await refreshCourses(); alert("Módulo adicionado com sucesso!"); }
+    catch (err) { alert(err instanceof Error ? err.message : "Não foi possível adicionar o módulo."); }
+  };
+
+  const handleAdminSaveConfig = async (layout: LayoutConfig, payment: PaymentConfig) => {
+    try {
+      await adminApi.saveConfig(layout, payment);
+      setLayoutConfig(layout);
+      setPaymentConfig(payment);
+      alert("Configurações gerais salvas no banco com sucesso!");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Não foi possível salvar as configurações.");
+    }
+  };
+
   // Watch classroom studies and save progress rate — persiste no banco.
   const handleUpdateEnrollmentProgress = async (enrollmentId: string, progressFraction: number) => {
     if (getToken() && currentUser) {
@@ -579,6 +677,15 @@ export default function App() {
             onUpdateComments={setComments}
             onUpdateLayout={setLayoutConfig}
             onUpdatePayment={setPaymentConfig}
+            onCreateUser={handleAdminCreateUser}
+            onToggleUserActive={handleAdminToggleUser}
+            onReplyComment={handleAdminReplyComment}
+            onBatchEnroll={handleAdminBatchEnroll}
+            onCreateCoupon={handleAdminCreateCoupon}
+            onToggleCoupon={handleAdminToggleCoupon}
+            onAddInstructor={handleAdminAddInstructor}
+            onAddModule={handleAdminAddModule}
+            onSaveConfig={handleAdminSaveConfig}
           />
         )}
 

@@ -23,6 +23,7 @@ import express, { type Request, type Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { authRouter } from './auth';
 import { apiRouter } from './routes';
+import { adminRouter } from './admin';
 import { prisma } from './db';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -57,6 +58,7 @@ app.get('/api/health', async (_req: Request, res: Response) => {
 
 // Authentication + resource routes.
 app.use('/api/auth', authRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api', apiRouter);
 
 // --- Tutor de IA ---

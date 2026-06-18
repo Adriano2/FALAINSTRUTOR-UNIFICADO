@@ -8,7 +8,10 @@
  * Centraliza o token JWT (em localStorage) e o tratamento de erros.
  */
 
-import { User, Course, Enrollment } from './types';
+import {
+  User, Course, Enrollment, SalesTransaction, Coupon, Comment,
+  ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig,
+} from './types';
 
 const TOKEN_KEY = 'fil_token';
 
@@ -204,6 +207,101 @@ export const enrollmentsApi = {
       body: JSON.stringify(payload),
     });
     return data.enrollment;
+  },
+};
+
+// Converte data ISO -> "dd/mm/aaaa" (formato usado no painel).
+const fmtBr = (iso: string): string => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+};
+
+// --- Cliente administrativo (somente ADMIN) ---
+export interface AdminData {
+  users: User[];
+  enrollments: Enrollment[];
+  transactions: SalesTransaction[];
+  exams: StudentExamSubmission[];
+  comments: Comment[];
+  contacts: ContactMessage[];
+  coupons: Coupon[];
+  layout: LayoutConfig | null;
+  payment: PaymentConfig | null;
+}
+
+export const adminApi = {
+  async loadAll(): Promise<AdminData> {
+    const [u, e, t, x, c, ct, cp, cfg] = await Promise.all([
+      apiFetch<{ users: any[] }>('/admin/users'),
+      apiFetch<{ enrollments: any[] }>('/admin/enrollments'),
+      apiFetch<{ transactions: any[] }>('/admin/transactions'),
+      apiFetch<{ exams: any[] }>('/admin/exams'),
+      apiFetch<{ comments: any[] }>('/admin/comments'),
+      apiFetch<{ contacts: any[] }>('/admin/contacts'),
+      apiFetch<{ coupons: any[] }>('/admin/coupons'),
+      apiFetch<{ layout: LayoutConfig | null; payment: PaymentConfig | null }>('/admin/config'),
+    ]);
+    return {
+      users: u.users.map(mapApiUser),
+      enrollments: e.enrollments.map((en) => ({
+        id: en.id, userId: en.userId, userName: en.user?.name ?? '', userEmail: en.user?.email ?? '',
+        courseId: en.courseId, courseName: en.course?.name ?? '', courseCode: en.course?.code ?? '',
+        progress: en.progress, startDate: (en.startDate || '').split('T')[0], examScore: en.examScore,
+        passed: en.passed, certificateCode: en.certificateCode, enrolledAt: (en.enrolledAt || '').split('T')[0],
+      })),
+      transactions: t.transactions.map((tx) => ({
+        id: tx.id, userId: tx.userId, userName: tx.user?.name ?? '', courseName: tx.courseName,
+        total: tx.total, discount: tx.discount, status: String(tx.status).toLowerCase() as SalesTransaction['status'],
+        installments: tx.installments, couponCode: tx.couponCode ?? undefined, date: fmtBr(tx.date),
+      })),
+      exams: x.exams.map((ex) => ({
+        id: ex.id, userId: ex.userId, userName: ex.user?.name ?? '', courseId: ex.courseId,
+        courseCode: ex.course?.code ?? '', courseName: ex.course?.name ?? '', score: ex.score,
+        answers: ex.answers ?? {}, passed: ex.passed, date: fmtBr(ex.date),
+      })),
+      comments: c.comments.map((cm) => ({
+        id: cm.id, userId: cm.userId, userName: cm.user?.name ?? '', courseId: cm.courseId,
+        courseName: cm.course?.name ?? '', text: cm.text, reply: cm.reply ?? undefined,
+        isPublic: cm.isPublic, date: fmtBr(cm.date),
+      })),
+      contacts: ct.contacts.map((m) => ({
+        id: m.id, name: m.name, email: m.email, phone: m.phone ?? '', subject: m.subject,
+        message: m.message, date: fmtBr(m.date),
+      })),
+      coupons: cp.coupons.map((c2) => ({
+        id: c2.id, code: c2.code, description: c2.description, value: c2.value,
+        type: String(c2.type).toLowerCase() as Coupon['type'], isActive: c2.isActive,
+        associatedProducts: c2.associatedProducts ?? [],
+      })),
+      layout: cfg.layout, payment: cfg.payment,
+    };
+  },
+  createUser(input: { name: string; email: string; cpf: string; dob?: string; role?: 'ADMIN' | 'STUDENT'; password?: string }) {
+    return apiFetch('/admin/users', { method: 'POST', body: JSON.stringify(input) });
+  },
+  toggleUserActive(id: string, isActive: boolean) {
+    return apiFetch(`/admin/users/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) });
+  },
+  replyComment(id: string, reply: string) {
+    return apiFetch(`/admin/comments/${id}/reply`, { method: 'PATCH', body: JSON.stringify({ reply }) });
+  },
+  batchEnroll(userIds: string[], courseId: string) {
+    return apiFetch('/admin/enrollments/batch', { method: 'POST', body: JSON.stringify({ userIds, courseId }) });
+  },
+  createCoupon(input: { code: string; description: string; value: number; type: 'PERCENTAGE' | 'FIXED'; associatedProducts: string[] }) {
+    return apiFetch('/admin/coupons', { method: 'POST', body: JSON.stringify(input) });
+  },
+  toggleCoupon(id: string, isActive: boolean) {
+    return apiFetch(`/admin/coupons/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) });
+  },
+  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; signatureUrl?: string; icpEnabled: boolean }) {
+    return apiFetch(`/admin/courses/${courseId}/instructors`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  addModule(courseId: string, module: string) {
+    return apiFetch(`/admin/courses/${courseId}/modules`, { method: 'POST', body: JSON.stringify({ module }) });
+  },
+  saveConfig(layout: LayoutConfig, payment: PaymentConfig) {
+    return apiFetch('/admin/config', { method: 'PUT', body: JSON.stringify({ layout, payment }) });
   },
 };
 
