@@ -77,6 +77,8 @@ model Course {
   isFeatured       Boolean  @default(false)
   modules          String[]
   manualActivities String[]
+  videoUrl         String? // link da vídeo aula (YouTube/Vimeo/MP4) visível ao aluno
+  documents        Json    @default("[]") // materiais de apoio: [{ name, url }]
 
   instructors     Instructor[]
   enrollments     Enrollment[]

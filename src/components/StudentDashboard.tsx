@@ -15,6 +15,40 @@ import QRCode from 'qrcode';
 import TutorChat from './TutorChat';
 import { ShieldEmblem, LogoHorizontal, RosetteSeal } from './BrandLogo';
 
+// Player da vídeo aula do curso: detecta YouTube/Vimeo (iframe) ou vídeo
+// direto (MP4) e renderiza o reprodutor adequado dentro do espaço do player.
+function CourseVideo({ url }: { url: string }) {
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  let embed: string | null = null;
+  if (yt) embed = `https://www.youtube.com/embed/${yt[1]}`;
+  else if (vimeo) embed = `https://player.vimeo.com/video/${vimeo[1]}`;
+
+  if (embed) {
+    return (
+      <iframe
+        src={embed}
+        title="Vídeo aula"
+        className="absolute inset-0 w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    );
+  }
+  if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
+    return <video src={url} controls className="absolute inset-0 w-full h-full bg-black" />;
+  }
+  // Link genérico: abre em nova guia.
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-3 p-6 text-center">
+      <Play className="w-10 h-10 text-emerald-400" />
+      <a href={url} target="_blank" rel="noreferrer" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded font-bold text-xs uppercase">
+        Abrir vídeo aula
+      </a>
+    </div>
+  );
+}
+
 // Formata uma data (ISO ou yyyy-mm-dd) por extenso em português: "10 de junho de 2024".
 function formatLongDatePt(value: string): string {
   if (!value) return '';
@@ -477,6 +511,9 @@ export default function StudentDashboard({
                         
                         {/* Player Content area based on lessonType */}
                         {lessonType === 'video' ? (
+                          course.videoUrl ? (
+                            <CourseVideo url={course.videoUrl} />
+                          ) : (
                           <div className="flex-1 flex flex-col items-center justify-center text-center text-white space-y-4">
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-black to-black z-0 pointer-events-none" />
                             <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8">
@@ -494,6 +531,7 @@ export default function StudentDashboard({
                               </button>
                             </div>
                           </div>
+                          )
                         ) : (
                           <div className="flex-1 flex items-center justify-center bg-slate-100 text-slate-800 w-full overflow-hidden relative">
                               {/* Fake PDF slide generator viewer */}
@@ -524,6 +562,29 @@ export default function StudentDashboard({
                           </button>
                         </div>
                       </div>
+
+                      {/* Materiais de apoio do treinamento (visíveis ao aluno) */}
+                      {course.documents && course.documents.length > 0 && (
+                        <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 sm:p-5">
+                          <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 font-display flex items-center gap-2">
+                            <FileText className="w-4 h-4" /> Materiais de Apoio
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {course.documents.map((doc, di) => (
+                              <a
+                                key={di}
+                                href={doc.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 transition-colors group"
+                              >
+                                <FileDown className="w-4 h-4 text-emerald-400 shrink-0" />
+                                <span className="text-xs font-semibold truncate group-hover:text-white">{doc.name}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Immersive Modules Carousel (Horizontal Listing below player) */}
                       <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 sm:p-5">

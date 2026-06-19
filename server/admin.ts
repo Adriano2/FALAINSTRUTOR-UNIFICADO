@@ -198,6 +198,26 @@ adminRouter.post('/courses/:id/instructors', async (req, res) => {
   res.status(201).json({ course });
 });
 
+// Atualiza o conteúdo de mídia do curso: vídeo aula e materiais de apoio.
+adminRouter.patch('/courses/:id/content', async (req, res) => {
+  const parsed = z
+    .object({
+      videoUrl: z.string().optional(),
+      documents: z.array(z.object({ name: z.string().min(1), url: z.string().min(1) })).optional(),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Conteúdo do curso inválido.' });
+  const data: Prisma.CourseUpdateInput = {};
+  if (parsed.data.videoUrl !== undefined) data.videoUrl = parsed.data.videoUrl || null;
+  if (parsed.data.documents !== undefined) data.documents = parsed.data.documents as unknown as Prisma.InputJsonValue;
+  const course = await prisma.course.update({
+    where: { id: req.params.id },
+    data,
+    include: { instructors: true },
+  });
+  res.json({ course });
+});
+
 adminRouter.post('/courses/:id/modules', async (req, res) => {
   const parsed = z.object({ module: z.string().min(2) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Módulo inválido.' });

@@ -76,6 +76,8 @@ interface ApiCourse {
   isFeatured: boolean;
   modules: string[];
   manualActivities: string[];
+  videoUrl: string | null;
+  documents: { name: string; url: string }[] | null;
   instructors: {
     id: string;
     name: string;
@@ -130,6 +132,8 @@ export function mapApiCourse(c: ApiCourse): Course {
     isFeatured: c.isFeatured,
     modules: c.modules ?? [],
     manualActivities: c.manualActivities ?? [],
+    videoUrl: c.videoUrl ?? undefined,
+    documents: Array.isArray(c.documents) ? c.documents : [],
     instructors: (c.instructors ?? []).map((i) => ({
       id: i.id,
       name: i.name,
@@ -357,6 +361,9 @@ export const adminApi = {
   },
   addModule(courseId: string, module: string) {
     return apiFetch(`/admin/courses/${courseId}/modules`, { method: 'POST', body: JSON.stringify({ module }) });
+  },
+  saveCourseContent(courseId: string, input: { videoUrl?: string; documents?: { name: string; url: string }[] }) {
+    return apiFetch(`/admin/courses/${courseId}/content`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   saveConfig(layout: LayoutConfig, payment: PaymentConfig) {
     return apiFetch('/admin/config', { method: 'PUT', body: JSON.stringify({ layout, payment }) });

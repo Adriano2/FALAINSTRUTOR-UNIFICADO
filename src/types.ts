@@ -41,6 +41,8 @@ export interface Course {
   modules: string[];
   instructors: Instructor[];
   manualActivities: string[]; // custom exercises, e.g., "Treinamento com escada"
+  videoUrl?: string; // link da vídeo aula visível ao aluno
+  documents?: { name: string; url: string }[]; // materiais de apoio
 }
 
 export interface Enrollment {

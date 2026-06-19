@@ -13,7 +13,7 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap, Receipt
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
@@ -48,6 +48,7 @@ interface AdminDashboardProps {
   onToggleCoupon: (id: string, isActive: boolean) => void;
   onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
   onAddModule: (courseId: string, module: string) => void;
+  onSaveCourseContent: (courseId: string, input: { videoUrl?: string; documents?: { name: string; url: string }[] }) => void;
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
 }
 
@@ -78,6 +79,7 @@ export default function AdminDashboard({
   onToggleCoupon,
   onAddInstructor,
   onAddModule,
+  onSaveCourseContent,
   onSaveConfig,
 }: AdminDashboardProps) {
   // Sidebar State
@@ -111,7 +113,12 @@ export default function AdminDashboard({
 
   // General course modal states
   const [managingCourse, setManagingCourse] = React.useState<Course | null>(null);
-  const [courseModalType, setCourseModalType] = React.useState<'instructors' | 'modules' | null>(null);
+  const [courseModalType, setCourseModalType] = React.useState<'instructors' | 'modules' | 'content' | null>(null);
+  // Conteúdo de mídia do curso (vídeo aula + materiais de apoio)
+  const [contentVideoUrl, setContentVideoUrl] = React.useState('');
+  const [contentDocs, setContentDocs] = React.useState<{ name: string; url: string }[]>([]);
+  const [newDocName, setNewDocName] = React.useState('');
+  const [newDocUrl, setNewDocUrl] = React.useState('');
   const [newInstructorName, setNewInstructorName] = React.useState('');
   const [newInstructorFormation, setNewInstructorFormation] = React.useState('');
   const [newInstructorMte, setNewInstructorMte] = React.useState('');
@@ -220,6 +227,22 @@ export default function AdminDashboard({
     if (!managingCourse || !newModuleText) return;
     onAddModule(managingCourse.id, newModuleText);
     setNewModuleText('');
+    setManagingCourse(null);
+    setCourseModalType(null);
+  };
+
+  // Add a support document (name + URL) to the in-modal draft list
+  const handleAddDoc = () => {
+    if (!newDocName.trim() || !newDocUrl.trim()) return;
+    setContentDocs([...contentDocs, { name: newDocName.trim(), url: newDocUrl.trim() }]);
+    setNewDocName('');
+    setNewDocUrl('');
+  };
+
+  // Save course video link + support documents
+  const handleSaveCourseContent = () => {
+    if (!managingCourse) return;
+    onSaveCourseContent(managingCourse.id, { videoUrl: contentVideoUrl.trim(), documents: contentDocs });
     setManagingCourse(null);
     setCourseModalType(null);
   };
@@ -570,6 +593,21 @@ export default function AdminDashboard({
                         className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-500/10 text-slate-700 dark:text-slate-300 rounded font-semibold text-center text-[11px] transition select-none cursor-pointer"
                       >
                         Módulos Práticos
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setManagingCourse(course);
+                          setContentVideoUrl(course.videoUrl || '');
+                          setContentDocs(course.documents || []);
+                          setNewDocName('');
+                          setNewDocUrl('');
+                          setCourseModalType('content');
+                        }}
+                        className="col-span-2 p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold text-center text-[11px] transition select-none cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <Video className="w-3.5 h-3.5" /> Vídeo & Materiais
+                        {course.videoUrl ? <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" title="Vídeo configurado" /> : null}
                       </button>
                     </div>
                   </div>
@@ -1562,6 +1600,81 @@ export default function AdminDashboard({
                 Incluir Novo Item
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VÍDEO AULA & MATERIAIS DE APOIO */}
+      {managingCourse && courseModalType === 'content' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 flex items-center justify-center backdrop-blur-xs">
+          <div className="bg-white text-slate-900 p-6 rounded-lg max-w-lg w-full space-y-4 shadow-2xl border border-slate-3D max-h-[88vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-black text-sm uppercase tracking-tight">Vídeo & Materiais — {managingCourse.code}</h3>
+              <button onClick={() => { setManagingCourse(null); setCourseModalType(null); }} className="text-slate-400 hover:text-red-500 font-black">X</button>
+            </div>
+
+            {/* Link da vídeo aula */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><Video className="w-3.5 h-3.5" /> Link da vídeo aula (visível ao aluno)</label>
+              <input
+                type="text"
+                placeholder="Ex: https://www.youtube.com/watch?v=... ou https://vimeo.com/... ou .mp4"
+                value={contentVideoUrl}
+                onChange={(e) => setContentVideoUrl(e.target.value)}
+                className="w-full p-2.5 rounded bg-slate-50 border text-xs focus:outline-none"
+              />
+              <p className="text-[10px] text-slate-400">Aceita YouTube, Vimeo ou link direto de vídeo (MP4). Deixe em branco para não exibir.</p>
+            </div>
+
+            {/* Materiais de apoio */}
+            <div className="space-y-2 border-t border-slate-100 pt-3">
+              <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Documentos de apoio (visíveis ao aluno)</span>
+
+              {contentDocs.length > 0 ? (
+                <div className="space-y-1.5">
+                  {contentDocs.map((doc, di) => (
+                    <div key={di} className="flex items-center justify-between gap-2 p-2 bg-slate-50 border rounded text-xs">
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-800 truncate">{doc.name}</p>
+                        <p className="text-[10px] text-slate-400 truncate flex items-center gap-1"><Link2 className="w-3 h-3 shrink-0" /> {doc.url}</p>
+                      </div>
+                      <button onClick={() => setContentDocs(contentDocs.filter((_, i) => i !== di))} className="p-1 text-slate-400 hover:text-red-500 shrink-0" title="Remover">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-400 text-center py-1">Nenhum material de apoio adicionado ainda.</p>
+              )}
+
+              <div className="grid grid-cols-1 gap-2 bg-slate-50 p-3 rounded border">
+                <input
+                  type="text"
+                  placeholder="Nome do documento (ex: Apostila NR-35.pdf)"
+                  value={newDocName}
+                  onChange={(e) => setNewDocName(e.target.value)}
+                  className="w-full p-2 rounded bg-white border text-xs focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Link do documento (URL — Drive, site, PDF...)"
+                  value={newDocUrl}
+                  onChange={(e) => setNewDocUrl(e.target.value)}
+                  className="w-full p-2 rounded bg-white border text-xs focus:outline-none"
+                />
+                <button onClick={handleAddDoc} className="inline-flex items-center justify-center gap-1.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase rounded cursor-pointer select-none">
+                  <Plus className="w-4 h-4" /> Adicionar documento
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveCourseContent}
+              className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase rounded cursor-pointer select-none"
+            >
+              Salvar Conteúdo do Curso
+            </button>
           </div>
         </div>
       )}
