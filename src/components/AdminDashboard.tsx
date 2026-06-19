@@ -150,6 +150,9 @@ export default function AdminDashboard({
   const [layoutPhone, setLayoutPhone] = React.useState(layoutConfig.phone);
   const [cfgPrimary, setCfgPrimary] = React.useState(layoutConfig.primaryColor);
   const [cfgSecondary, setCfgSecondary] = React.useState(layoutConfig.secondaryColor);
+  const [cfgInstagram, setCfgInstagram] = React.useState(layoutConfig.instagramUrl || '');
+  const [cfgYoutube, setCfgYoutube] = React.useState(layoutConfig.youtubeUrl || '');
+  const [cfgLinkedin, setCfgLinkedin] = React.useState(layoutConfig.linkedinUrl || '');
   const [cfgCnpj, setCfgCnpj] = React.useState(paymentConfig.cnpj);
   const [cfgCep, setCfgCep] = React.useState(paymentConfig.cep);
   const [cfgStreet, setCfgStreet] = React.useState(paymentConfig.street);
@@ -306,7 +309,7 @@ export default function AdminDashboard({
   // Save Settings Config
   const handleSaveSettings = () => {
     onSaveConfig(
-      { ...layoutConfig, companyName: layoutCompany, phone: layoutPhone, primaryColor: cfgPrimary, secondaryColor: cfgSecondary },
+      { ...layoutConfig, companyName: layoutCompany, phone: layoutPhone, primaryColor: cfgPrimary, secondaryColor: cfgSecondary, instagramUrl: cfgInstagram, youtubeUrl: cfgYoutube, linkedinUrl: cfgLinkedin },
       {
         ...paymentConfig,
         cnpj: cfgCnpj, cep: cfgCep, street: cfgStreet, number: cfgNum, complement: cfgComp, city: cfgCity, state: cfgState,
@@ -912,6 +915,44 @@ export default function AdminDashboard({
                         <span className="font-mono text-slate-650 dark:text-slate-350">{cfgSecondary}</span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Redes sociais (exibidas no rodapé) */}
+                  <div className="space-y-3 border-t border-slate-100 dark:border-slate-850 pt-4">
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Redes Sociais (rodapé)</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Instagram (URL)</label>
+                        <input
+                          type="text"
+                          value={cfgInstagram}
+                          onChange={(e) => setCfgInstagram(e.target.value)}
+                          placeholder="https://instagram.com/sua_pagina"
+                          className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">YouTube (URL)</label>
+                        <input
+                          type="text"
+                          value={cfgYoutube}
+                          onChange={(e) => setCfgYoutube(e.target.value)}
+                          placeholder="https://youtube.com/@seu_canal"
+                          className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">LinkedIn (URL)</label>
+                        <input
+                          type="text"
+                          value={cfgLinkedin}
+                          onChange={(e) => setCfgLinkedin(e.target.value)}
+                          placeholder="https://linkedin.com/company/sua_empresa"
+                          className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400">Deixe em branco para ocultar o ícone no rodapé. (Facebook e Twitter/X removidos.)</p>
                   </div>
                 </div>
 

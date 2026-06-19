@@ -107,9 +107,9 @@ export interface ContactMessage {
 export interface LayoutConfig {
   companyName: string;
   hostname: string;
-  twitterUrl: string;
   instagramUrl: string;
   youtubeUrl: string;
+  linkedinUrl: string;
   phone: string;
   primaryColor: string;
   secondaryColor: string;

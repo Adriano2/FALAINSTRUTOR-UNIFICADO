@@ -8,9 +8,9 @@ import { Course, Instructor, User, Enrollment, SalesTransaction, Coupon, Comment
 export const INITIAL_LAYOUT_CONFIG: LayoutConfig = {
   companyName: "FalaInstrutor",
   hostname: "https://falainstrutor.com.br",
-  twitterUrl: "https://twitter.com/falainstrutor",
   instagramUrl: "https://instagram.com/falainstrutor.treinamentos",
   youtubeUrl: "https://youtube.com/falainstrutor",
+  linkedinUrl: "",
   phone: "+55 (11) 99625-5102",
   primaryColor: "#0f172a", // slate-900
   secondaryColor: "#eab308", // yellow-500

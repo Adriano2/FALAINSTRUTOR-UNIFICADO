@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Phone, ShieldCheck, Mail, Building } from 'lucide-react';
+import { Phone, ShieldCheck, Mail, Building, Instagram, Youtube, Linkedin } from 'lucide-react';
 import { LayoutConfig, PaymentConfig } from '../types';
 import { ShieldEmblem } from './BrandLogo';
 
@@ -41,6 +41,33 @@ export default function Footer({ layoutConfig, paymentConfig, onNavigate }: Foot
               <span>•</span>
               <span className="hover:text-blue-450 transition-colors">SST</span>
             </div>
+
+            {/* Redes sociais (exibe apenas as que estiverem configuradas) */}
+            {(layoutConfig.instagramUrl || layoutConfig.youtubeUrl || layoutConfig.linkedinUrl) && (
+              <div className="pt-1">
+                <h4 className="text-[10px] font-bold tracking-wider text-slate-800 uppercase mb-2">Redes Sociais</h4>
+                <div className="flex items-center gap-3">
+                  {layoutConfig.instagramUrl && (
+                    <a href={layoutConfig.instagramUrl} target="_blank" rel="noreferrer" title="Instagram"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors">
+                      <Instagram className="w-4 h-4" />
+                    </a>
+                  )}
+                  {layoutConfig.youtubeUrl && (
+                    <a href={layoutConfig.youtubeUrl} target="_blank" rel="noreferrer" title="YouTube"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-red-600 hover:text-white transition-colors">
+                      <Youtube className="w-4 h-4" />
+                    </a>
+                  )}
+                  {layoutConfig.linkedinUrl && (
+                    <a href={layoutConfig.linkedinUrl} target="_blank" rel="noreferrer" title="LinkedIn"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-blue-700 hover:text-white transition-colors">
+                      <Linkedin className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Col 2: Useful Links */}
