@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Phone, ShieldCheck, Mail, MapPin, Building, Globe } from 'lucide-react';
+import { Phone, ShieldCheck, Mail, Building } from 'lucide-react';
 import { LayoutConfig, PaymentConfig } from '../types';
 import { ShieldEmblem } from './BrandLogo';
 
@@ -125,14 +125,6 @@ export default function Footer({ layoutConfig, paymentConfig, onNavigate }: Foot
           {/* Col 4: Corporate details & Contact */}
           <div className="space-y-3 text-xs">
             <h3 className="text-xs font-bold tracking-wider text-slate-800 uppercase mb-4">Contato & Suporte</h3>
-            <p className="flex items-start gap-2 text-slate-600 font-medium leading-relaxed">
-              <MapPin className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-              <span>
-                {paymentConfig.street}, {paymentConfig.number} - {paymentConfig.complement}<br />
-                {paymentConfig.neighborhood}, {paymentConfig.city} - {paymentConfig.state}<br />
-                CEP {paymentConfig.cep}
-              </span>
-            </p>
             <p className="flex items-center gap-2 text-slate-600 font-medium">
               <Phone className="w-4 h-4 text-blue-500 shrink-0" />
               <span>{layoutConfig.phone}</span>
