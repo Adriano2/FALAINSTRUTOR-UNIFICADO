@@ -27,3 +27,25 @@ prefeitura/SEFAZ, para tomadores **CPF (PF)** e **CNPJ (PJ)**.
 
 **Lembrete:** confirmar com o cliente o município de emissão e o provedor antes
 de iniciar (cada prefeitura tem particularidades de layout/credenciamento).
+
+## 📝 Versionar provas (gabarito junto da submissão)
+
+**Status:** o Editor de Provas já permite criar/editar questões por curso
+(`Course.examQuestions`). Porém as respostas do aluno são gravadas por
+**posição da alternativa** (`ExamSubmission.answers` = índice). Se a prova for
+editada/reordenada depois que alunos já fizeram, as submissões antigas podem
+não corresponder às novas posições.
+
+**Solução futura:** guardar um "snapshot" da prova (enunciados, alternativas e
+gabarito) junto de cada `ExamSubmission` no momento do envio — assim a Auditoria
+de Provas sempre mostra a prova exatamente como o aluno respondeu, independente
+de edições posteriores.
+
+**Onde ligar:**
+- `prisma/schema.prisma` — adicionar `questionsSnapshot Json?` em `ExamSubmission`.
+- `server/routes.ts` — rota `POST /enrollments/:id/exam`: salvar o snapshot das
+  questões usadas (vir do front ou recomputar a partir do curso no momento).
+- `src/components/AdminDashboard.tsx` — Auditoria de Provas: usar o snapshot da
+  submissão quando existir, em vez das questões atuais do curso.
+
+**Mitigação atual:** finalizar a prova no Editor antes de aplicá-la aos alunos.
