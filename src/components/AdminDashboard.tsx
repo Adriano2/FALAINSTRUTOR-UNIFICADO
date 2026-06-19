@@ -1447,7 +1447,7 @@ export default function AdminDashboard({
               fields={[
                 { name: 'name', label: 'Nome do parceiro', placeholder: 'Ex: Construtora Alfa' },
                 { name: 'url', label: 'Site (URL)', placeholder: 'https://...' },
-                { name: 'logoUrl', label: 'Logo (URL)', placeholder: 'https://...' },
+                { name: 'logoUrl', label: 'Logo do parceiro', type: 'image' },
                 { name: 'description', label: 'Descrição', type: 'textarea', placeholder: 'Breve descrição da parceria' },
               ]}
             />

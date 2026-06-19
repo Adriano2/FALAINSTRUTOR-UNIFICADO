@@ -164,10 +164,16 @@ export default function LandingPage({ courses, onSelectCourse, onSubmitContact }
   ];
   const [newsItems, setNewsItems] = React.useState(defaultNews);
 
+  // Parceiros/patrocinadores (editáveis no painel admin).
+  const [partners, setPartners] = React.useState<{ id?: string; name?: string; url?: string; logoUrl?: string }[]>([]);
+
   React.useEffect(() => {
     let alive = true;
     contentApi.get('news').then((items) => {
       if (alive && Array.isArray(items) && items.length > 0) setNewsItems(items as typeof defaultNews);
+    });
+    contentApi.get('partners').then((items) => {
+      if (alive && Array.isArray(items)) setPartners(items);
     });
     return () => { alive = false; };
   }, []);
@@ -448,6 +454,34 @@ export default function LandingPage({ courses, onSelectCourse, onSubmitContact }
           </div>
         </div>
       </section>
+
+      {/* Parceiros / Patrocinadores */}
+      {partners.filter((p) => p.logoUrl).length > 0 && (
+        <section className="bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <h2 className="text-center text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-6">
+              Nossos Parceiros
+            </h2>
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+              {partners.filter((p) => p.logoUrl).map((p, i) => {
+                const logo = (
+                  <img
+                    src={p.logoUrl}
+                    alt={p.name || 'Parceiro'}
+                    title={p.name}
+                    className="max-h-12 w-auto object-contain opacity-70 hover:opacity-100 grayscale hover:grayscale-0 transition"
+                  />
+                );
+                return p.url ? (
+                  <a key={p.id || i} href={p.url} target="_blank" rel="noreferrer">{logo}</a>
+                ) : (
+                  <span key={p.id || i}>{logo}</span>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Recent Blog and News section */}
       <section className="mx-auto max-w-7xl px-4 py-18 sm:px-6 lg:px-8">

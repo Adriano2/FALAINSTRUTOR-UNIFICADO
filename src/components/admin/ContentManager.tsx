@@ -9,14 +9,41 @@
  */
 
 import React from 'react';
-import { Plus, Trash2, Save, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, Upload } from 'lucide-react';
 import { adminApi } from '../../api';
 
 export interface ContentField {
   name: string;
   label: string;
-  type?: 'text' | 'textarea';
+  type?: 'text' | 'textarea' | 'image';
   placeholder?: string;
+}
+
+// Redimensiona/comprime uma imagem no navegador e devolve um data URL pequeno
+// (logo de parceiro/patrocínio). Mantém a proporção dentro de maxW x maxH.
+function resizeImageFile(file: File, maxW = 320, maxH = 160): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('canvas indisponível'));
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/png')); // PNG preserva transparência do logo
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 interface ContentManagerProps {
@@ -76,7 +103,41 @@ export default function ContentManager({ title, description, contentKey, fields 
           {fields.map((f) => (
             <div key={f.name} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
               <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{f.label}</label>
-              {f.type === 'textarea' ? (
+              {f.type === 'image' ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-28 h-14 shrink-0 rounded border border-slate-200 dark:border-slate-700 bg-white flex items-center justify-center overflow-hidden">
+                    {draft[f.name] ? (
+                      <img src={draft[f.name]} alt="logo" className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <span className="text-[9px] text-slate-300">prévia</span>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" /> Enviar logo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const dataUrl = await resizeImageFile(file);
+                            setDraft({ ...draft, [f.name]: dataUrl });
+                          } catch { /* ignore */ }
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {draft[f.name] ? (
+                      <button onClick={() => setDraft({ ...draft, [f.name]: '' })} className="block text-[10px] text-slate-400 hover:text-red-500">Remover imagem</button>
+                    ) : (
+                      <span className="block text-[10px] text-slate-400">PNG/JPG — redimensionado automaticamente</span>
+                    )}
+                  </div>
+                </div>
+              ) : f.type === 'textarea' ? (
                 <textarea
                   rows={3}
                   value={draft[f.name] || ''}
@@ -113,11 +174,22 @@ export default function ContentManager({ title, description, contentKey, fields 
         <div className="space-y-2">
           {items.map((it) => (
             <div key={it.id} className="flex items-start justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded border border-slate-100 dark:border-slate-800">
-              <div className="min-w-0 text-xs text-slate-700 dark:text-slate-300">
-                <p className="font-bold text-slate-900 dark:text-white truncate">{it[fields[0].name] || it.title || it.name || '(sem título)'}</p>
-                {fields.slice(1).map((f) => it[f.name] ? (
-                  <p key={f.name} className="text-[11px] text-slate-500 line-clamp-2"><span className="font-semibold">{f.label}:</span> {it[f.name]}</p>
-                ) : null)}
+              <div className="min-w-0 text-xs text-slate-700 dark:text-slate-300 flex items-start gap-3">
+                {/* Miniatura do logo quando houver campo de imagem */}
+                {(() => {
+                  const imgField = fields.find((f) => f.type === 'image');
+                  return imgField && it[imgField.name] ? (
+                    <div className="w-24 h-12 shrink-0 rounded border border-slate-200 dark:border-slate-700 bg-white flex items-center justify-center overflow-hidden">
+                      <img src={it[imgField.name]} alt="logo" className="max-w-full max-h-full object-contain" />
+                    </div>
+                  ) : null;
+                })()}
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-900 dark:text-white truncate">{it[fields[0].name] || it.title || it.name || '(sem título)'}</p>
+                  {fields.slice(1).filter((f) => f.type !== 'image').map((f) => it[f.name] ? (
+                    <p key={f.name} className="text-[11px] text-slate-500 line-clamp-2"><span className="font-semibold">{f.label}:</span> {it[f.name]}</p>
+                  ) : null)}
+                </div>
               </div>
               <button onClick={() => removeItem(it.id)} className="p-1.5 text-slate-400 hover:text-red-500 shrink-0" title="Remover">
                 <Trash2 className="w-4 h-4" />
