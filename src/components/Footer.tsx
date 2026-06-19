@@ -5,6 +5,7 @@
 
 import { Phone, ShieldCheck, Mail, MapPin, Building, Globe } from 'lucide-react';
 import { LayoutConfig, PaymentConfig } from '../types';
+import { ShieldEmblem } from './BrandLogo';
 
 interface FooterProps {
   layoutConfig: LayoutConfig;
@@ -27,9 +28,7 @@ export default function Footer({ layoutConfig, paymentConfig, onNavigate }: Foot
           {/* Col 1: Brand & Desc */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 font-bold text-xl select-none" id="footer-logo">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white font-bold tracking-tighter">
-                FI
-              </div>
+              <ShieldEmblem className="h-9 w-auto shrink-0" />
               <span className="text-slate-850 font-display font-semibold text-lg">
                 Fala<span className="text-blue-500 font-bold">Instrutor</span>
               </span>

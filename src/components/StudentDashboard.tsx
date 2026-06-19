@@ -891,12 +891,12 @@ export default function StudentDashboard({
               }}
             />
             <div className="absolute inset-[9px] border border-slate-300 pointer-events-none" />
-            {/* Canto superior esquerdo */}
-            <div className="absolute top-0 left-0 w-[26%] h-[18%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
-            <div className="absolute top-0 left-0 w-[16%] h-[11%] pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            {/* Canto superior esquerdo (acima do conteúdo, z-20) */}
+            <div className="absolute top-0 left-0 w-[26%] h-[18%] pointer-events-none z-20" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+            <div className="absolute top-0 left-0 w-[16%] h-[11%] pointer-events-none z-20" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
             {/* Canto inferior direito */}
-            <div className="absolute bottom-0 right-0 w-[19%] h-[13%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
-            <div className="absolute bottom-0 right-0 w-[11%] h-[8%] pointer-events-none" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+            <div className="absolute bottom-0 right-0 w-[19%] h-[13%] pointer-events-none z-20" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            <div className="absolute bottom-0 right-0 w-[11%] h-[8%] pointer-events-none z-20" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
           </>
         );
 
