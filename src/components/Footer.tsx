@@ -64,10 +64,8 @@ export default function Footer({ layoutConfig, paymentConfig, onNavigate }: Foot
                 </button>
               </li>
               <li>
-                <button 
-                  onClick={() => {
-                    alert("Fazendo download do Projeto Pedagógico Inicial FalaInstrutor (NR01)...");
-                  }} 
+                <button
+                  onClick={() => onNavigate('projeto-pedagogico')}
                   className="hover:text-slate-900 text-left transition-colors text-slate-505 font-medium"
                 >
                   Projeto Pedagógico dos Cursos

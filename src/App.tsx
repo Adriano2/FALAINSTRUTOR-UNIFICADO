@@ -12,6 +12,7 @@ import CartView from './components/CartView';
 import ValidationView from './components/ValidationView';
 import StudentDashboard from './components/StudentDashboard';
 import AdminDashboard from './components/AdminDashboard';
+import ProjetoPedagogico from './components/ProjetoPedagogico';
 
 import { 
   INITIAL_LAYOUT_CONFIG, 
@@ -657,6 +658,10 @@ export default function App() {
 
         {currentScreen === 'validate-certificate' && (
           <ValidationView initialCode={certParam ?? undefined} />
+        )}
+
+        {currentScreen === 'projeto-pedagogico' && (
+          <ProjetoPedagogico courses={courses} onNavigateHome={() => handleNavigate('home')} />
         )}
 
         {currentScreen === 'student-dashboard' && currentUser && (
