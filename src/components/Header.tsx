@@ -6,6 +6,7 @@
 import React from 'react';
 import { ShoppingCart, Moon, Sun, User as UserIcon, LogOut, ShieldCheck, ClipboardList, BookOpen, Settings } from 'lucide-react';
 import { User, Course, LayoutConfig } from '../types';
+import { ShieldEmblem } from './BrandLogo';
 
 interface HeaderProps {
   currentUser: User | null;
@@ -53,9 +54,7 @@ export default function Header({
           className="flex items-center gap-2.5 cursor-pointer select-none group"
           id="header-brand-logo"
         >
-          <div className="flex items-center justify-center w-8.5 h-8.5 rounded-lg bg-blue-600 dark:bg-blue-500 text-white font-bold tracking-tighter shadow-sm group-hover:scale-105 transition-transform duration-200">
-            FI
-          </div>
+          <ShieldEmblem className="h-9 w-auto shrink-0 group-hover:scale-105 transition-transform duration-200" />
           <span className="font-display font-semibold text-lg text-slate-800 dark:text-slate-100">
             Fala<span className="text-blue-600 dark:text-blue-400 font-bold transition-colors">Instrutor</span>
           </span>
