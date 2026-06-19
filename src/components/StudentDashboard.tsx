@@ -7,7 +7,9 @@ import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
 import { getExamQuestions, CONTEUDO_PROGRAMATICO } from '../data';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
-import html2canvas from 'html2canvas';
+// html2canvas-pro suporta as cores oklch() do Tailwind v4 (o html2canvas
+// clássico falha ao parsear oklch e quebrava a geração do PDF/impressão).
+import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import TutorChat from './TutorChat';
@@ -994,9 +996,9 @@ export default function StudentDashboard({
                   >
                     <Printer className="w-4 h-4" /> Imprimir (A4 paisagem)
                   </button>
-                  <button 
+                  <button
                     onClick={() => setViewingCertificate(null)}
-                    className="p-1 px-3 bg-red-650 hover:bg-red-700 text-white rounded text-xs font-bold transition select-none cursor-pointer"
+                    className="p-1 px-3 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition select-none cursor-pointer"
                   >
                     Fechar
                   </button>
@@ -1044,12 +1046,8 @@ export default function StudentDashboard({
                         </div>
                       </div>
 
-                      {/* Assinaturas */}
-                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-[5%] gap-6">
-                        <div className="w-44 flex flex-col items-center">
-                          <div className="w-full h-px bg-slate-900 mb-1.5" />
-                          <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
-                        </div>
+                      {/* Assinatura do instrutor responsável (centralizada) */}
+                      <div className="flex items-end justify-center w-full max-w-2xl mx-auto mt-4 mb-[5%]">
                         <div className="w-72 flex flex-col items-center">
                           {firstInstructor.signatureUrl ? (
                             <img src={firstInstructor.signatureUrl} alt="Assinatura do instrutor" className="h-9 object-contain mb-0.5" referrerPolicy="no-referrer" />
