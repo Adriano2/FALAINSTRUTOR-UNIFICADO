@@ -177,6 +177,22 @@ adminRouter.post('/courses/:id/modules', async (req, res) => {
   res.json({ course });
 });
 
+// --- Conteúdo editável do site (notícias, parceiros, páginas, etc.) ---
+adminRouter.get('/content/:key', async (req, res) => {
+  const row = await prisma.siteContent.findUnique({ where: { key: req.params.key } });
+  res.json({ key: req.params.key, data: row?.data ?? [] });
+});
+
+adminRouter.put('/content/:key', async (req, res) => {
+  const data = (req.body?.data ?? []) as Prisma.InputJsonValue;
+  const row = await prisma.siteContent.upsert({
+    where: { key: req.params.key },
+    update: { data },
+    create: { key: req.params.key, data },
+  });
+  res.json({ key: row.key, data: row.data });
+});
+
 // --- Configurações globais (layout + pagamento) ---
 adminRouter.get('/config', async (_req, res) => {
   const cfg = await prisma.appConfig.findUnique({ where: { id: 'singleton' } });

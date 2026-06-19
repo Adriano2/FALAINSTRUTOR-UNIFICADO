@@ -303,6 +303,25 @@ export const adminApi = {
   saveConfig(layout: LayoutConfig, payment: PaymentConfig) {
     return apiFetch('/admin/config', { method: 'PUT', body: JSON.stringify({ layout, payment }) });
   },
+  async getContent(key: string): Promise<any[]> {
+    const d = await apiFetch<{ data: any[] }>(`/admin/content/${key}`);
+    return Array.isArray(d.data) ? d.data : [];
+  },
+  saveContent(key: string, data: any[]) {
+    return apiFetch(`/admin/content/${key}`, { method: 'PUT', body: JSON.stringify({ data }) });
+  },
+};
+
+// Conteúdo editável do site (notícias, parceiros, páginas, produtos, e-mails).
+export const contentApi = {
+  async get(key: string): Promise<any[]> {
+    try {
+      const d = await apiFetch<{ data: any[] }>(`/content/${key}`);
+      return Array.isArray(d.data) ? d.data : [];
+    } catch {
+      return [];
+    }
+  },
 };
 
 export const paymentsApi = {

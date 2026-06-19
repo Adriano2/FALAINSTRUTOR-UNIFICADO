@@ -170,6 +170,24 @@ async function main() {
     create: { id: 'singleton', layout, payment },
   });
 
+  // 5) Conteúdo editável do site (notícias e parceiros)
+  const news = [
+    { id: 'news-1', tag: 'NR-05', title: 'O papel da CIPA na prevenção de acidentes de trabalho', description: 'A Comissão Interna de Prevenção de Acidentes e Assédio (CIPA) é essencial para aproximar colaboradores e a coordenação de SST na identificação de riscos.', date: '05/06/2026', readTime: '4 min de leitura' },
+    { id: 'news-2', tag: 'Trânsito', title: 'Exame Toxicológico de CNH C, D e E: por que é indispensável?', description: 'Esclarecemos as diretrizes sobre a obrigatoriedade de renovação periódica dos exames toxicológicos para condutores profissionais.', date: '01/06/2026', readTime: '5 min de leitura' },
+    { id: 'news-3', tag: 'PGR / GRO', title: 'Riscos Psicossociais no PGR a partir de 2026', description: 'As atualizações no Programa de Gerenciamento de Riscos demandam avaliação da ergonomia cognitiva e dos estressores emocionais.', date: '28/05/2026', readTime: '6 min de leitura' },
+  ];
+  const partners = [
+    { id: 'p1', name: 'CREA-SP', logoUrl: '', url: 'https://www.creasp.org.br' },
+    { id: 'p2', name: 'Ministério do Trabalho e Emprego', logoUrl: '', url: 'https://www.gov.br/trabalho-e-emprego' },
+  ];
+  for (const [key, data] of [['news', news], ['partners', partners]] as const) {
+    await prisma.siteContent.upsert({
+      where: { key },
+      update: {},
+      create: { key, data: data as unknown as Prisma.InputJsonValue },
+    });
+  }
+
   const counts = {
     usuarios: await prisma.user.count(),
     cursos: await prisma.course.count(),

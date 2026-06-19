@@ -173,6 +173,12 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
   res.json({ enrollment });
 });
 
+// --- Conteúdo editável do site (público para leitura) ---
+apiRouter.get('/content/:key', async (req, res) => {
+  const row = await prisma.siteContent.findUnique({ where: { key: req.params.key } });
+  res.json({ key: req.params.key, data: row?.data ?? [] });
+});
+
 // --- Validação pública de certificado ---
 
 apiRouter.get('/certificates/:code', async (req, res) => {

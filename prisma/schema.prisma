@@ -170,6 +170,14 @@ model Order {
   createdAt  DateTime    @default(now())
 }
 
+// Conteúdo editável do site (notícias, parceiros, páginas, produtos, e-mails)
+// guardado como lista JSON por chave. Editável no painel administrativo.
+model SiteContent {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
 // Configurações globais da aplicação (layout + pagamento) como linha única.
 model AppConfig {
   id        String   @id @default("singleton")
