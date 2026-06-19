@@ -212,6 +212,8 @@ adminRouter.post('/courses/:id/modules', async (req, res) => {
 });
 
 // --- Notas Fiscais de Serviço (NFS-e) — base de gerenciamento ---
+// TODO(NFS-e): integrar emissão automática (NFE.io / PlugNotas / Focus NFe)
+// para tomadores CPF e CNPJ. Ver TODO.md. Hoje o fluxo é manual.
 
 const invoiceSchema = z.object({
   recipientType: z.enum(['PF', 'PJ']).default('PF'),
