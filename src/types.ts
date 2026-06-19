@@ -44,6 +44,7 @@ export interface Course {
   videoUrl?: string; // vídeo padrão (fallback) visível ao aluno
   moduleVideos?: string[]; // link de vídeo por módulo (alinhado a modules)
   documents?: { name: string; url: string }[]; // materiais de apoio
+  examQuestions?: ExamQuestion[]; // prova do curso (editável no painel admin)
 }
 
 export interface Enrollment {

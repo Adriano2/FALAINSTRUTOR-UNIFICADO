@@ -79,6 +79,7 @@ interface ApiCourse {
   videoUrl: string | null;
   moduleVideos: string[] | null;
   documents: { name: string; url: string }[] | null;
+  examQuestions: { question: string; options: string[]; correctIndex: number }[] | null;
   instructors: {
     id: string;
     name: string;
@@ -136,6 +137,7 @@ export function mapApiCourse(c: ApiCourse): Course {
     videoUrl: c.videoUrl ?? undefined,
     moduleVideos: Array.isArray(c.moduleVideos) ? c.moduleVideos : [],
     documents: Array.isArray(c.documents) ? c.documents : [],
+    examQuestions: Array.isArray(c.examQuestions) ? c.examQuestions : [],
     instructors: (c.instructors ?? []).map((i) => ({
       id: i.id,
       name: i.name,
@@ -366,6 +368,9 @@ export const adminApi = {
   },
   saveCourseContent(courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[] }) {
     return apiFetch(`/admin/courses/${courseId}/content`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  saveExam(courseId: string, questions: { question: string; options: string[]; correctIndex: number }[]) {
+    return apiFetch(`/admin/courses/${courseId}/exam`, { method: 'PATCH', body: JSON.stringify({ questions }) });
   },
   saveConfig(layout: LayoutConfig, payment: PaymentConfig) {
     return apiFetch('/admin/config', { method: 'PUT', body: JSON.stringify({ layout, payment }) });

@@ -396,7 +396,8 @@ export default function StudentDashboard({
           if (!course) return null;
           
           const playlistFinished = activeEnrollment.progress === 100;
-          const questions = getExamQuestions(course.id);
+          // Prefere a prova cadastrada no painel admin; usa o banco padrão como fallback.
+          const questions = (course.examQuestions && course.examQuestions.length > 0) ? course.examQuestions : getExamQuestions(course.id);
 
           return (
             <div 

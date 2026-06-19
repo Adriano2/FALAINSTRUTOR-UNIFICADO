@@ -18,6 +18,7 @@ import {
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
 import InvoiceManager from './admin/InvoiceManager';
+import ExamEditor from './admin/ExamEditor';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -50,6 +51,7 @@ interface AdminDashboardProps {
   onAddModule: (courseId: string, module: string) => void;
   onSaveCourseContent: (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[] }) => void;
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
+  onRefreshCourses?: () => void;
 }
 
 export default function AdminDashboard({
@@ -81,6 +83,7 @@ export default function AdminDashboard({
   onAddModule,
   onSaveCourseContent,
   onSaveConfig,
+  onRefreshCourses,
 }: AdminDashboardProps) {
   // Sidebar State
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
@@ -392,7 +395,8 @@ export default function AdminDashboard({
                   { id: 'news', label: 'Gestão de notícias', icon: Newspaper },
                   { id: 'products', label: 'Gestão de produtos', icon: Package },
                   { id: 'coupons', label: 'Gestão de cupons', icon: Tag },
-                  { id: 'exams', label: 'Provas / Exames', icon: BookOpenCheck },
+                  { id: 'exam-editor', label: 'Editor de provas', icon: BookOpenCheck },
+                  { id: 'exams', label: 'Auditoria de provas', icon: ClipboardList },
                 ],
               },
               {
@@ -631,6 +635,11 @@ export default function AdminDashboard({
           {/* TAB: NOTAS FISCAIS (NFS-e) */}
           {activeTab === 'invoices' && (
             <InvoiceManager />
+          )}
+
+          {/* TAB: EDITOR DE PROVAS */}
+          {activeTab === 'exam-editor' && (
+            <ExamEditor courses={courses} onSaved={onRefreshCourses} />
           )}
 
           {/* TAB 3: MATRICULAS (ENROLLMENTS) */}
@@ -1314,7 +1323,7 @@ export default function AdminDashboard({
               {auditingExam && (() => {
                 const enr = enrollments.find((e) => e.userId === auditingExam.userId && e.courseId === auditingExam.courseId);
                 const course = courses.find((c) => c.id === auditingExam.courseId);
-                const questions = getExamQuestions(auditingExam.courseId);
+                const questions = (course?.examQuestions && course.examQuestions.length > 0) ? course.examQuestions : getExamQuestions(auditingExam.courseId);
                 const totalQuestions = questions.length;
                 const correctCount = questions.reduce((acc, q, i) => acc + (auditingExam.answers[i] === q.correctIndex ? 1 : 0), 0);
                 const totalModules = course?.modules.length ?? 0;

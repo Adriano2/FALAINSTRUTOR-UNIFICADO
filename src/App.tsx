@@ -714,6 +714,7 @@ export default function App() {
             onAddModule={handleAdminAddModule}
             onSaveCourseContent={handleAdminSaveCourseContent}
             onSaveConfig={handleAdminSaveConfig}
+            onRefreshCourses={refreshCourses}
           />
         )}
 

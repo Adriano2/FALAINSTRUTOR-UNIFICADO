@@ -220,6 +220,34 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
   res.json({ course });
 });
 
+// Editor de provas: salva o banco de questões do curso.
+adminRouter.patch('/courses/:id/exam', async (req, res) => {
+  const parsed = z
+    .object({
+      questions: z.array(
+        z.object({
+          question: z.string().min(1),
+          options: z.array(z.string().min(1)).min(2),
+          correctIndex: z.number().int().min(0),
+        }),
+      ),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Prova inválida. Verifique questões, alternativas e a resposta correta.' });
+  // Garante que o índice correto está dentro das alternativas.
+  for (const q of parsed.data.questions) {
+    if (q.correctIndex >= q.options.length) {
+      return res.status(400).json({ error: 'Há uma questão com resposta correta fora das alternativas.' });
+    }
+  }
+  const course = await prisma.course.update({
+    where: { id: req.params.id },
+    data: { examQuestions: parsed.data.questions as unknown as Prisma.InputJsonValue },
+    include: { instructors: true },
+  });
+  res.json({ course });
+});
+
 adminRouter.post('/courses/:id/modules', async (req, res) => {
   const parsed = z.object({ module: z.string().min(2) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Módulo inválido.' });
