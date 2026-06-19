@@ -203,12 +203,14 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
   const parsed = z
     .object({
       videoUrl: z.string().optional(),
+      moduleVideos: z.array(z.string()).optional(),
       documents: z.array(z.object({ name: z.string().min(1), url: z.string().min(1) })).optional(),
     })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Conteúdo do curso inválido.' });
   const data: Prisma.CourseUpdateInput = {};
   if (parsed.data.videoUrl !== undefined) data.videoUrl = parsed.data.videoUrl || null;
+  if (parsed.data.moduleVideos !== undefined) data.moduleVideos = parsed.data.moduleVideos as unknown as Prisma.InputJsonValue;
   if (parsed.data.documents !== undefined) data.documents = parsed.data.documents as unknown as Prisma.InputJsonValue;
   const course = await prisma.course.update({
     where: { id: req.params.id },

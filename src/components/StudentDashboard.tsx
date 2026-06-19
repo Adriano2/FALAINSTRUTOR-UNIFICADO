@@ -511,8 +511,8 @@ export default function StudentDashboard({
                         
                         {/* Player Content area based on lessonType */}
                         {lessonType === 'video' ? (
-                          course.videoUrl ? (
-                            <CourseVideo url={course.videoUrl} />
+                          (course.moduleVideos?.[selectedModuleIdx] || course.videoUrl) ? (
+                            <CourseVideo url={(course.moduleVideos?.[selectedModuleIdx] || course.videoUrl)!} />
                           ) : (
                           <div className="flex-1 flex flex-col items-center justify-center text-center text-white space-y-4">
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-black to-black z-0 pointer-events-none" />

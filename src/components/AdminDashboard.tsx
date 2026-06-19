@@ -48,7 +48,7 @@ interface AdminDashboardProps {
   onToggleCoupon: (id: string, isActive: boolean) => void;
   onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
   onAddModule: (courseId: string, module: string) => void;
-  onSaveCourseContent: (courseId: string, input: { videoUrl?: string; documents?: { name: string; url: string }[] }) => void;
+  onSaveCourseContent: (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[] }) => void;
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
 }
 
@@ -116,6 +116,7 @@ export default function AdminDashboard({
   const [courseModalType, setCourseModalType] = React.useState<'instructors' | 'modules' | 'content' | null>(null);
   // Conteúdo de mídia do curso (vídeo aula + materiais de apoio)
   const [contentVideoUrl, setContentVideoUrl] = React.useState('');
+  const [contentModuleVideos, setContentModuleVideos] = React.useState<string[]>([]);
   const [contentDocs, setContentDocs] = React.useState<{ name: string; url: string }[]>([]);
   const [newDocName, setNewDocName] = React.useState('');
   const [newDocUrl, setNewDocUrl] = React.useState('');
@@ -242,7 +243,11 @@ export default function AdminDashboard({
   // Save course video link + support documents
   const handleSaveCourseContent = () => {
     if (!managingCourse) return;
-    onSaveCourseContent(managingCourse.id, { videoUrl: contentVideoUrl.trim(), documents: contentDocs });
+    onSaveCourseContent(managingCourse.id, {
+      videoUrl: contentVideoUrl.trim(),
+      moduleVideos: contentModuleVideos.map((v) => v.trim()),
+      documents: contentDocs,
+    });
     setManagingCourse(null);
     setCourseModalType(null);
   };
@@ -599,6 +604,7 @@ export default function AdminDashboard({
                         onClick={() => {
                           setManagingCourse(course);
                           setContentVideoUrl(course.videoUrl || '');
+                          setContentModuleVideos(course.modules.map((_, i) => course.moduleVideos?.[i] || ''));
                           setContentDocs(course.documents || []);
                           setNewDocName('');
                           setNewDocUrl('');
@@ -1613,17 +1619,43 @@ export default function AdminDashboard({
               <button onClick={() => { setManagingCourse(null); setCourseModalType(null); }} className="text-slate-400 hover:text-red-500 font-black">X</button>
             </div>
 
-            {/* Link da vídeo aula */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><Video className="w-3.5 h-3.5" /> Link da vídeo aula (visível ao aluno)</label>
+            {/* Vídeo por módulo */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><Video className="w-3.5 h-3.5" /> Vídeo de cada módulo (visível ao aluno)</label>
+              <div className="space-y-2">
+                {managingCourse.modules.map((mod, mi) => (
+                  <div key={mi} className="space-y-1">
+                    <span className="text-[10px] font-semibold text-slate-600 flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-blue-600 text-white text-[8px] font-black shrink-0">{mi + 1}</span>
+                      <span className="truncate">{mod}</span>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Link do vídeo deste módulo (YouTube/Vimeo/MP4)"
+                      value={contentModuleVideos[mi] ?? ''}
+                      onChange={(e) => {
+                        const next = [...contentModuleVideos];
+                        next[mi] = e.target.value;
+                        setContentModuleVideos(next);
+                      }}
+                      className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400">Cada módulo pode ter um vídeo diferente. Deixe em branco para usar o vídeo padrão abaixo.</p>
+            </div>
+
+            {/* Vídeo padrão (fallback) */}
+            <div className="space-y-1.5 border-t border-slate-100 pt-3">
+              <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><Video className="w-3.5 h-3.5" /> Vídeo padrão (opcional)</label>
               <input
                 type="text"
-                placeholder="Ex: https://www.youtube.com/watch?v=... ou https://vimeo.com/... ou .mp4"
+                placeholder="Usado nos módulos sem vídeo próprio"
                 value={contentVideoUrl}
                 onChange={(e) => setContentVideoUrl(e.target.value)}
                 className="w-full p-2.5 rounded bg-slate-50 border text-xs focus:outline-none"
               />
-              <p className="text-[10px] text-slate-400">Aceita YouTube, Vimeo ou link direto de vídeo (MP4). Deixe em branco para não exibir.</p>
             </div>
 
             {/* Materiais de apoio */}
