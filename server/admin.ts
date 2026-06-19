@@ -211,6 +211,59 @@ adminRouter.post('/courses/:id/modules', async (req, res) => {
   res.json({ course });
 });
 
+// --- Notas Fiscais de Serviço (NFS-e) — base de gerenciamento ---
+
+const invoiceSchema = z.object({
+  recipientType: z.enum(['PF', 'PJ']).default('PF'),
+  document: z.string().min(3),
+  recipientName: z.string().min(2),
+  email: z.string().optional(),
+  serviceDesc: z.string().min(2),
+  amount: z.number().nonnegative(),
+  issueDate: z.string().optional(),
+  number: z.string().optional(),
+  series: z.string().optional(),
+  orderId: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+adminRouter.get('/invoices', async (_req, res) => {
+  const invoices = await prisma.serviceInvoice.findMany({ orderBy: { createdAt: 'desc' } });
+  res.json({ invoices });
+});
+
+adminRouter.post('/invoices', async (req, res) => {
+  const parsed = invoiceSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados da nota fiscal inválidos.' });
+  const { issueDate, ...rest } = parsed.data;
+  const invoice = await prisma.serviceInvoice.create({
+    data: {
+      ...rest,
+      ...(issueDate ? { issueDate: new Date(issueDate) } : {}),
+    } as Prisma.ServiceInvoiceUncheckedCreateInput,
+  });
+  res.status(201).json({ invoice });
+});
+
+adminRouter.patch('/invoices/:id', async (req, res) => {
+  const parsed = z
+    .object({
+      status: z.enum(['PENDING', 'ISSUED', 'CANCELED']).optional(),
+      number: z.string().optional(),
+      series: z.string().optional(),
+      notes: z.string().optional(),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Atualização inválida.' });
+  const invoice = await prisma.serviceInvoice.update({ where: { id: req.params.id }, data: parsed.data });
+  res.json({ invoice });
+});
+
+adminRouter.delete('/invoices/:id', async (req, res) => {
+  await prisma.serviceInvoice.delete({ where: { id: req.params.id } }).catch(() => {});
+  res.json({ ok: true });
+});
+
 // --- Conteúdo editável do site (notícias, parceiros, páginas, etc.) ---
 adminRouter.get('/content/:key', async (req, res) => {
   const row = await prisma.siteContent.findUnique({ where: { key: req.params.key } });

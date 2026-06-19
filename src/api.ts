@@ -99,6 +99,24 @@ export interface ApiInstructor {
   course: { id: string; code: string; name: string } | null;
 }
 
+// Nota Fiscal de Serviço (NFS-e) — base de gerenciamento.
+export interface ApiInvoice {
+  id: string;
+  number: string | null;
+  series: string | null;
+  recipientType: 'PF' | 'PJ';
+  document: string;
+  recipientName: string;
+  email: string | null;
+  serviceDesc: string;
+  amount: number;
+  issueDate: string;
+  status: 'PENDING' | 'ISSUED' | 'CANCELED';
+  orderId: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
 export function mapApiCourse(c: ApiCourse): Course {
   return {
     id: c.id,
@@ -321,6 +339,21 @@ export const adminApi = {
   },
   deleteInstructor(id: string) {
     return apiFetch(`/admin/instructors/${id}`, { method: 'DELETE' });
+  },
+  listInvoices() {
+    return apiFetch<{ invoices: ApiInvoice[] }>(`/admin/invoices`);
+  },
+  createInvoice(input: {
+    recipientType: 'PF' | 'PJ'; document: string; recipientName: string; email?: string;
+    serviceDesc: string; amount: number; issueDate?: string; number?: string; series?: string; orderId?: string; notes?: string;
+  }) {
+    return apiFetch<{ invoice: ApiInvoice }>(`/admin/invoices`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  updateInvoice(id: string, input: { status?: 'PENDING' | 'ISSUED' | 'CANCELED'; number?: string; series?: string; notes?: string }) {
+    return apiFetch<{ invoice: ApiInvoice }>(`/admin/invoices/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  deleteInvoice(id: string) {
+    return apiFetch(`/admin/invoices/${id}`, { method: 'DELETE' });
   },
   addModule(courseId: string, module: string) {
     return apiFetch(`/admin/courses/${courseId}/modules`, { method: 'POST', body: JSON.stringify({ module }) });

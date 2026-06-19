@@ -13,10 +13,11 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
+import InvoiceManager from './admin/InvoiceManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -356,6 +357,7 @@ export default function AdminDashboard({
                   { id: 'instructors', label: 'Gestão de instrutores', icon: GraduationCap },
                   { id: 'enrollments', label: 'Gestão de matrículas', icon: ClipboardList },
                   { id: 'sales', label: 'Gestão de vendas', icon: DollarSign },
+                  { id: 'invoices', label: 'Notas fiscais (NFS-e)', icon: Receipt },
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
                   { id: 'users', label: 'Gestão de usuários', icon: Users },
                   { id: 'pages', label: 'Gestão de páginas', icon: Layout },
@@ -580,6 +582,11 @@ export default function AdminDashboard({
           {/* TAB: GESTÃO DE INSTRUTORES */}
           {activeTab === 'instructors' && (
             <InstructorManager courses={courses} />
+          )}
+
+          {/* TAB: NOTAS FISCAIS (NFS-e) */}
+          {activeTab === 'invoices' && (
+            <InvoiceManager />
           )}
 
           {/* TAB 3: MATRICULAS (ENROLLMENTS) */}

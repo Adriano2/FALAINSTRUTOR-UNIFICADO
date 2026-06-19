@@ -15,6 +15,19 @@ enum Role {
   STUDENT
 }
 
+// Tomador do serviço: pessoa física (CPF) ou jurídica (CNPJ).
+enum RecipientType {
+  PF
+  PJ
+}
+
+// Situação da Nota Fiscal de Serviço (NFS-e).
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  CANCELED
+}
+
 enum CouponType {
   PERCENTAGE
   FIXED
@@ -185,4 +198,25 @@ model AppConfig {
   layout    Json
   payment   Json
   updatedAt DateTime @updatedAt
+}
+
+// Base de gerenciamento de Nota Fiscal de Serviço (NFS-e). A emissão junto à
+// prefeitura/SEFAZ (integração para CPF e CNPJ) será adicionada futuramente;
+// por ora os registros são gerenciados manualmente e começam como PENDING.
+model ServiceInvoice {
+  id            String        @id @default(cuid())
+  number        String? // número da NFS-e (preenchido quando emitida)
+  series        String?
+  recipientType RecipientType @default(PF)
+  document      String // CPF ou CNPJ do tomador
+  recipientName String // nome ou razão social
+  email         String?
+  serviceDesc   String // descrição do serviço prestado
+  amount        Float
+  issueDate     DateTime      @default(now())
+  status        InvoiceStatus @default(PENDING)
+  orderId       String? // vínculo opcional com um pedido
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
