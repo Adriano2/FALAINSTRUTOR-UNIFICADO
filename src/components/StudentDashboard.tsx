@@ -120,16 +120,45 @@ export default function StudentDashboard({
       .catch(() => setCertQrUrl(''));
   }, [viewingCertificate]);
 
+  // Captura todas as páginas do certificado em alta resolução. Importante:
+  // o preview fica dentro de um wrapper com `transform: scale()` para caber na
+  // tela — e o html2canvas mede a largura do texto errado sob transform,
+  // fazendo as palavras "grudarem". Por isso zeramos a escala (scale 1, tamanho
+  // A4 real) só durante a captura e restauramos em seguida. Também aguardamos as
+  // fontes carregarem para evitar fallback que junta os caracteres.
+  const captureCertificatePages = async (quality = 0.98): Promise<string[]> => {
+    const pageEls = ['certificate-page-1', 'certificate-page-2', 'certificate-page-3']
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el);
+    if (pageEls.length < 2) return [];
+
+    const area = document.getElementById('printable-certificate-area');
+    const prevTransform = area?.style.transform ?? '';
+    if (area) area.style.transform = 'none';
+
+    try {
+      if ((document as any).fonts?.ready) await (document as any).fonts.ready;
+      const imgs: string[] = [];
+      for (const el of pageEls) {
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+        });
+        imgs.push(canvas.toDataURL('image/jpeg', quality));
+      }
+      return imgs;
+    } finally {
+      if (area) area.style.transform = prevTransform;
+    }
+  };
+
   const handleDownloadPDF = async (courseName: string) => {
     setIsGeneratingPDF(true);
     try {
-      // Coleta todas as páginas do certificado presentes no DOM (frente, verso
-      // e — se houver — a segunda página do conteúdo programático).
-      const pageEls = ['certificate-page-1', 'certificate-page-2', 'certificate-page-3']
-        .map((id) => document.getElementById(id))
-        .filter((el): el is HTMLElement => !!el);
-
-      if (pageEls.length < 2) {
+      const imgs = await captureCertificatePages(0.98);
+      if (imgs.length < 2) {
         alert("Erro ao detectar as partes do certificado para geração do PDF.");
         setIsGeneratingPDF(false);
         return;
@@ -142,17 +171,10 @@ export default function StudentDashboard({
         format: 'a4'
       });
 
-      for (let i = 0; i < pageEls.length; i++) {
+      imgs.forEach((img, i) => {
         if (i > 0) pdf.addPage();
-        const canvas = await html2canvas(pageEls[i], {
-          scale: 2, // Double scale for maximum crystalline quality
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff'
-        });
-        const img = canvas.toDataURL('image/jpeg', 0.98);
         pdf.addImage(img, 'JPEG', 0, 0, 297, 210);
-      }
+      });
 
       // Download the composite multi-page PDF file
       const formattedCourseName = courseName.toLowerCase().replace(/[^a-z0-9]/g, '_');
@@ -171,18 +193,11 @@ export default function StudentDashboard({
   const handlePrintCertificate = async () => {
     setIsGeneratingPDF(true);
     try {
-      const pageEls = ['certificate-page-1', 'certificate-page-2', 'certificate-page-3']
-        .map((id) => document.getElementById(id))
-        .filter((el): el is HTMLElement => !!el);
-      if (pageEls.length < 2) {
+      const imgs = await captureCertificatePages(0.97);
+      if (imgs.length < 2) {
         alert('Erro ao detectar as partes do certificado para impressão.');
         return;
       }
-
-      const canvases = await Promise.all(
-        pageEls.map((el) => html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' })),
-      );
-      const imgs = canvases.map((c) => c.toDataURL('image/jpeg', 0.97));
 
       const win = window.open('', '_blank');
       if (!win) {
@@ -1046,8 +1061,12 @@ export default function StudentDashboard({
                         </div>
                       </div>
 
-                      {/* Assinatura do instrutor responsável (centralizada) */}
-                      <div className="flex items-end justify-center w-full max-w-2xl mx-auto mt-4 mb-[5%]">
+                      {/* Assinaturas: aluno (esquerda) e instrutor responsável (direita) */}
+                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-[5%] gap-6">
+                        <div className="w-44 flex flex-col items-center">
+                          <div className="w-full h-px bg-slate-900 mb-1.5" />
+                          <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
+                        </div>
                         <div className="w-72 flex flex-col items-center">
                           {firstInstructor.signatureUrl ? (
                             <img src={firstInstructor.signatureUrl} alt="Assinatura do instrutor" className="h-9 object-contain mb-0.5" referrerPolicy="no-referrer" />
