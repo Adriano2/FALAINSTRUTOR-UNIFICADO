@@ -1310,55 +1310,130 @@ export default function AdminDashboard({
                 </table>
               </div>
 
-              {/* Exam auditor detailed popup sheet */}
-              {auditingExam && (
+              {/* Exam auditor detailed popup sheet — acompanhamento do aluno */}
+              {auditingExam && (() => {
+                const enr = enrollments.find((e) => e.userId === auditingExam.userId && e.courseId === auditingExam.courseId);
+                const course = courses.find((c) => c.id === auditingExam.courseId);
+                const questions = getExamQuestions(auditingExam.courseId);
+                const totalQuestions = questions.length;
+                const correctCount = questions.reduce((acc, q, i) => acc + (auditingExam.answers[i] === q.correctIndex ? 1 : 0), 0);
+                const totalModules = course?.modules.length ?? 0;
+                const progress = enr?.progress ?? (auditingExam.passed ? 100 : 0);
+                const modulesDone = Math.round((progress / 100) * totalModules);
+
+                return (
                 <div className="fixed inset-0 z-50 bg-slate-950/80 p-4 sm:p-6 flex items-center justify-center backdrop-blur-xs">
-                  <div className="bg-white p-6 rounded-lg max-w-2xl w-full space-y-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
-                    <div className="flex items-center justify-between border-b pb-2 text-slate-900">
-                      <h3 className="font-extrabold uppercase text-sm">Respostas do Profissional {auditingExam.userName}</h3>
-                      <button onClick={() => setAuditingExam(null)} className="p-1 px-3 bg-red-600 text-white rounded text-xs font-bold">X</button>
+                  <div className="bg-white p-0 rounded-lg max-w-2xl w-full shadow-2xl relative max-h-[88vh] overflow-y-auto">
+                    {/* Cabeçalho */}
+                    <div className="flex items-center justify-between px-6 py-3 bg-[#34607d] text-white sticky top-0 z-10">
+                      <h3 className="font-extrabold uppercase text-sm">Acompanhamento do Aluno</h3>
+                      <button onClick={() => setAuditingExam(null)} className="p-1 px-3 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold">X</button>
                     </div>
 
-                    <div className="space-y-3 text-xs">
-                      <p className="font-bold text-slate-600">Treinamento: {auditingExam.courseName} ({auditingExam.courseCode})</p>
-                      <p className="text-slate-500">Média Regulamentar obtida: <strong className="text-slate-900 font-black">{auditingExam.score}%</strong></p>
-                    </div>
+                    <div className="p-6 space-y-5">
+                      {/* Dados do aluno */}
+                      <div>
+                        <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-wide border-b border-slate-100 pb-1 mb-2">Dados do Aluno</h4>
+                        <div className="flex items-center justify-between text-xs">
+                          <p className="font-bold text-slate-900">{auditingExam.userName}</p>
+                          <p className="text-slate-500">{enr?.userEmail}</p>
+                        </div>
+                      </div>
 
-                    <div className="space-y-4">
-                      {getExamQuestions(auditingExam.courseId).map((q, qIndex) => {
-                        const studentChoiceIdx = auditingExam.answers[qIndex];
-                        return (
-                          <div key={qIndex} className="p-3 bg-slate-50 border rounded text-xs space-y-2">
-                            <p className="font-bold text-slate-800">{qIndex + 1}. {q.question}</p>
-                            <div className="space-y-1 ml-2">
-                              {q.options.map((opt, oIndex) => {
-                                const isCorrect = oIndex === q.correctIndex;
-                                const isStudentChoice = oIndex === studentChoiceIdx;
-                                return (
-                                  <div 
-                                    key={oIndex} 
-                                    className={`p-1.5 rounded flex items-center gap-1.5 ${
-                                      isCorrect 
-                                        ? 'bg-emerald-500/10 text-emerald-800 font-bold' 
-                                        : isStudentChoice 
-                                          ? 'bg-red-500/10 text-red-800 font-semibold' 
-                                          : 'text-slate-650'
-                                    }`}
-                                  >
-                                    <span>{opt}</span>
-                                    {isCorrect && <span className="text-[10px] text-emerald-600">(Índice Correto)</span>}
-                                    {isStudentChoice && !isCorrect && <span className="text-[10px] text-red-500">(Escolha do Aluno)</span>}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                      {/* Dados da matrícula */}
+                      <div>
+                        <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-wide border-b border-slate-100 pb-1 mb-2">Dados da Matrícula</h4>
+                        <p className="font-bold text-slate-900 text-sm">{auditingExam.courseCode} — {auditingExam.courseName}</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-[11px]">
+                          <div><span className="text-slate-400 block">Início</span><strong className="text-slate-800">{enr?.startDate ?? '—'}</strong></div>
+                          <div><span className="text-slate-400 block">Última prova</span><strong className="text-slate-800">{auditingExam.date}</strong></div>
+                          <div><span className="text-slate-400 block">Status</span><strong className={auditingExam.passed ? 'text-emerald-600' : 'text-amber-600'}>{auditingExam.passed ? 'Concluído' : 'Em andamento'}</strong></div>
+                          <div><span className="text-slate-400 block">Aprovação</span><strong className={auditingExam.passed ? 'text-emerald-600' : 'text-red-600'}>{auditingExam.passed ? 'Aprovada' : 'Reprovada'}</strong></div>
+                        </div>
+                        <div className="mt-2">
+                          <div className="flex justify-between text-[10px] text-slate-400 mb-0.5"><span>Tempo decorrido</span><span>{progress}%</span></div>
+                          <div className="w-full bg-slate-150 rounded-full h-2"><div className="bg-blue-500 h-2 rounded-full" style={{ width: `${progress}%` }} /></div>
+                        </div>
+                      </div>
+
+                      {/* Frequência e desempenho */}
+                      <div>
+                        <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-wide border-b border-slate-100 pb-1 mb-3">Frequência e Desempenho</h4>
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div className="p-3 rounded-lg border border-slate-150 bg-slate-50">
+                            <div className="text-2xl font-black text-emerald-600">{totalModules ? Math.round((modulesDone / totalModules) * 100) : 0}%</div>
+                            <span className="text-[10px] font-bold uppercase text-slate-500 block">Frequência</span>
+                            <p className="text-[10px] text-slate-400 mt-1">Completou {modulesDone} de {totalModules} aulas</p>
                           </div>
-                        );
-                      })}
+                          <div className="p-3 rounded-lg border border-slate-150 bg-slate-50">
+                            <div className="text-2xl font-black text-emerald-600">{auditingExam.score}%</div>
+                            <span className="text-[10px] font-bold uppercase text-slate-500 block">Desempenho</span>
+                            <p className="text-[10px] text-slate-400 mt-1">Acertou {correctCount} de {totalQuestions} questões</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Detalhes por módulo */}
+                      {totalModules > 0 && (
+                        <div>
+                          <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-wide border-b border-slate-100 pb-1 mb-2">Detalhes de Acessos por Módulo</h4>
+                          <div className="space-y-1">
+                            {course!.modules.map((mod, mi) => {
+                              const done = mi < modulesDone;
+                              return (
+                                <div key={mi} className="flex items-center gap-2 text-[11px] p-1.5 rounded bg-slate-50 border border-slate-100">
+                                  <span className={`w-3 h-3 rounded-full shrink-0 ${done ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                  <span className="font-semibold text-slate-700">Módulo {mi + 1}</span>
+                                  <span className="text-slate-500 truncate">— {mod}</span>
+                                  <span className={`ml-auto text-[9px] font-bold uppercase ${done ? 'text-emerald-600' : 'text-slate-400'}`}>{done ? 'Completa' : 'Não acessada'}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Prova final — respostas */}
+                      <div>
+                        <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-wide border-b border-slate-100 pb-1 mb-3">Prova Final — Respostas ({correctCount}/{totalQuestions})</h4>
+                        <div className="space-y-4">
+                          {questions.map((q, qIndex) => {
+                            const studentChoiceIdx = auditingExam.answers[qIndex];
+                            return (
+                              <div key={qIndex} className="p-3 bg-slate-50 border rounded text-xs space-y-2">
+                                <p className="font-bold text-slate-800">{qIndex + 1}. {q.question}</p>
+                                <div className="space-y-1 ml-2">
+                                  {q.options.map((opt, oIndex) => {
+                                    const isCorrect = oIndex === q.correctIndex;
+                                    const isStudentChoice = oIndex === studentChoiceIdx;
+                                    return (
+                                      <div
+                                        key={oIndex}
+                                        className={`p-1.5 rounded flex items-center gap-1.5 ${
+                                          isCorrect
+                                            ? 'bg-emerald-500/10 text-emerald-800 font-bold'
+                                            : isStudentChoice
+                                              ? 'bg-red-500/10 text-red-800 font-semibold'
+                                              : 'text-slate-650'
+                                        }`}
+                                      >
+                                        <span>{opt}</span>
+                                        {isCorrect && <span className="text-[10px] text-emerald-600">(Correta)</span>}
+                                        {isStudentChoice && !isCorrect && <span className="text-[10px] text-red-500">(Resposta do aluno)</span>}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
+                );
+              })()}
 
             </div>
           )}

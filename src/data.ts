@@ -576,6 +576,108 @@ export const SEED_CONTACTS: ContactMessage[] = [
  * Question banks for the course exams
  */
 export const RECORD_EXAMS: Record<string, ExamQuestion[]> = {
+  "course-nr05": [
+    {
+      question: "Qual é a principal finalidade da CIPA segundo a NR 05?",
+      options: [
+        "A) Fiscalizar a jornada de trabalho dos empregados",
+        "B) A prevenção de acidentes e doenças decorrentes do trabalho, preservando a vida e a saúde do trabalhador",
+        "C) Substituir o setor de Recursos Humanos da empresa",
+        "D) Apenas organizar confraternizações internas",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Como é composta a CIPA?",
+      options: [
+        "A) Apenas por representantes indicados pelo empregador",
+        "B) Somente por membros do sindicato da categoria",
+        "C) Por representantes do empregador (indicados) e dos empregados (eleitos), em partes iguais",
+        "D) Exclusivamente pelo técnico de segurança do trabalho",
+      ],
+      correctIndex: 2,
+    },
+    {
+      question: "Como são escolhidos os representantes dos empregados na CIPA?",
+      options: [
+        "A) São indicados diretamente pelo empregador",
+        "B) São eleitos em escrutínio secreto pelos próprios empregados",
+        "C) São nomeados pelo sindicato",
+        "D) São definidos por ordem de antiguidade na empresa",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Qual é o período do mandato dos membros eleitos da CIPA?",
+      options: [
+        "A) Seis meses, sem direito a reeleição",
+        "B) Um ano, permitida uma reeleição",
+        "C) Dois anos, sem possibilidade de reeleição",
+        "D) Mandato por tempo indeterminado",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "O que é o Mapa de Riscos elaborado com a participação da CIPA?",
+      options: [
+        "A) Um mapa das rotas de fuga em caso de incêndio",
+        "B) Uma representação gráfica dos riscos ambientais nos diversos locais de trabalho",
+        "C) A planta elétrica da edificação",
+        "D) O organograma hierárquico da empresa",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Os representantes dos empregados na CIPA possuem estabilidade no emprego. Por quanto tempo?",
+      options: [
+        "A) Não possuem nenhuma estabilidade",
+        "B) Desde o registro da candidatura até um ano após o término do mandato",
+        "C) Apenas durante o período de eleição",
+        "D) Por cinco anos após a posse",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Além de prevenir acidentes, a NR 05 atribuiu à CIPA ações de prevenção e combate a:",
+      options: [
+        "A) Sonegação fiscal",
+        "B) Assédio e demais formas de violência no trabalho",
+        "C) Concorrência desleal",
+        "D) Atrasos na produção",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "O que deve ser feito quando a CIPA identifica um risco grave e iminente no ambiente de trabalho?",
+      options: [
+        "A) Aguardar a próxima reunião ordinária para discutir",
+        "B) Solicitar imediatamente ao empregador medidas para eliminar ou neutralizar o risco e, se necessário, a interdição da atividade",
+        "C) Ignorar, pois não é competência da CIPA",
+        "D) Comunicar somente ao final do mandato",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Com que frequência a CIPA deve se reunir ordinariamente?",
+      options: [
+        "A) Diariamente",
+        "B) Mensalmente, conforme calendário preestabelecido",
+        "C) Apenas uma vez por ano",
+        "D) Somente quando ocorre um acidente",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "O que é a SIPAT, organizada com o apoio da CIPA?",
+      options: [
+        "A) Sindicato Interno de Profissionais e Trabalhadores",
+        "B) Semana Interna de Prevenção de Acidentes do Trabalho",
+        "C) Sistema Integrado de Pagamento de Adicionais Trabalhistas",
+        "D) Serviço de Inspeção Periódica de Ambientes de Trabalho",
+      ],
+      correctIndex: 1,
+    },
+  ],
   "course-nr35": [
     {
       question: "O que deve ser verificado em equipamentos de proteção individual (EPI) antes de seu uso?",
