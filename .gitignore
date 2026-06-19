@@ -9,3 +9,7 @@ coverage/
 
 # Scripts temporários de teste (Playwright)
 _*.mjs
+
+# Certificados digitais — NUNCA versionar
+*.pfx
+*.p12

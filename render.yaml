@@ -40,6 +40,13 @@ services:
         value: sandbox
       - key: ASAAS_WEBHOOK_TOKEN
         generateValue: true
+      # --- Assinatura digital ICP-Brasil (certificado A1 .pfx) ---
+      # NUNCA versione o .pfx nem a senha. Defina estas variáveis apenas no
+      # painel do Render. ICP_PFX_BASE64 = saída de `base64 -w0 certificado.pfx`.
+      - key: ICP_PFX_BASE64
+        sync: false
+      - key: ICP_PFX_PASSWORD
+        sync: false
       # PUBLIC_URL não é necessária: o Render injeta RENDER_EXTERNAL_URL
       # (URL https completa), já usada pelo servidor para retornos e webhook.
 

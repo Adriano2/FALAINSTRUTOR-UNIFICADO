@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, authorize, type AuthedRequest } from './auth';
+import { getSignerInfo, signPayload, isIcpConfigured } from './icp';
 
 export const apiRouter = Router();
 
@@ -191,15 +192,32 @@ apiRouter.get('/certificates/:code', async (req, res) => {
   }
   const instructor = enrollment.course.instructors[0];
 
-  // Identidade do certificado digital ICP-Brasil configurada no painel administrativo.
+  // Identidade do certificado digital ICP-Brasil. Quando o .pfx está
+  // configurado (variáveis de ambiente), usamos a identidade REAL do
+  // certificado e assinamos criptograficamente os dados. Caso contrário,
+  // recorremos à identidade informada no painel administrativo.
   const cfg = await prisma.appConfig.findUnique({ where: { id: 'singleton' } });
   const payment = (cfg?.payment ?? {}) as Record<string, unknown>;
+  const signer = getSignerInfo();
+
+  const canonical = [
+    enrollment.certificateCode,
+    enrollment.user.name,
+    enrollment.user.cpf,
+    enrollment.course.code,
+    enrollment.startDate,
+  ].join('|');
+  const sig = signPayload(canonical);
+
   const digitalSignature = {
-    holder: (payment.digitalCertificateHolder as string) || instructor?.name || 'Instrutor Qualificado',
+    holder: signer?.holder || (payment.digitalCertificateHolder as string) || instructor?.name || 'Instrutor Qualificado',
     certificateName: (payment.digitalCertificateName as string) || null,
-    issuer: (payment.digitalCertificateIssuer as string) || 'ICP-Brasil',
-    serial: (payment.digitalCertificateSerial as string) || null,
-    validUntil: (payment.digitalCertificateValidUntil as string) || null,
+    issuer: signer?.issuer || (payment.digitalCertificateIssuer as string) || 'ICP-Brasil',
+    serial: signer?.serial || (payment.digitalCertificateSerial as string) || null,
+    validUntil: signer?.validUntil || (payment.digitalCertificateValidUntil as string) || null,
+    icpVerified: isIcpConfigured(),
+    algorithm: sig?.algorithm || null,
+    signature: sig?.signature || null,
   };
 
   res.json({

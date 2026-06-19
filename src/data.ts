@@ -35,8 +35,8 @@ export const INITIAL_PAYMENT_CONFIG: PaymentConfig = {
   digitalCertificateName: "ADRIANO_APARECIDO_RIBAS_RICARDO_CERT.pfx",
   digitalCertificateHolder: "Adriano Aparecido Ribas Ricardo",
   digitalCertificateIssuer: "AC SOLUTI Múltipla v5 — ICP-Brasil",
-  digitalCertificateSerial: "",
-  digitalCertificateValidUntil: "",
+  digitalCertificateSerial: "493D260213579194",
+  digitalCertificateValidUntil: "13/02/2027",
 };
 
 export const SEED_USERS: User[] = [

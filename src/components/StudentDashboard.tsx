@@ -85,6 +85,26 @@ export default function StudentDashboard({
   const [isGeneratingPDF, setIsGeneratingPDF] = React.useState(false);
   const [certQrUrl, setCertQrUrl] = React.useState('');
 
+  // Tamanho fixo de uma folha A4 paisagem (≈96dpi). O certificado é sempre
+  // renderizado nesse tamanho para nunca cortar conteúdo; na pré-visualização
+  // ele é apenas reduzido proporcionalmente para caber na largura do modal.
+  const PAGE_W = 1040;
+  const PAGE_H = Math.round(PAGE_W / 1.414); // mantém a proporção A4 paisagem
+  const PREVIEW_GAP = 32;
+  const previewWrapRef = React.useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = React.useState(1);
+
+  React.useEffect(() => {
+    if (!viewingCertificate) return;
+    const update = () => {
+      const w = previewWrapRef.current?.clientWidth ?? PAGE_W;
+      setPreviewScale(Math.min(1, w / PAGE_W));
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [viewingCertificate]);
+
   // Generates a real, scannable QR Code pointing to the public certificate
   // validation page (anti-fraud). Regenerated whenever the certificate changes.
   React.useEffect(() => {
@@ -144,6 +164,54 @@ export default function StudentDashboard({
     } catch (error) {
       console.error("Erro na compilação do arquivo PDF do certificado:", error);
       alert("Houve um contratempo técnico ao compilar e fazer o download do seu PDF. Por favor, tente novamente.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  // Abre o certificado em uma nova guia, já formatado em folha A4 paisagem,
+  // com todo o conteúdo (frente e verso) e dispara a impressão. Evita que o
+  // navegador corte o documento ao imprimir o modal da aplicação.
+  const handlePrintCertificate = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      const pageFront = document.getElementById('certificate-page-1');
+      const pageBack = document.getElementById('certificate-page-2');
+      if (!pageFront || !pageBack) {
+        alert('Erro ao detectar as partes do certificado para impressão.');
+        return;
+      }
+
+      const [canvasFront, canvasBack] = await Promise.all([
+        html2canvas(pageFront, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' }),
+        html2canvas(pageBack, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' }),
+      ]);
+      const imgFront = canvasFront.toDataURL('image/jpeg', 0.97);
+      const imgBack = canvasBack.toDataURL('image/jpeg', 0.97);
+
+      const win = window.open('', '_blank');
+      if (!win) {
+        alert('Não foi possível abrir a nova guia. Permita pop-ups para imprimir o certificado.');
+        return;
+      }
+      win.document.write(
+        `<!doctype html><html><head><meta charset="utf-8"><title>Certificado FalaInstrutor</title>
+        <style>
+          @page { size: A4 landscape; margin: 0; }
+          html, body { margin: 0; padding: 0; background: #fff; }
+          .page { width: 297mm; height: 210mm; overflow: hidden; page-break-after: always; }
+          .page:last-child { page-break-after: auto; }
+          .page img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        </style></head><body>
+          <div class="page"><img src="${imgFront}" alt="Certificado - frente" /></div>
+          <div class="page"><img src="${imgBack}" alt="Certificado - verso" /></div>
+          <script>window.onload=function(){setTimeout(function(){window.focus();window.print();},350);};<\/script>
+        </body></html>`
+      );
+      win.document.close();
+    } catch (error) {
+      console.error('Erro ao preparar a impressão do certificado:', error);
+      alert('Houve um problema ao preparar a impressão. Tente novamente.');
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -880,11 +948,16 @@ export default function StudentDashboard({
                       </>
                     )}
                   </button>
-                  <button 
-                    onClick={() => window.print()}
-                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-white rounded text-xs font-bold flex items-center gap-1 transition select-none cursor-pointer"
+                  <button
+                    disabled={isGeneratingPDF}
+                    onClick={handlePrintCertificate}
+                    className={`px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 transition select-none ${
+                      isGeneratingPDF
+                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                        : 'bg-slate-900 hover:bg-slate-850 text-white cursor-pointer'
+                    }`}
                   >
-                    <Printer className="w-4 h-4" /> Imprimir Documento
+                    <Printer className="w-4 h-4" /> Imprimir (A4 paisagem)
                   </button>
                   <button 
                     onClick={() => setViewingCertificate(null)}
@@ -895,11 +968,16 @@ export default function StudentDashboard({
                 </div>
               </div>
 
-              {/* DUAL PAGE LAYOUT PREVIEW PANEL */}
-              <div className="space-y-8" id="printable-certificate-area">
-                
+              {/* DUAL PAGE LAYOUT PREVIEW PANEL — renderizado em tamanho A4 fixo
+                  e reduzido proporcionalmente para caber, sem cortar conteúdo. */}
+              <div ref={previewWrapRef} className="w-full overflow-hidden mx-auto" style={{ height: (PAGE_H * 2 + PREVIEW_GAP) * previewScale }}>
+                <div
+                  id="printable-certificate-area"
+                  style={{ width: PAGE_W, transform: `scale(${previewScale})`, transformOrigin: 'top left', display: 'flex', flexDirection: 'column', gap: PREVIEW_GAP }}
+                >
+
                     {/* PAGE 1: FRONT SIDE */}
-                <div id="certificate-page-1" className="relative bg-white aspect-[1.414] shadow-sm select-all font-sans text-slate-900 overflow-hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
+                <div id="certificate-page-1" className="relative bg-white shadow-sm select-all font-sans text-slate-900 overflow-hidden" style={{ width: PAGE_W, height: PAGE_H, fontFamily: 'Arial, sans-serif' }}>
                   {Frame}
 
                   <div className="relative z-10 flex w-full h-full px-[3%] py-[2.5%]">
@@ -969,7 +1047,7 @@ export default function StudentDashboard({
                 </div>
 
                 {/* PAGE 2: BACK SIDE */}
-                <div id="certificate-page-2" className="relative bg-white aspect-[1.414] shadow-sm select-all font-sans text-slate-900 mt-8 overflow-hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
+                <div id="certificate-page-2" className="relative bg-white shadow-sm select-all font-sans text-slate-900 overflow-hidden" style={{ width: PAGE_W, height: PAGE_H, fontFamily: 'Arial, sans-serif' }}>
                   {Frame}
 
                   <div className="relative z-10 flex w-full h-full px-[3%] py-[2.5%]">
@@ -1000,6 +1078,7 @@ export default function StudentDashboard({
                       </div>
                     </div>
                   </div>
+                </div>
                 </div>
               </div>
             </div>

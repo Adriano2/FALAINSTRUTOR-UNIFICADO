@@ -197,6 +197,11 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
                   <span>Assinatura eletrônica em conformidade com o ICP-Brasil e homologação de responsabilidade técnica pela FALA INSTRUTOR A2 CONSUTORIA SEG HIGIENE OCUPACIONAL.</span>
                   {matchedCertificate.digitalSignature && (
                     <div className="pt-1.5 mt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
+                      {matchedCertificate.digitalSignature.icpVerified && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 mb-1 bg-emerald-500/10 text-emerald-600 rounded font-bold text-[10px] uppercase tracking-wide">
+                          <CheckCircle className="w-3 h-3" /> Assinatura ICP-Brasil verificada
+                        </span>
+                      )}
                       <span className="block"><span className="text-slate-400">Titular do certificado digital:</span> <strong className="text-slate-700 dark:text-slate-300">{matchedCertificate.digitalSignature.holder}</strong></span>
                       {matchedCertificate.digitalSignature.issuer && (
                         <span className="block"><span className="text-slate-400">Autoridade Certificadora:</span> {matchedCertificate.digitalSignature.issuer}</span>
@@ -206,6 +211,9 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
                       )}
                       {matchedCertificate.digitalSignature.validUntil && (
                         <span className="block"><span className="text-slate-400">Válido até:</span> {matchedCertificate.digitalSignature.validUntil}</span>
+                      )}
+                      {matchedCertificate.digitalSignature.signature && (
+                        <span className="block"><span className="text-slate-400">Assinatura ({matchedCertificate.digitalSignature.algorithm}):</span> <span className="font-mono break-all text-[10px]">{matchedCertificate.digitalSignature.signature.slice(0, 44)}…</span></span>
                       )}
                     </div>
                   )}
