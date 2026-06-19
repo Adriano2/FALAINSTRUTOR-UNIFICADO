@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
-import { getExamQuestions } from '../data';
+import { getExamQuestions, CONTEUDO_PROGRAMATICO } from '../data';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -121,10 +121,13 @@ export default function StudentDashboard({
   const handleDownloadPDF = async (courseName: string) => {
     setIsGeneratingPDF(true);
     try {
-      const pageFront = document.getElementById('certificate-page-1');
-      const pageBack = document.getElementById('certificate-page-2');
+      // Coleta todas as páginas do certificado presentes no DOM (frente, verso
+      // e — se houver — a segunda página do conteúdo programático).
+      const pageEls = ['certificate-page-1', 'certificate-page-2', 'certificate-page-3']
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => !!el);
 
-      if (!pageFront || !pageBack) {
+      if (pageEls.length < 2) {
         alert("Erro ao detectar as partes do certificado para geração do PDF.");
         setIsGeneratingPDF(false);
         return;
@@ -137,28 +140,19 @@ export default function StudentDashboard({
         format: 'a4'
       });
 
-      // Capture Front side of the certificate
-      const canvasFront = await html2canvas(pageFront, {
-        scale: 2, // Double scale for maximum crystalline quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff'
-      });
-      const imgFront = canvasFront.toDataURL('image/jpeg', 0.98);
-      pdf.addImage(imgFront, 'JPEG', 0, 0, 297, 210);
+      for (let i = 0; i < pageEls.length; i++) {
+        if (i > 0) pdf.addPage();
+        const canvas = await html2canvas(pageEls[i], {
+          scale: 2, // Double scale for maximum crystalline quality
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        });
+        const img = canvas.toDataURL('image/jpeg', 0.98);
+        pdf.addImage(img, 'JPEG', 0, 0, 297, 210);
+      }
 
-      // Add a page break and capture the Programmatic Back side
-      pdf.addPage();
-      const canvasBack = await html2canvas(pageBack, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff'
-      });
-      const imgBack = canvasBack.toDataURL('image/jpeg', 0.98);
-      pdf.addImage(imgBack, 'JPEG', 0, 0, 297, 210);
-
-      // Download the composite dual-page PDF file
+      // Download the composite multi-page PDF file
       const formattedCourseName = courseName.toLowerCase().replace(/[^a-z0-9]/g, '_');
       pdf.save(`certificado_${formattedCourseName}.pdf`);
     } catch (error) {
@@ -175,25 +169,27 @@ export default function StudentDashboard({
   const handlePrintCertificate = async () => {
     setIsGeneratingPDF(true);
     try {
-      const pageFront = document.getElementById('certificate-page-1');
-      const pageBack = document.getElementById('certificate-page-2');
-      if (!pageFront || !pageBack) {
+      const pageEls = ['certificate-page-1', 'certificate-page-2', 'certificate-page-3']
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => !!el);
+      if (pageEls.length < 2) {
         alert('Erro ao detectar as partes do certificado para impressão.');
         return;
       }
 
-      const [canvasFront, canvasBack] = await Promise.all([
-        html2canvas(pageFront, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' }),
-        html2canvas(pageBack, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' }),
-      ]);
-      const imgFront = canvasFront.toDataURL('image/jpeg', 0.97);
-      const imgBack = canvasBack.toDataURL('image/jpeg', 0.97);
+      const canvases = await Promise.all(
+        pageEls.map((el) => html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' })),
+      );
+      const imgs = canvases.map((c) => c.toDataURL('image/jpeg', 0.97));
 
       const win = window.open('', '_blank');
       if (!win) {
         alert('Não foi possível abrir a nova guia. Permita pop-ups para imprimir o certificado.');
         return;
       }
+      const pagesHtml = imgs
+        .map((src, i) => `<div class="page"><img src="${src}" alt="Certificado - página ${i + 1}" /></div>`)
+        .join('');
       win.document.write(
         `<!doctype html><html><head><meta charset="utf-8"><title>Certificado FalaInstrutor</title>
         <style>
@@ -203,8 +199,7 @@ export default function StudentDashboard({
           .page:last-child { page-break-after: auto; }
           .page img { width: 100%; height: 100%; object-fit: contain; display: block; }
         </style></head><body>
-          <div class="page"><img src="${imgFront}" alt="Certificado - frente" /></div>
-          <div class="page"><img src="${imgBack}" alt="Certificado - verso" /></div>
+          ${pagesHtml}
           <script>window.onload=function(){setTimeout(function(){window.focus();window.print();},350);};<\/script>
         </body></html>`
       );
@@ -879,6 +874,45 @@ export default function StudentDashboard({
         const longDate = formatLongDatePt(viewingCertificate.startDate);
         const badge = certificateBadge(course.code);
 
+        // Conteúdo programático detalhado do verso. Usa o catálogo por NR e
+        // complementa com módulos/atividades práticas do curso. Quando longo,
+        // é dividido em duas páginas de verso (parte 1 e parte 2).
+        const syllabus: string[] = [
+          ...(CONTEUDO_PROGRAMATICO[course.code] ?? course.modules),
+          ...course.manualActivities,
+        ];
+        const SYLLABUS_PER_PAGE = 12; // cabe confortavelmente em 2 colunas
+        const needsSecondBack = syllabus.length > SYLLABUS_PER_PAGE;
+        const syllabusPage1 = needsSecondBack ? syllabus.slice(0, SYLLABUS_PER_PAGE) : syllabus;
+        const syllabusPage2 = needsSecondBack ? syllabus.slice(SYLLABUS_PER_PAGE) : [];
+
+        // Verso reaproveitado para parte 1 e parte 2 do conteúdo programático.
+        const BackPage = (id: string, items: string[], part?: { n: number; total: number }) => (
+          <div id={id} className="relative bg-white shadow-sm select-all font-sans text-slate-900 overflow-hidden" style={{ width: PAGE_W, height: PAGE_H, fontFamily: 'Arial, sans-serif' }}>
+            {Frame}
+            <div className="relative z-10 flex w-full h-full px-[3%] py-[2.5%]">
+              {LeftColumn}
+              <div className="flex-1 flex flex-col pr-[2%] pt-[1.5%]">
+                <div className="flex justify-center">{LogoBlock}</div>
+                <h3 className="text-[14px] max-w-2xl mx-auto text-center font-bold text-[#1f2a44] mt-3 mb-4 border-b-2 border-[#1e9b46] pb-2">
+                  Conteúdo Programático — {course.name}
+                  {part ? <span className="block text-[10px] font-semibold text-slate-500 mt-0.5">Página {part.n} de {part.total}</span> : null}
+                </h3>
+                <div className="flex-1 w-full text-[11px] leading-relaxed text-slate-800 px-2 columns-2 gap-8">
+                  <ul className="list-disc pl-4 space-y-1 font-medium [&>li]:break-inside-avoid">
+                    {items.map((it, i) => (
+                      <li key={i}>{it}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-auto pt-4 flex justify-center text-[12px] text-[#1e9b46] font-black tracking-[0.2em] w-full">
+                  WWW.FALAINSTRUTOR.COM.BR
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
         // Moldura: textura diagonal sutil, borda fina e cantos angulares
         // (verde + azul-marinho) no topo-esquerdo e na base-direita.
         const Frame = (
@@ -1047,39 +1081,11 @@ export default function StudentDashboard({
                   </div>
                 </div>
 
-                {/* PAGE 2: BACK SIDE */}
-                <div id="certificate-page-2" className="relative bg-white shadow-sm select-all font-sans text-slate-900 overflow-hidden" style={{ width: PAGE_W, height: PAGE_H, fontFamily: 'Arial, sans-serif' }}>
-                  {Frame}
+                {/* PAGE 2: BACK SIDE — conteúdo programático (parte 1) */}
+                {BackPage('certificate-page-2', syllabusPage1, needsSecondBack ? { n: 1, total: 2 } : undefined)}
 
-                  <div className="relative z-10 flex w-full h-full px-[3%] py-[2.5%]">
-                    {LeftColumn}
-
-                    {/* Main Content Pane */}
-                    <div className="flex-1 flex flex-col pr-[2%] pt-[1.5%]">
-                      <div className="flex justify-center">{LogoBlock}</div>
-
-                      <h3 className="text-[14px] max-w-2xl mx-auto text-center font-bold text-[#1f2a44] mt-3 mb-4 border-b-2 border-[#1e9b46] pb-2">
-                        Conteúdo Programático do Treinamento de {course.name}
-                      </h3>
-
-                      <div className="flex-1 w-full text-[11px] leading-relaxed text-slate-800 px-2 columns-2 gap-8">
-                        <ul className="list-disc pl-4 space-y-1 font-medium [&>li]:break-inside-avoid">
-                          {course.modules.map((mod, mi) => (
-                            <li key={mi}>{mod}</li>
-                          ))}
-                          {course.manualActivities.length > 0 && course.manualActivities.map((act, ax) => (
-                            <li key={`act-${ax}`}>{act}</li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {/* Footer URL */}
-                      <div className="mt-auto pt-4 flex justify-center text-[12px] text-[#1e9b46] font-black tracking-[0.2em] w-full">
-                        WWW.FALAINSTRUTOR.COM.BR
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* PAGE 3: BACK SIDE — conteúdo programático (parte 2), quando necessário */}
+                {needsSecondBack && BackPage('certificate-page-3', syllabusPage2, { n: 2, total: 2 })}
                 </div>
               </div>
             </div>
