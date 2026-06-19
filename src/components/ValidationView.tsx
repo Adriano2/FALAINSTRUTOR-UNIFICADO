@@ -121,6 +121,13 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
                 <div className="text-center sm:text-right">
                   <span className="text-[10px] text-slate-400 font-bold block uppercase">Assinante Digital Responsável</span>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-350">{matchedCertificate.digitalSignature?.holder || matchedCertificate.instructor}</span>
+                  {(matchedCertificate.instructorMte || matchedCertificate.instructorCrea) && (
+                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                      {matchedCertificate.instructorMte ? `MTE ${matchedCertificate.instructorMte}` : ''}
+                      {matchedCertificate.instructorMte && matchedCertificate.instructorCrea ? ' • ' : ''}
+                      {matchedCertificate.instructorCrea ? `CREA ${matchedCertificate.instructorCrea}` : ''}
+                    </span>
+                  )}
                 </div>
               </div>
 

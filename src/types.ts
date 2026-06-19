@@ -23,6 +23,7 @@ export interface Instructor {
   name: string;
   formation: string;
   mte?: string; // Registro MTE do instrutor (ex.: "0124684/SP")
+  crea?: string; // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
   signatureUrl?: string; // imagem da assinatura (scan), opcional
   icpEnabled?: boolean; // assinatura digital ICP-Brasil habilitada
 }

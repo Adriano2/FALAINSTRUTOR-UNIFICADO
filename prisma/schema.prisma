@@ -76,6 +76,7 @@ model Instructor {
   name         String
   formation    String
   mte          String?
+  crea         String? // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
   signatureUrl String? // imagem da assinatura (scan), opcional
   icpEnabled   Boolean @default(false) // assinatura digital ICP-Brasil habilitada
   course       Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)

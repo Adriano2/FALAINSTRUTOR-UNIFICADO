@@ -1080,6 +1080,7 @@ export default function StudentDashboard({
                             Instrutor: {firstInstructor.name}<br />
                             {firstInstructor.formation}<br />
                             MTE nº: {firstInstructor.mte || '0124684/SP'}
+                            {firstInstructor.crea ? <><br />CREA nº: {firstInstructor.crea}</> : null}
                           </div>
                           {firstInstructor.icpEnabled && viewingCertificate.certificateCode && (
                             <div className="mt-1.5 w-full flex items-center gap-1.5 border border-[#1f2a44]/40 rounded px-2 py-1 bg-[#1f2a44]/[0.04]">

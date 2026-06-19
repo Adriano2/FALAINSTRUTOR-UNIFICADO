@@ -102,6 +102,7 @@ const INSTRUTOR_PADRAO: Instructor = {
   name: "Adriano Aparecido Ribas Ricardo",
   formation: "Técnico de Segurança do Trabalho",
   mte: "0124684/SP",
+  crea: "",
   icpEnabled: true,
 };
 

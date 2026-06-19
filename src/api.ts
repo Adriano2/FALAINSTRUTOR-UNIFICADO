@@ -81,9 +81,22 @@ interface ApiCourse {
     name: string;
     formation: string;
     mte: string | null;
+    crea: string | null;
     signatureUrl: string | null;
     icpEnabled: boolean;
   }[];
+}
+
+// Instrutor com o treinamento ao qual está associado (gestão de instrutores).
+export interface ApiInstructor {
+  id: string;
+  name: string;
+  formation: string;
+  mte: string | null;
+  crea: string | null;
+  signatureUrl: string | null;
+  icpEnabled: boolean;
+  course: { id: string; code: string; name: string } | null;
 }
 
 export function mapApiCourse(c: ApiCourse): Course {
@@ -104,6 +117,7 @@ export function mapApiCourse(c: ApiCourse): Course {
       name: i.name,
       formation: i.formation,
       mte: i.mte ?? undefined,
+      crea: i.crea ?? undefined,
       signatureUrl: i.signatureUrl ?? undefined,
       icpEnabled: Boolean(i.icpEnabled),
     })),
@@ -121,6 +135,8 @@ export interface CertificateResult {
   completionDate: string;
   instructor: string;
   instructorFormation: string;
+  instructorMte?: string | null;
+  instructorCrea?: string | null;
   manualActivities: string[];
 }
 
@@ -294,8 +310,17 @@ export const adminApi = {
   toggleCoupon(id: string, isActive: boolean) {
     return apiFetch(`/admin/coupons/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) });
   },
-  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; signatureUrl?: string; icpEnabled: boolean }) {
+  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) {
     return apiFetch(`/admin/courses/${courseId}/instructors`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  listInstructors() {
+    return apiFetch<{ instructors: ApiInstructor[] }>(`/admin/instructors`);
+  },
+  createInstructor(input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean; courseIds: string[] }) {
+    return apiFetch(`/admin/instructors`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  deleteInstructor(id: string) {
+    return apiFetch(`/admin/instructors/${id}`, { method: 'DELETE' });
   },
   addModule(courseId: string, module: string) {
     return apiFetch(`/admin/courses/${courseId}/modules`, { method: 'POST', body: JSON.stringify({ module }) });

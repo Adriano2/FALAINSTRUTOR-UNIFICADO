@@ -233,6 +233,8 @@ apiRouter.get('/certificates/:code', async (req, res) => {
       completionDate: enrollment.startDate,
       instructor: instructor?.name ?? 'Instrutor Qualificado',
       instructorFormation: instructor?.formation ?? 'Engenheiro de Segurança / Civil',
+      instructorMte: instructor?.mte ?? null,
+      instructorCrea: instructor?.crea ?? null,
       manualActivities: enrollment.course.manualActivities ?? [],
       digitalSignature,
     },

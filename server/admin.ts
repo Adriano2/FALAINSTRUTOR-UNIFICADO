@@ -145,17 +145,51 @@ adminRouter.patch('/coupons/:id/active', async (req, res) => {
   res.json({ coupon });
 });
 
-// --- Curso: instrutores e módulos ---
-adminRouter.post('/courses/:id/instructors', async (req, res) => {
-  const parsed = z
-    .object({
-      name: z.string().min(2),
-      formation: z.string().min(2),
-      mte: z.string().optional(),
-      signatureUrl: z.string().optional(),
-      icpEnabled: z.boolean().default(false),
-    })
+// --- Gestão de instrutores ---
+
+const instructorSchema = z.object({
+  name: z.string().min(2),
+  formation: z.string().min(2),
+  mte: z.string().optional(),
+  crea: z.string().optional(),
+  signatureUrl: z.string().optional(),
+  icpEnabled: z.boolean().default(false),
+});
+
+// Lista todos os instrutores cadastrados, com o curso ao qual estão associados.
+adminRouter.get('/instructors', async (_req, res) => {
+  const instructors = await prisma.instructor.findMany({
+    include: { course: { select: { id: true, code: true, name: true } } },
+    orderBy: { name: 'asc' },
+  });
+  res.json({ instructors });
+});
+
+// Cadastra um instrutor e o associa a um ou mais treinamentos de uma só vez.
+adminRouter.post('/instructors', async (req, res) => {
+  const parsed = instructorSchema
+    .extend({ courseIds: z.array(z.string()).min(1) })
     .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do instrutor inválidos. Selecione ao menos um treinamento.' });
+  const { courseIds, ...data } = parsed.data;
+  await prisma.instructor.createMany({
+    data: courseIds.map((courseId) => ({ ...data, courseId })) as Prisma.InstructorUncheckedCreateInput[],
+  });
+  const instructors = await prisma.instructor.findMany({
+    include: { course: { select: { id: true, code: true, name: true } } },
+    orderBy: { name: 'asc' },
+  });
+  res.status(201).json({ instructors });
+});
+
+// Remove a associação de um instrutor a um treinamento.
+adminRouter.delete('/instructors/:id', async (req, res) => {
+  await prisma.instructor.delete({ where: { id: req.params.id } }).catch(() => {});
+  res.json({ ok: true });
+});
+
+adminRouter.post('/courses/:id/instructors', async (req, res) => {
+  const parsed = instructorSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Dados do instrutor inválidos.' });
   await prisma.instructor.create({
     data: { ...parsed.data, courseId: req.params.id } as Prisma.InstructorUncheckedCreateInput,

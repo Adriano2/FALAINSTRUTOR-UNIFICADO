@@ -13,9 +13,10 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout
+  Newspaper, Package, Building2, Layout, GraduationCap
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
+import InstructorManager from './admin/InstructorManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -44,7 +45,7 @@ interface AdminDashboardProps {
   onBatchEnroll: (userIds: string[], courseId: string) => void;
   onCreateCoupon: (input: { code: string; description: string; value: number; type: 'PERCENTAGE' | 'FIXED'; associatedProducts: string[] }) => void;
   onToggleCoupon: (id: string, isActive: boolean) => void;
-  onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
+  onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
   onAddModule: (courseId: string, module: string) => void;
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
 }
@@ -113,6 +114,7 @@ export default function AdminDashboard({
   const [newInstructorName, setNewInstructorName] = React.useState('');
   const [newInstructorFormation, setNewInstructorFormation] = React.useState('');
   const [newInstructorMte, setNewInstructorMte] = React.useState('');
+  const [newInstructorCrea, setNewInstructorCrea] = React.useState('');
   const [newInstructorSignatureUrl, setNewInstructorSignatureUrl] = React.useState('');
   const [newInstructorIcp, setNewInstructorIcp] = React.useState(true);
   const [newModuleText, setNewModuleText] = React.useState('');
@@ -187,17 +189,22 @@ export default function AdminDashboard({
 
   // Add customized instructors
   const handleAddInstructor = () => {
-    if (!managingCourse || !newInstructorName || !newInstructorFormation) return;
+    if (!managingCourse || !newInstructorName.trim()) {
+      alert('Informe ao menos o nome do instrutor.');
+      return;
+    }
     onAddInstructor(managingCourse.id, {
-      name: newInstructorName,
-      formation: newInstructorFormation,
+      name: newInstructorName.trim(),
+      formation: newInstructorFormation.trim() || 'Instrutor Responsável',
       mte: newInstructorMte || undefined,
+      crea: newInstructorCrea || undefined,
       signatureUrl: newInstructorSignatureUrl || undefined,
       icpEnabled: newInstructorIcp,
     });
     setNewInstructorName('');
     setNewInstructorFormation('');
     setNewInstructorMte('');
+    setNewInstructorCrea('');
     setNewInstructorSignatureUrl('');
     setNewInstructorIcp(true);
     setManagingCourse(null);
@@ -343,6 +350,7 @@ export default function AdminDashboard({
                 items: [
                   { id: 'dashboard', label: 'Dashboard', icon: BarChart },
                   { id: 'courses', label: 'Gestão de cursos', icon: BookOpen },
+                  { id: 'instructors', label: 'Gestão de instrutores', icon: GraduationCap },
                   { id: 'enrollments', label: 'Gestão de matrículas', icon: ClipboardList },
                   { id: 'sales', label: 'Gestão de vendas', icon: DollarSign },
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
@@ -564,6 +572,11 @@ export default function AdminDashboard({
               </div>
 
             </div>
+          )}
+
+          {/* TAB: GESTÃO DE INSTRUTORES */}
+          {activeTab === 'instructors' && (
+            <InstructorManager courses={courses} />
           )}
 
           {/* TAB 3: MATRICULAS (ENROLLMENTS) */}
@@ -1428,6 +1441,13 @@ export default function AdminDashboard({
                   placeholder="Registro MTE (ex: 0124684/SP)"
                   value={newInstructorMte}
                   onChange={(e) => setNewInstructorMte(e.target.value)}
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Registro CREA (ex: SP-1234567/D)"
+                  value={newInstructorCrea}
+                  onChange={(e) => setNewInstructorCrea(e.target.value)}
                   className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
                 />
                 <input
