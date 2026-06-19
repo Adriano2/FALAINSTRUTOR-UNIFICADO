@@ -6,6 +6,7 @@
 import React from 'react';
 import { Play, Shield, Award, Clock, Search, BookOpen, MapPin, Send, HelpCircle, AlertTriangle, FileText, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Course, ContactMessage } from '../types';
+import { contentApi } from '../api';
 
 interface LandingPageProps {
   courses: Course[];
@@ -134,8 +135,8 @@ export default function LandingPage({ courses, onSelectCourse, onSubmitContact }
     setTimeout(() => setContactSuccess(false), 5000);
   };
 
-  // Recent News listing
-  const newsItems = [
+  // Recent News listing — carrega do banco (editável no painel admin) com fallback estático
+  const defaultNews = [
     {
       id: "news-1",
       tag: "NR-05",
@@ -161,6 +162,15 @@ export default function LandingPage({ courses, onSelectCourse, onSubmitContact }
       readTime: "6 min de leitura"
     }
   ];
+  const [newsItems, setNewsItems] = React.useState(defaultNews);
+
+  React.useEffect(() => {
+    let alive = true;
+    contentApi.get('news').then((items) => {
+      if (alive && Array.isArray(items) && items.length > 0) setNewsItems(items as typeof defaultNews);
+    });
+    return () => { alive = false; };
+  }, []);
 
   return (
     <div className="w-full bg-slate-50 dark:bg-slate-950 transition-colors duration-200">

@@ -9,11 +9,14 @@ import {
   ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission 
 } from '../types';
 import { getExamQuestions } from '../data';
-import { 
-  BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare, 
-  Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus, 
-  Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key 
+import {
+  BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
+  Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
+  Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
+  Newspaper, Package, Building2, Layout
 } from 'lucide-react';
+import ContentManager from './admin/ContentManager';
+import { FiEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
   users: User[];
@@ -305,65 +308,69 @@ export default function AdminDashboard({
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 font-sans transition-colors duration-200">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         
-        {/* Admin Left navigation column */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 rounded-lg p-4 space-y-4">
-            
-            <div>
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Treinamento Geral</p>
-              <div className="space-y-1">
-                {[
-                  { id: 'dashboard', label: 'Visão Geral', icon: BarChart },
-                  { id: 'courses', label: 'Gestão de Cursos', icon: BookOpen },
-                  { id: 'enrollments', label: 'Matrículas', icon: ClipboardList },
-                  { id: 'sales', label: 'Gestão de Vendas', icon: DollarSign },
-                  { id: 'users', label: 'Usuários LMS', icon: Users },
-                  { id: 'coupons', label: 'Gerenciar Cupons', icon: Tag },
-                ].map(opt => {
-                  const Icon = opt.icon;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => setActiveTab(opt.id)}
-                      className={`w-full flex items-center gap-2 p-2 rounded text-xs font-semibold text-left transition select-none cursor-pointer ${
-                        activeTab === opt.id 
-                          ? 'bg-amber-500 text-slate-950 font-extrabold' 
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" /> {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
+        {/* Admin Left navigation column (menu lateral) */}
+        <div className="md:col-span-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 md:sticky md:top-20 space-y-4">
+
+            {/* Marca */}
+            <div className="flex items-center gap-2 px-1 py-2 border-b border-slate-100 dark:border-slate-800">
+              <FiEmblem className="w-9 h-auto" />
+              <span className="font-display font-bold text-sm text-slate-800 dark:text-slate-100">
+                Fala<span className="text-blue-600">Instrutor</span>
+              </span>
             </div>
 
-            <div>
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Administração Configs</p>
-              <div className="space-y-1">
-                {[
+            {[
+              {
+                group: 'Geral',
+                items: [
+                  { id: 'dashboard', label: 'Dashboard', icon: BarChart },
+                  { id: 'courses', label: 'Gestão de cursos', icon: BookOpen },
+                  { id: 'enrollments', label: 'Gestão de matrículas', icon: ClipboardList },
+                  { id: 'sales', label: 'Gestão de vendas', icon: DollarSign },
+                  { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
+                  { id: 'users', label: 'Gestão de usuários', icon: Users },
+                  { id: 'pages', label: 'Gestão de páginas', icon: Layout },
+                  { id: 'news', label: 'Gestão de notícias', icon: Newspaper },
+                  { id: 'products', label: 'Gestão de produtos', icon: Package },
+                  { id: 'coupons', label: 'Gestão de cupons', icon: Tag },
+                  { id: 'exams', label: 'Provas / Exames', icon: BookOpenCheck },
+                ],
+              },
+              {
+                group: 'Configuração',
+                items: [
                   { id: 'settings', label: 'Configurações', icon: Settings },
                   { id: 'comments', label: 'Comentários', icon: MessageSquare },
-                  { id: 'contacts', label: 'Mensagens Contato', icon: Mail },
-                  { id: 'exams', label: 'Provas / Atividades', icon: BookOpenCheck },
-                ].map(opt => {
-                  const Icon = opt.icon;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => setActiveTab(opt.id)}
-                      className={`w-full flex items-center gap-2 p-2 rounded text-xs font-semibold text-left transition select-none cursor-pointer ${
-                        activeTab === opt.id 
-                          ? 'bg-amber-500 text-slate-950 font-extrabold' 
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" /> {opt.label}
-                    </button>
-                  );
-                })}
+                  { id: 'contacts', label: 'Mensagem de contato', icon: Mail },
+                  { id: 'certificates', label: 'Certificados', icon: Award },
+                  { id: 'emails', label: 'E-mails', icon: Mail },
+                ],
+              },
+            ].map((section) => (
+              <div key={section.group}>
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 px-1">{section.group}</p>
+                <div className="space-y-0.5">
+                  {section.items.map((opt) => {
+                    const Icon = opt.icon;
+                    const active = activeTab === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => setActiveTab(opt.id)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-left transition select-none cursor-pointer ${
+                          active
+                            ? 'bg-blue-600 text-white font-bold shadow-sm'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" /> {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            ))}
 
           </div>
         </div>
@@ -1173,6 +1180,126 @@ export default function AdminDashboard({
                 </div>
               )}
 
+            </div>
+          )}
+
+          {/* TAB 11: PARTNERS MANAGER */}
+          {activeTab === 'partners' && (
+            <ContentManager
+              title="Gestão de Parceiros"
+              description="Empresas e instituições parceiras exibidas na página inicial."
+              contentKey="partners"
+              fields={[
+                { name: 'name', label: 'Nome do parceiro', placeholder: 'Ex: Construtora Alfa' },
+                { name: 'url', label: 'Site (URL)', placeholder: 'https://...' },
+                { name: 'logoUrl', label: 'Logo (URL)', placeholder: 'https://...' },
+                { name: 'description', label: 'Descrição', type: 'textarea', placeholder: 'Breve descrição da parceria' },
+              ]}
+            />
+          )}
+
+          {/* TAB 12: PAGES MANAGER */}
+          {activeTab === 'pages' && (
+            <ContentManager
+              title="Gestão de Páginas"
+              description="Páginas institucionais de conteúdo livre (Sobre, Termos, FAQ etc.)."
+              contentKey="pages"
+              fields={[
+                { name: 'title', label: 'Título da página', placeholder: 'Ex: Sobre Nós' },
+                { name: 'slug', label: 'Endereço (slug)', placeholder: 'sobre-nos' },
+                { name: 'content', label: 'Conteúdo', type: 'textarea', placeholder: 'Texto da página...' },
+              ]}
+            />
+          )}
+
+          {/* TAB 13: NEWS MANAGER */}
+          {activeTab === 'news' && (
+            <ContentManager
+              title="Gestão de Notícias"
+              description="Notícias e artigos exibidos na página inicial."
+              contentKey="news"
+              fields={[
+                { name: 'tag', label: 'Categoria', placeholder: 'Ex: Segurança' },
+                { name: 'title', label: 'Título', placeholder: 'Título da notícia' },
+                { name: 'description', label: 'Resumo', type: 'textarea', placeholder: 'Resumo da notícia...' },
+                { name: 'date', label: 'Data', placeholder: '19/06/2026' },
+                { name: 'readTime', label: 'Tempo de leitura', placeholder: '3 min' },
+              ]}
+            />
+          )}
+
+          {/* TAB 14: PRODUCTS MANAGER */}
+          {activeTab === 'products' && (
+            <ContentManager
+              title="Gestão de Produtos"
+              description="Produtos complementares (EPIs, apostilas, kits) ofertados na loja."
+              contentKey="products"
+              fields={[
+                { name: 'name', label: 'Nome do produto', placeholder: 'Ex: Capacete classe B' },
+                { name: 'price', label: 'Preço (R$)', placeholder: '49,90' },
+                { name: 'description', label: 'Descrição', type: 'textarea', placeholder: 'Descrição do produto...' },
+                { name: 'imageUrl', label: 'Imagem (URL)', placeholder: 'https://...' },
+              ]}
+            />
+          )}
+
+          {/* TAB 15: EMAILS / TEMPLATES MANAGER */}
+          {activeTab === 'emails' && (
+            <ContentManager
+              title="E-mails Transacionais"
+              description="Modelos de e-mail enviados aos alunos (boas-vindas, certificado, cobrança)."
+              contentKey="emails"
+              fields={[
+                { name: 'name', label: 'Nome do modelo', placeholder: 'Ex: Boas-vindas' },
+                { name: 'subject', label: 'Assunto', placeholder: 'Bem-vindo ao FalaInstrutor!' },
+                { name: 'body', label: 'Corpo do e-mail', type: 'textarea', placeholder: 'Olá {{nome}}, ...' },
+              ]}
+            />
+          )}
+
+          {/* TAB 16: CERTIFICATES ISSUED (read-only) */}
+          {activeTab === 'certificates' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
+                Certificados Emitidos
+              </h2>
+              <p className="text-xs text-slate-400">
+                Lista de certificados gerados após aprovação na avaliação. O código é validável publicamente em
+                <span className="font-mono text-amber-500"> /validar</span>.
+              </p>
+
+              <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-205 dark:border-slate-800 overflow-x-auto shadow-sm">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="p-3">Aluno</th>
+                      <th className="p-3">Treinamento</th>
+                      <th className="p-3 text-center">Nota</th>
+                      <th className="p-3">Código de Validação</th>
+                      <th className="p-3 text-right">Emissão</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {enrollments.filter(e => e.passed && e.certificateCode).length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-6 text-center text-slate-400">Nenhum certificado emitido ainda.</td>
+                      </tr>
+                    ) : (
+                      enrollments.filter(e => e.passed && e.certificateCode).map(enr => (
+                        <tr key={enr.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                          <td className="p-3 font-bold text-slate-900 dark:text-slate-150">{enr.userName}</td>
+                          <td className="p-3 font-semibold text-slate-650 dark:text-slate-350">{enr.courseCode} - {enr.courseName}</td>
+                          <td className="p-3 text-center font-bold">{enr.examScore !== null ? `${enr.examScore}%` : '—'}</td>
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded font-mono font-bold select-all">{enr.certificateCode}</span>
+                          </td>
+                          <td className="p-3 text-right text-slate-450 font-bold font-mono">{enr.startDate}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
