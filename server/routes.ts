@@ -190,6 +190,18 @@ apiRouter.get('/certificates/:code', async (req, res) => {
     return res.status(404).json({ valid: false, error: 'Certificado não encontrado.' });
   }
   const instructor = enrollment.course.instructors[0];
+
+  // Identidade do certificado digital ICP-Brasil configurada no painel administrativo.
+  const cfg = await prisma.appConfig.findUnique({ where: { id: 'singleton' } });
+  const payment = (cfg?.payment ?? {}) as Record<string, unknown>;
+  const digitalSignature = {
+    holder: (payment.digitalCertificateHolder as string) || instructor?.name || 'Instrutor Qualificado',
+    certificateName: (payment.digitalCertificateName as string) || null,
+    issuer: (payment.digitalCertificateIssuer as string) || 'ICP-Brasil',
+    serial: (payment.digitalCertificateSerial as string) || null,
+    validUntil: (payment.digitalCertificateValidUntil as string) || null,
+  };
+
   res.json({
     valid: true,
     certificate: {
@@ -204,6 +216,7 @@ apiRouter.get('/certificates/:code', async (req, res) => {
       instructor: instructor?.name ?? 'Instrutor Qualificado',
       instructorFormation: instructor?.formation ?? 'Engenheiro de Segurança / Civil',
       manualActivities: enrollment.course.manualActivities ?? [],
+      digitalSignature,
     },
   });
 });

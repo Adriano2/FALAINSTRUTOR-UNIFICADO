@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion } from '../types';
+import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
 import { getExamQuestions } from '../data';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -42,6 +42,7 @@ interface StudentDashboardProps {
   enrollments: Enrollment[];
   comments: Comment[];
   studentExams: StudentExamSubmission[];
+  paymentConfig?: PaymentConfig;
   onUpdateProfile: (updated: Partial<User>) => void;
   onPostComment: (comment: Omit<Comment, 'id' | 'date'>) => void;
   onCompleteEnrollment: (enrollmentId: string, score: number, passed: boolean, certificateCode: string, answers: Record<number, number>) => Promise<Enrollment | undefined>;
@@ -54,6 +55,7 @@ export default function StudentDashboard({
   enrollments,
   comments,
   studentExams,
+  paymentConfig,
   onUpdateProfile,
   onPostComment,
   onCompleteEnrollment,
@@ -954,6 +956,7 @@ export default function StudentDashboard({
                               <ShieldCheck className="w-4 h-4 text-[#1f2a44] shrink-0" />
                               <div className="text-[7px] leading-snug text-[#1f2a44] text-left min-w-0">
                                 <span className="font-extrabold uppercase tracking-wide block">Assinado digitalmente • ICP-Brasil</span>
+                                <span className="block truncate">{paymentConfig?.digitalCertificateHolder || firstInstructor.name}</span>
                                 <span className="font-mono block truncate">{viewingCertificate.certificateCode}</span>
                                 <span className="block">MP 2.200-2/2001</span>
                               </div>

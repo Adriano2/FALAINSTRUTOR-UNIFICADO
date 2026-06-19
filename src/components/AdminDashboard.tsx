@@ -16,7 +16,7 @@ import {
   Newspaper, Package, Building2, Layout
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
-import { FiEmblem } from './BrandLogo';
+import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
   users: User[];
@@ -156,6 +156,14 @@ export default function AdminDashboard({
   const [cfgCity, setCfgCity] = React.useState(paymentConfig.city);
   const [cfgState, setCfgState] = React.useState(paymentConfig.state);
 
+  // Certificado digital ICP-Brasil (identidade do assinante dos certificados emitidos)
+  const [cfgCertName, setCfgCertName] = React.useState(paymentConfig.digitalCertificateName || '');
+  const [cfgCertHolder, setCfgCertHolder] = React.useState(paymentConfig.digitalCertificateHolder || '');
+  const [cfgCertPassword, setCfgCertPassword] = React.useState(paymentConfig.digitalCertificatePassword || '');
+  const [cfgCertIssuer, setCfgCertIssuer] = React.useState(paymentConfig.digitalCertificateIssuer || '');
+  const [cfgCertSerial, setCfgCertSerial] = React.useState(paymentConfig.digitalCertificateSerial || '');
+  const [cfgCertValid, setCfgCertValid] = React.useState(paymentConfig.digitalCertificateValidUntil || '');
+
   // Exam Details state drawer
   const [auditingExam, setAuditingExam] = React.useState<StudentExamSubmission | null>(null);
 
@@ -292,7 +300,16 @@ export default function AdminDashboard({
   const handleSaveSettings = () => {
     onSaveConfig(
       { ...layoutConfig, companyName: layoutCompany, phone: layoutPhone, primaryColor: cfgPrimary, secondaryColor: cfgSecondary },
-      { ...paymentConfig, cnpj: cfgCnpj, cep: cfgCep, street: cfgStreet, number: cfgNum, complement: cfgComp, city: cfgCity, state: cfgState },
+      {
+        ...paymentConfig,
+        cnpj: cfgCnpj, cep: cfgCep, street: cfgStreet, number: cfgNum, complement: cfgComp, city: cfgCity, state: cfgState,
+        digitalCertificateName: cfgCertName,
+        digitalCertificateHolder: cfgCertHolder,
+        digitalCertificatePassword: cfgCertPassword,
+        digitalCertificateIssuer: cfgCertIssuer,
+        digitalCertificateSerial: cfgCertSerial,
+        digitalCertificateValidUntil: cfgCertValid,
+      },
     );
   };
 
@@ -314,7 +331,7 @@ export default function AdminDashboard({
 
             {/* Marca */}
             <div className="flex items-center gap-2 px-1 py-2 border-b border-slate-100 dark:border-slate-800">
-              <FiEmblem className="w-9 h-auto" />
+              <ShieldEmblem className="w-9 h-auto" />
               <span className="font-display font-bold text-sm text-slate-800 dark:text-slate-100">
                 Fala<span className="text-blue-600">Instrutor</span>
               </span>
@@ -952,28 +969,86 @@ export default function AdminDashboard({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4 text-xs font-semibold text-slate-550">
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">Arquivo Certificado Digital (.pfx / A1)</label>
-                      <input 
-                        type="file" 
-                        disabled
-                        className="w-full cursor-not-allowed"
-                      />
-                      <span className="text-[10px] text-amber-500 font-bold block">{paymentConfig.digitalCertificateName} ativo</span>
-                    </div>
+                </div>
 
+                {/* Section C: Digital Certificate ICP-Brasil */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-1">
+                    Certificado Digital ICP-Brasil (Assinatura dos Certificados)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Estes dados identificam o titular que assina digitalmente os certificados emitidos. Eles aparecem
+                    publicamente na validação do certificado (após a conclusão do aluno).
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 uppercase block">Senha do Certificado PFX</label>
-                      <input 
-                        type="password" 
-                        value="••••••••••••••"
-                        disabled
-                        className="w-full text-xs p-2.5 rounded bg-slate-100 dark:bg-slate-850 border border-slate-205 text-slate-405 cursor-not-allowed"
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Titular do Certificado Digital</label>
+                      <input
+                        type="text"
+                        value={cfgCertHolder}
+                        onChange={(e) => setCfgCertHolder(e.target.value)}
+                        placeholder="Ex: Adriano Aparecido Ribas Ricardo"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Arquivo / Identificador (.pfx / A1)</label>
+                      <input
+                        type="text"
+                        value={cfgCertName}
+                        onChange={(e) => setCfgCertName(e.target.value)}
+                        placeholder="ADRIANO_APARECIDO_RIBAS_RICARDO_CERT.pfx"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                       />
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Autoridade Certificadora (Emissor)</label>
+                      <input
+                        type="text"
+                        value={cfgCertIssuer}
+                        onChange={(e) => setCfgCertIssuer(e.target.value)}
+                        placeholder="Ex: AC SOLUTI Múltipla v5 — ICP-Brasil"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Senha do Certificado (.pfx)</label>
+                      <input
+                        type="password"
+                        value={cfgCertPassword}
+                        onChange={(e) => setCfgCertPassword(e.target.value)}
+                        placeholder="••••••••••"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Número de Série</label>
+                      <input
+                        type="text"
+                        value={cfgCertSerial}
+                        onChange={(e) => setCfgCertSerial(e.target.value)}
+                        placeholder="Ex: 00:A1:B2:C3:D4"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Validade (Válido até)</label>
+                      <input
+                        type="text"
+                        value={cfgCertValid}
+                        onChange={(e) => setCfgCertValid(e.target.value)}
+                        placeholder="Ex: 31/12/2027"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <button 

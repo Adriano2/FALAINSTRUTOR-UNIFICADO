@@ -136,6 +136,11 @@ export interface PaymentConfig {
   state: string;
   digitalCertificateName?: string;
   digitalCertificatePassword?: string;
+  // Identidade do certificado digital ICP-Brasil usado para assinar os certificados emitidos.
+  digitalCertificateHolder?: string;
+  digitalCertificateIssuer?: string;
+  digitalCertificateSerial?: string;
+  digitalCertificateValidUntil?: string;
 }
 
 export interface ExamQuestion {

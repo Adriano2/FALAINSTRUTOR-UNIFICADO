@@ -671,6 +671,7 @@ export default function App() {
             enrollments={myEnrollments}
             comments={comments}
             studentExams={studentExams}
+            paymentConfig={paymentConfig}
             onUpdateProfile={handleUpdateStudentProfile}
             onPostComment={handlePostComment}
             onCompleteEnrollment={handleCompleteEnrollment}

@@ -32,7 +32,11 @@ export const INITIAL_PAYMENT_CONFIG: PaymentConfig = {
   neighborhood: "",
   city: "São Paulo",
   state: "SP",
-  digitalCertificateName: "FRANCISCO_MAILSON_DA_COSTA_CERT.pfx",
+  digitalCertificateName: "ADRIANO_APARECIDO_RIBAS_RICARDO_CERT.pfx",
+  digitalCertificateHolder: "Adriano Aparecido Ribas Ricardo",
+  digitalCertificateIssuer: "AC SOLUTI Múltipla v5 — ICP-Brasil",
+  digitalCertificateSerial: "",
+  digitalCertificateValidUntil: "",
 };
 
 export const SEED_USERS: User[] = [

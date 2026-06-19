@@ -120,7 +120,7 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
                 
                 <div className="text-center sm:text-right">
                   <span className="text-[10px] text-slate-400 font-bold block uppercase">Assinante Digital Responsável</span>
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-350">{matchedCertificate.instructor}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-350">{matchedCertificate.digitalSignature?.holder || matchedCertificate.instructor}</span>
                 </div>
               </div>
 
@@ -195,6 +195,20 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
                   <strong className="text-slate-400 font-bold uppercase tracking-wider block text-[10px]">Identificador de Autenticidade</strong>
                   <span className="font-mono text-slate-800 dark:text-slate-350 select-all font-semibold block">{matchedCertificate.digitalSeal}</span>
                   <span>Assinatura eletrônica em conformidade com o ICP-Brasil e homologação de responsabilidade técnica pela FALA INSTRUTOR A2 CONSUTORIA SEG HIGIENE OCUPACIONAL.</span>
+                  {matchedCertificate.digitalSignature && (
+                    <div className="pt-1.5 mt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
+                      <span className="block"><span className="text-slate-400">Titular do certificado digital:</span> <strong className="text-slate-700 dark:text-slate-300">{matchedCertificate.digitalSignature.holder}</strong></span>
+                      {matchedCertificate.digitalSignature.issuer && (
+                        <span className="block"><span className="text-slate-400">Autoridade Certificadora:</span> {matchedCertificate.digitalSignature.issuer}</span>
+                      )}
+                      {matchedCertificate.digitalSignature.serial && (
+                        <span className="block"><span className="text-slate-400">Nº de série:</span> <span className="font-mono">{matchedCertificate.digitalSignature.serial}</span></span>
+                      )}
+                      {matchedCertificate.digitalSignature.validUntil && (
+                        <span className="block"><span className="text-slate-400">Válido até:</span> {matchedCertificate.digitalSignature.validUntil}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1 p-3 bg-slate-50 dark:bg-slate-800/40 rounded border border-slate-100 dark:border-slate-800 text-center sm:text-left flex flex-col justify-center">
