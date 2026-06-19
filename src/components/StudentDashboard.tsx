@@ -904,8 +904,9 @@ export default function StudentDashboard({
         const LogoBlock = <LogoHorizontal />;
 
         // Coluna esquerda: selo da NR (losango amarelo), emblema FI e QR real.
+        // Fundo azul-marinho (mesma cor do certificado) com QR sobre cartão branco.
         const LeftColumn = (
-          <div className="w-[19%] flex flex-col items-center justify-between pt-[15%] pb-[6%] shrink-0">
+          <div className="w-[19%] flex flex-col items-center justify-between pt-[15%] pb-[6%] px-[1%] shrink-0 rounded-md" style={{ backgroundColor: '#1f2a44' }}>
             <div className="w-[78px] h-[78px] bg-[#f5c518] border-[3px] border-slate-900 rounded-[14px] rotate-45 flex items-center justify-center shadow-md">
               <div className="-rotate-45 text-center leading-none">
                 {badge.top && <span className="block text-[16px] font-black text-slate-900 leading-none">{badge.top}</span>}
@@ -914,8 +915,8 @@ export default function StudentDashboard({
             </div>
             <ShieldEmblem className="w-[72px] h-auto" />
             {certQrUrl
-              ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[78px] h-[78px]" />
-              : <div className="w-[78px] h-[78px] bg-slate-100 border border-slate-300" />}
+              ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[78px] h-[78px] p-1 bg-white rounded" />
+              : <div className="w-[78px] h-[78px] bg-white border border-slate-300 rounded" />}
           </div>
         );
 
