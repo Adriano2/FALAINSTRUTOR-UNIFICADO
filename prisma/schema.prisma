@@ -13,6 +13,7 @@ datasource db {
 enum Role {
   ADMIN
   STUDENT
+  COMPANY
 }
 
 // Tomador do serviço: pessoa física (CPF) ou jurídica (CNPJ).
@@ -57,12 +58,28 @@ model User {
   avatar       String?
   registeredAt DateTime @default(now())
   asaasCustomerId String?
+  company      Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyId    String?
 
   enrollments  Enrollment[]
   transactions Transaction[]
   comments     Comment[]
   examSubmissions ExamSubmission[]
   orders       Order[]
+}
+
+// Empresa cliente: agrupa funcionários (User.companyId) e tem um painel próprio
+// (gestores com role COMPANY) para ver os certificados emitidos da sua equipe.
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  cnpj      String?
+  email     String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  members   User[]
 }
 
 model Course {

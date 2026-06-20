@@ -19,6 +19,7 @@ import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
 import InvoiceManager from './admin/InvoiceManager';
 import ExamEditor from './admin/ExamEditor';
+import CompanyManager from './admin/CompanyManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -391,6 +392,7 @@ export default function AdminDashboard({
                   { id: 'sales', label: 'Gestão de vendas', icon: DollarSign },
                   { id: 'invoices', label: 'Notas fiscais (NFS-e)', icon: Receipt },
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
+                  { id: 'companies', label: 'Gestão de empresas', icon: Building2 },
                   { id: 'users', label: 'Gestão de usuários', icon: Users },
                   { id: 'pages', label: 'Gestão de páginas', icon: Layout },
                   { id: 'news', label: 'Gestão de notícias', icon: Newspaper },
@@ -654,6 +656,11 @@ export default function AdminDashboard({
           {/* TAB: EDITOR DE PROVAS */}
           {activeTab === 'exam-editor' && (
             <ExamEditor courses={courses} onSaved={onRefreshCourses} initialCourseId={examCourseId} />
+          )}
+
+          {/* TAB: GESTÃO DE EMPRESAS */}
+          {activeTab === 'companies' && (
+            <CompanyManager users={users} />
           )}
 
           {/* TAB 3: MATRICULAS (ENROLLMENTS) */}

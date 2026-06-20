@@ -26,7 +26,7 @@ interface ApiUser {
   dob: string | null;
   cpf: string;
   email: string;
-  role: 'ADMIN' | 'STUDENT';
+  role: 'ADMIN' | 'STUDENT' | 'COMPANY';
   isActive: boolean;
   avatar: string | null;
   registeredAt: string;
@@ -40,7 +40,7 @@ export function mapApiUser(u: ApiUser): User {
     dob: u.dob ?? '',
     cpf: u.cpf,
     email: u.email,
-    role: u.role === 'ADMIN' ? 'admin' : 'student',
+    role: u.role === 'ADMIN' ? 'admin' : u.role === 'COMPANY' ? 'company' : 'student',
     isActive: u.isActive,
     avatar: u.avatar ?? undefined,
     registeredAt: (u.registeredAt || '').split('T')[0],
@@ -101,6 +101,39 @@ export interface ApiInstructor {
   signatureUrl: string | null;
   icpEnabled: boolean;
   course: { id: string; code: string; name: string } | null;
+}
+
+// Empresa cliente (painel próprio com certificados da equipe).
+export interface ApiCompany {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  email: string | null;
+  phone: string | null;
+  isActive: boolean;
+  createdAt: string;
+  _count?: { members: number };
+}
+
+export interface CompanyDashboardData {
+  company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null } | null;
+  employees: {
+    id: string;
+    name: string;
+    email: string;
+    cpf: string;
+    enrollments: {
+      courseName: string;
+      courseCode: string;
+      workload: number;
+      progress: number;
+      passed: boolean;
+      score: number | null;
+      certificateCode: string | null;
+      date: string;
+    }[];
+  }[];
+  stats: { employees: number; certificates: number };
 }
 
 // Nota Fiscal de Serviço (NFS-e) — base de gerenciamento.
@@ -336,6 +369,22 @@ export const adminApi = {
   toggleCoupon(id: string, isActive: boolean) {
     return apiFetch(`/admin/coupons/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) });
   },
+  // Empresas
+  listCompanies() {
+    return apiFetch<{ companies: ApiCompany[] }>(`/admin/companies`);
+  },
+  createCompany(input: { name: string; cnpj?: string; email?: string; phone?: string }) {
+    return apiFetch<{ company: ApiCompany }>(`/admin/companies`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  updateCompany(id: string, input: { name?: string; cnpj?: string; email?: string; phone?: string; isActive?: boolean }) {
+    return apiFetch<{ company: ApiCompany }>(`/admin/companies/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  createCompanyManager(companyId: string, input: { name: string; email: string; password: string; cpf: string }) {
+    return apiFetch(`/admin/companies/${companyId}/manager`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  assignUserCompany(userId: string, companyId: string | null) {
+    return apiFetch(`/admin/users/${userId}/company`, { method: 'PATCH', body: JSON.stringify({ companyId }) });
+  },
   addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) {
     return apiFetch(`/admin/courses/${courseId}/instructors`, { method: 'POST', body: JSON.stringify(input) });
   },
@@ -393,6 +442,13 @@ export const contentApi = {
     } catch {
       return [];
     }
+  },
+};
+
+// Painel da empresa (gestor com role 'company').
+export const companyApi = {
+  getDashboard() {
+    return apiFetch<CompanyDashboardData>('/company/me');
   },
 };
 

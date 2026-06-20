@@ -36,9 +36,11 @@ export default function Header({
   const handleProfileClick = (actionName: string) => {
     setProfileDropdownOpen(false);
     if (actionName === 'profile') {
-      onNavigate('student-dashboard');
+      onNavigate(currentUser?.role === 'company' ? 'company-dashboard' : 'student-dashboard');
     } else if (actionName === 'admin') {
       onNavigate('admin-dashboard');
+    } else if (actionName === 'company') {
+      onNavigate('company-dashboard');
     } else if (actionName === 'logout') {
       onLogout();
     }
@@ -162,13 +164,23 @@ export default function Header({
                     </button>
 
                     {currentUser.role === 'admin' && (
-                      <button 
+                      <button
                         onClick={() => handleProfileClick('admin')}
                         className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
                         id="header-admin-portal-btn"
                       >
                         <Settings className="w-4 h-4 text-blue-500" />
                         Painel Administrador
+                      </button>
+                    )}
+
+                    {currentUser.role === 'company' && (
+                      <button
+                        onClick={() => handleProfileClick('company')}
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
+                      >
+                        <Settings className="w-4 h-4 text-blue-500" />
+                        Painel da Empresa
                       </button>
                     )}
 

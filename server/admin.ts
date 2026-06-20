@@ -145,6 +145,57 @@ adminRouter.patch('/coupons/:id/active', async (req, res) => {
   res.json({ coupon });
 });
 
+// --- Gestão de empresas ---
+
+adminRouter.get('/companies', async (_req, res) => {
+  const companies = await prisma.company.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: { _count: { select: { members: true } } },
+  });
+  res.json({ companies });
+});
+
+adminRouter.post('/companies', async (req, res) => {
+  const parsed = z
+    .object({ name: z.string().min(2), cnpj: z.string().optional(), email: z.string().optional(), phone: z.string().optional() })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados da empresa inválidos.' });
+  const company = await prisma.company.create({ data: parsed.data as Prisma.CompanyCreateInput });
+  res.status(201).json({ company });
+});
+
+adminRouter.patch('/companies/:id', async (req, res) => {
+  const parsed = z
+    .object({ name: z.string().optional(), cnpj: z.string().optional(), email: z.string().optional(), phone: z.string().optional(), isActive: z.boolean().optional() })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Atualização inválida.' });
+  const company = await prisma.company.update({ where: { id: req.params.id }, data: parsed.data });
+  res.json({ company });
+});
+
+// Cria o usuário gestor (role COMPANY) que acessa o painel da empresa.
+adminRouter.post('/companies/:id/manager', async (req, res) => {
+  const parsed = z
+    .object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6), cpf: z.string().min(3) })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do gestor inválidos (senha mínima de 6 caracteres).' });
+  const exists = await prisma.user.findFirst({ where: { OR: [{ email: parsed.data.email.toLowerCase() }, { cpf: parsed.data.cpf }] }, select: { id: true } });
+  if (exists) return res.status(409).json({ error: 'E-mail ou CPF já cadastrado.' });
+  const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+  const manager = await prisma.user.create({
+    data: { name: parsed.data.name, email: parsed.data.email.toLowerCase(), cpf: parsed.data.cpf, passwordHash, role: 'COMPANY', companyId: req.params.id },
+  });
+  res.status(201).json({ manager: { id: manager.id, name: manager.name, email: manager.email } });
+});
+
+// Vincula/desvincula um funcionário (aluno) a uma empresa.
+adminRouter.patch('/users/:id/company', async (req, res) => {
+  const parsed = z.object({ companyId: z.string().nullable() }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Vínculo inválido.' });
+  await prisma.user.update({ where: { id: req.params.id }, data: { companyId: parsed.data.companyId } });
+  res.json({ ok: true });
+});
+
 // --- Gestão de instrutores ---
 
 const instructorSchema = z.object({

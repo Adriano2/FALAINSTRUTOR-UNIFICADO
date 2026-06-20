@@ -13,6 +13,7 @@ const CartView = React.lazy(() => import('./components/CartView'));
 const ValidationView = React.lazy(() => import('./components/ValidationView'));
 const StudentDashboard = React.lazy(() => import('./components/StudentDashboard'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
+const CompanyDashboard = React.lazy(() => import('./components/CompanyDashboard'));
 const ProjetoPedagogico = React.lazy(() => import('./components/ProjetoPedagogico'));
 
 import { 
@@ -325,6 +326,9 @@ export default function App() {
     if (screen === 'course-detail' && extra) {
       setSelectedCourse(extra);
     }
+    if (screen === 'validate-certificate' && typeof extra === 'string') {
+      setCertParam(extra);
+    }
     // smooth scroll to top on screen change
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
@@ -337,6 +341,10 @@ export default function App() {
     alert("Sessão finalizada com sucesso. Até breve!");
   };
 
+  // Tela inicial conforme o papel do usuário.
+  const dashboardForRole = (role: string) =>
+    role === 'admin' ? 'admin-dashboard' : role === 'company' ? 'company-dashboard' : 'student-dashboard';
+
   // Login handler — autentica no backend (senha verificada com bcrypt + JWT).
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,7 +355,7 @@ export default function App() {
       if (user.role === 'admin') loadAdminData();
       setLoginEmail('');
       setLoginPassword('');
-      handleNavigate(user.role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
+      handleNavigate(dashboardForRole(user.role));
       alert(`Bem-vindo de volta, ${user.name}!`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Não foi possível efetuar o login.");
@@ -366,7 +374,7 @@ export default function App() {
       setCurrentUser(user);
       await refreshMyEnrollments(user);
       if (user.role === 'admin') await loadAdminData();
-      handleNavigate(user.role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
+      handleNavigate(dashboardForRole(user.role));
       alert(`Sessão ${user.role === 'admin' ? 'Administrador' : 'Aluno'}: ${user.name}`);
     } catch {
       // Fallback local (offline / sem backend)
@@ -685,8 +693,12 @@ export default function App() {
           />
         )}
 
+        {currentScreen === 'company-dashboard' && currentUser && currentUser.role === 'company' && (
+          <CompanyDashboard onValidateCertificate={(code) => handleNavigate('validate-certificate', code)} />
+        )}
+
         {currentScreen === 'admin-dashboard' && currentUser && currentUser.role === 'admin' && (
-          <AdminDashboard 
+          <AdminDashboard
             users={users}
             courses={courses}
             enrollments={enrollments}
