@@ -106,6 +106,15 @@ const INSTRUTOR_PADRAO: Instructor = {
   icpEnabled: true,
 };
 
+// Instrutor responsável técnico em Química (cursos químicos).
+const INSTRUTOR_GILVAN: Instructor = {
+  id: "inst-gilvan",
+  name: "Gilvan Ramos",
+  formation: "Químico — Responsável Técnico",
+  crq: "04453210",
+  icpEnabled: true,
+};
+
 const IMG = {
   eletric: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&h=350&q=80",
   empilhadeira: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&h=350&q=80",
@@ -221,6 +230,20 @@ export const SEED_COURSES: Course[] = [
     duration: 8, price: 169, isActive: true, isFeatured: false, coverImage: IMG.geral,
     modules: ["Módulo 01 - Disposições Gerais da NR 38", "Módulo 02 - Riscos Biológicos, Químicos e de Trânsito", "Módulo 03 - Coleta, Varrição e Manejo de Resíduos", "Módulo 04 - EPI e Procedimentos Operacionais Seguros"],
     instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-incompat-quimica", code: "IQ", name: "Incompatibilidade Química",
+    description: "Identificação de incompatibilidades químicas, segregação e armazenamento seguro de produtos químicos, leitura de FISPQ/GHS e prevenção de reações perigosas.",
+    duration: 8, price: 149, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: [
+      "Módulo 01 - Fundamentos de Química e Reações Perigosas",
+      "Módulo 02 - Classificação GHS e Rotulagem de Produtos Químicos",
+      "Módulo 03 - Leitura e Interpretação da FISPQ (SDS)",
+      "Módulo 04 - Incompatibilidades Químicas e Tabela de Segregação",
+      "Módulo 05 - Armazenamento, Manuseio e Transporte Seguro",
+      "Módulo 06 - Resposta a Emergências e Primeiros Socorros Químicos",
+    ],
+    instructors: [INSTRUTOR_GILVAN], manualActivities: [],
   },
 ];
 
@@ -382,6 +405,18 @@ export const CONTEUDO_PROGRAMATICO: Record<string, string[]> = {
     "Procedimentos operacionais seguros",
     "Vacinação e cuidados com a saúde do trabalhador",
     "Situações de emergência e primeiros socorros",
+  ],
+  "IQ": [
+    "Conceitos fundamentais de química aplicada à segurança",
+    "Classes de produtos perigosos e o sistema GHS",
+    "Rotulagem preventiva e pictogramas de perigo",
+    "Ficha de Informações de Segurança de Produtos Químicos (FISPQ/SDS)",
+    "Principais grupos de incompatibilidade química",
+    "Tabela de segregação e armazenamento por compatibilidade",
+    "Reações perigosas: oxidação, corrosão, produtos pirofóricos e reativos à água",
+    "Boas práticas de manuseio, transporte e contenção",
+    "Ventilação, áreas de armazenagem e controle de derramamentos",
+    "Resposta a emergências químicas e primeiros socorros",
   ],
 };
 

@@ -48,7 +48,7 @@ interface AdminDashboardProps {
   onBatchEnroll: (userIds: string[], courseId: string) => void;
   onCreateCoupon: (input: { code: string; description: string; value: number; type: 'PERCENTAGE' | 'FIXED'; associatedProducts: string[] }) => void;
   onToggleCoupon: (id: string, isActive: boolean) => void;
-  onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
+  onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
   onAddModule: (courseId: string, module: string) => void;
   onSaveCourseContent: (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[] }) => void;
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
@@ -129,6 +129,7 @@ export default function AdminDashboard({
   const [newInstructorFormation, setNewInstructorFormation] = React.useState('');
   const [newInstructorMte, setNewInstructorMte] = React.useState('');
   const [newInstructorCrea, setNewInstructorCrea] = React.useState('');
+  const [newInstructorCrq, setNewInstructorCrq] = React.useState('');
   const [newInstructorSignatureUrl, setNewInstructorSignatureUrl] = React.useState('');
   const [newInstructorIcp, setNewInstructorIcp] = React.useState(true);
   const [newModuleText, setNewModuleText] = React.useState('');
@@ -215,6 +216,7 @@ export default function AdminDashboard({
       formation: newInstructorFormation.trim() || 'Instrutor Responsável',
       mte: newInstructorMte || undefined,
       crea: newInstructorCrea || undefined,
+      crq: newInstructorCrq || undefined,
       signatureUrl: newInstructorSignatureUrl || undefined,
       icpEnabled: newInstructorIcp,
     });
@@ -222,6 +224,7 @@ export default function AdminDashboard({
     setNewInstructorFormation('');
     setNewInstructorMte('');
     setNewInstructorCrea('');
+    setNewInstructorCrq('');
     setNewInstructorSignatureUrl('');
     setNewInstructorIcp(true);
     setManagingCourse(null);
@@ -1645,6 +1648,13 @@ export default function AdminDashboard({
                   placeholder="Registro CREA (ex: SP-1234567/D)"
                   value={newInstructorCrea}
                   onChange={(e) => setNewInstructorCrea(e.target.value)}
+                  className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Registro CRQ (ex: 04123456 - 4ª Região)"
+                  value={newInstructorCrq}
+                  onChange={(e) => setNewInstructorCrq(e.target.value)}
                   className="w-full p-2 rounded bg-slate-50 border text-xs focus:outline-none"
                 />
                 <input

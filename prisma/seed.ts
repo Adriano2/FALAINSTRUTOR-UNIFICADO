@@ -79,6 +79,8 @@ async function main() {
             name: i.name,
             formation: i.formation,
             mte: i.mte,
+            crea: i.crea,
+            crq: i.crq,
             signatureUrl: i.signatureUrl,
             icpEnabled: i.icpEnabled ?? false,
           })),

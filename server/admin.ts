@@ -233,6 +233,7 @@ const instructorSchema = z.object({
   formation: z.string().min(2),
   mte: z.string().optional(),
   crea: z.string().optional(),
+  crq: z.string().optional(),
   signatureUrl: z.string().optional(),
   icpEnabled: z.boolean().default(false),
 });

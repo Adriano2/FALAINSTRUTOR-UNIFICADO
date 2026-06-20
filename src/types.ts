@@ -24,6 +24,7 @@ export interface Instructor {
   formation: string;
   mte?: string; // Registro MTE do instrutor (ex.: "0124684/SP")
   crea?: string; // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
+  crq?: string; // Registro CRQ (Conselho Regional de Química), opcional
   signatureUrl?: string; // imagem da assinatura (scan), opcional
   icpEnabled?: boolean; // assinatura digital ICP-Brasil habilitada
 }

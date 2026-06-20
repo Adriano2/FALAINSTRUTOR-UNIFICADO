@@ -588,7 +588,7 @@ export default function App() {
     try { await adminApi.toggleCoupon(id, isActive); await loadAdminData(); } catch { /* ignore */ }
   };
 
-  const handleAdminAddInstructor = async (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) => {
+  const handleAdminAddInstructor = async (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) => {
     try {
       await adminApi.addInstructor(courseId, input);
       await refreshCourses();

@@ -26,6 +26,7 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
   const [formation, setFormation] = React.useState('');
   const [mte, setMte] = React.useState('');
   const [crea, setCrea] = React.useState('');
+  const [crq, setCrq] = React.useState('');
   const [signatureUrl, setSignatureUrl] = React.useState('');
   const [icpEnabled, setIcpEnabled] = React.useState(true);
   const [courseIds, setCourseIds] = React.useState<string[]>([]);
@@ -62,12 +63,13 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
         formation: formation.trim(),
         mte: mte.trim() || undefined,
         crea: crea.trim() || undefined,
+        crq: crq.trim() || undefined,
         signatureUrl: signatureUrl.trim() || undefined,
         icpEnabled,
         courseIds,
       }) as { instructors: ApiInstructor[] };
       setInstructors(Array.isArray(res.instructors) ? res.instructors : []);
-      setName(''); setFormation(''); setMte(''); setCrea(''); setSignatureUrl(''); setIcpEnabled(true); setCourseIds([]);
+      setName(''); setFormation(''); setMte(''); setCrea(''); setCrq(''); setSignatureUrl(''); setIcpEnabled(true); setCourseIds([]);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Não foi possível cadastrar o instrutor.');
     } finally {
@@ -127,6 +129,10 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
             <label className="text-[10px] font-bold text-slate-400 uppercase">Registro CREA</label>
             <input type="text" value={crea} onChange={(e) => setCrea(e.target.value)} placeholder="Ex: SP-1234567/D" className={inputCls} />
           </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Registro CRQ</label>
+            <input type="text" value={crq} onChange={(e) => setCrq(e.target.value)} placeholder="Ex: 04123456 (4ª Região)" className={inputCls} />
+          </div>
           <div className="space-y-1 sm:col-span-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase">URL da imagem da assinatura (opcional)</label>
             <input type="text" value={signatureUrl} onChange={(e) => setSignatureUrl(e.target.value)} placeholder="https://..." className={inputCls} />
@@ -181,7 +187,8 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
                     <p className="text-[11px] text-amber-600 font-semibold uppercase">{head.formation}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">
                       {head.mte ? <span className="mr-3">MTE: <strong>{head.mte}</strong></span> : null}
-                      {head.crea ? <span>CREA: <strong>{head.crea}</strong></span> : null}
+                      {head.crea ? <span className="mr-3">CREA: <strong>{head.crea}</strong></span> : null}
+                      {head.crq ? <span>CRQ: <strong>{head.crq}</strong></span> : null}
                     </p>
                   </div>
                 </div>

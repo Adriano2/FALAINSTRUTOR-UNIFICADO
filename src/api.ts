@@ -86,6 +86,7 @@ interface ApiCourse {
     formation: string;
     mte: string | null;
     crea: string | null;
+    crq: string | null;
     signatureUrl: string | null;
     icpEnabled: boolean;
   }[];
@@ -98,6 +99,7 @@ export interface ApiInstructor {
   formation: string;
   mte: string | null;
   crea: string | null;
+  crq: string | null;
   signatureUrl: string | null;
   icpEnabled: boolean;
   course: { id: string; code: string; name: string } | null;
@@ -191,6 +193,7 @@ export function mapApiCourse(c: ApiCourse): Course {
       formation: i.formation,
       mte: i.mte ?? undefined,
       crea: i.crea ?? undefined,
+      crq: i.crq ?? undefined,
       signatureUrl: i.signatureUrl ?? undefined,
       icpEnabled: Boolean(i.icpEnabled),
     })),
@@ -402,13 +405,13 @@ export const adminApi = {
   assignUserCompany(userId: string, companyId: string | null) {
     return apiFetch(`/admin/users/${userId}/company`, { method: 'PATCH', body: JSON.stringify({ companyId }) });
   },
-  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean }) {
+  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) {
     return apiFetch(`/admin/courses/${courseId}/instructors`, { method: 'POST', body: JSON.stringify(input) });
   },
   listInstructors() {
     return apiFetch<{ instructors: ApiInstructor[] }>(`/admin/instructors`);
   },
-  createInstructor(input: { name: string; formation: string; mte?: string; crea?: string; signatureUrl?: string; icpEnabled: boolean; courseIds: string[] }) {
+  createInstructor(input: { name: string; formation: string; mte?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean; courseIds: string[] }) {
     return apiFetch(`/admin/instructors`, { method: 'POST', body: JSON.stringify(input) });
   },
   deleteInstructor(id: string) {
