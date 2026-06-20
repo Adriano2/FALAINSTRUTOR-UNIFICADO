@@ -12,6 +12,7 @@
 import React from 'react';
 import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2 } from 'lucide-react';
 import { companyApi, CompanyDashboardData } from '../api';
+import { CIPA_NR5_BY_GRADE, cipaRequirement } from '../lib/cipa';
 
 interface CompanyDashboardProps {
   onValidateCertificate: (code: string) => void;
@@ -123,6 +124,58 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
           <p className="text-[10px] text-slate-400 mt-3">Baseline conforme o grau de risco (NR-04). Não substitui a análise de riscos (PGR) da empresa.</p>
         </div>
       )}
+
+      {/* Regra de carga horária da CIPA (NR-5) por grau de risco */}
+      <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <h3 className="text-xs font-black uppercase text-slate-500 mb-2">Treinamento da CIPA (NR-5) — carga horária por grau de risco</h3>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
+          A exigência de carga horária por grau de risco (1 a 4) refere-se especificamente ao <strong>treinamento da CIPA (NR-5)</strong>.
+          Com as atualizações da NR-5, alinhadas ao Anexo II da NR-1, o treinamento pode ser <strong>semipresencial (híbrido)</strong>.
+          Para empresas de maior risco (graus 3 e 4), parte da carga horária é <strong>obrigatoriamente presencial</strong>.
+        </p>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left border border-slate-100 dark:border-slate-800 rounded">
+            <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th className="p-2">Grau de risco</th>
+                <th className="p-2 text-center">Carga horária total</th>
+                <th className="p-2 text-center">Mínimo presencial</th>
+                <th className="p-2 text-center">Pode ser EaD</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {[1, 2, 3, 4].map((g) => {
+                const r = CIPA_NR5_BY_GRADE[g];
+                const isCompany = data.company?.riskGrade === g;
+                return (
+                  <tr key={g} className={isCompany ? 'bg-blue-500/10 font-bold' : ''}>
+                    <td className="p-2 text-slate-700 dark:text-slate-200">Grau {g}{isCompany ? ' — sua empresa' : ''}</td>
+                    <td className="p-2 text-center">{r.total} horas</td>
+                    <td className="p-2 text-center">{r.presencial > 0 ? `${r.presencial} horas` : '—'}</td>
+                    <td className="p-2 text-center">{r.ead} horas</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {data.company?.riskGrade ? (
+          (() => {
+            const r = cipaRequirement(data.company.riskGrade);
+            if (!r) return null;
+            return (
+              <div className="mt-3 p-3 rounded bg-emerald-500/5 border border-emerald-500/15 text-[11px] text-slate-600 dark:text-slate-300">
+                <strong className="text-emerald-700 dark:text-emerald-400">Sua empresa (grau {r.grade}):</strong> o treinamento da CIPA deve ter
+                <strong> {r.total} horas no total</strong>{r.presencial > 0 ? <>, sendo <strong>no mínimo {r.presencial} horas presenciais</strong> e até {r.ead} horas em EaD.</> : <>, podendo ser realizadas integralmente em EaD ({r.ead} horas).</>}
+              </div>
+            );
+          })()
+        ) : (
+          <p className="mt-3 text-[11px] text-amber-600">Defina o grau de risco da empresa (NR-04) para ver a exigência específica da CIPA.</p>
+        )}
+      </div>
 
       {/* Busca */}
       <input
