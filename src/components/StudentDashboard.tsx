@@ -7,11 +7,9 @@ import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
 import { getExamQuestions, CONTEUDO_PROGRAMATICO } from '../data';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
-// html2canvas-pro suporta as cores oklch() do Tailwind v4 (o html2canvas
-// clássico falha ao parsear oklch e quebrava a geração do PDF/impressão).
-import html2canvas from 'html2canvas-pro';
-import { jsPDF } from 'jspdf';
-import QRCode from 'qrcode';
+// jsPDF, html2canvas-pro e qrcode são carregados sob demanda (import dinâmico)
+// para não pesar o bundle inicial — só baixam quando o aluno gera/visualiza o
+// certificado. (html2canvas-pro suporta as cores oklch() do Tailwind v4.)
 import TutorChat from './TutorChat';
 import { ShieldEmblem, LogoHorizontal, RosetteSeal } from './BrandLogo';
 
@@ -149,7 +147,8 @@ export default function StudentDashboard({
       return;
     }
     const url = `${window.location.origin}/?cert=${encodeURIComponent(viewingCertificate.certificateCode)}`;
-    QRCode.toDataURL(url, { margin: 1, width: 240, errorCorrectionLevel: 'M' })
+    import('qrcode')
+      .then(({ default: QRCode }) => QRCode.toDataURL(url, { margin: 1, width: 240, errorCorrectionLevel: 'M' }))
       .then(setCertQrUrl)
       .catch(() => setCertQrUrl(''));
   }, [viewingCertificate]);
@@ -171,6 +170,7 @@ export default function StudentDashboard({
     if (area) area.style.transform = 'none';
 
     try {
+      const html2canvas = (await import('html2canvas-pro')).default;
       if ((document as any).fonts?.ready) await (document as any).fonts.ready;
       const imgs: string[] = [];
       for (const el of pageEls) {
@@ -199,6 +199,7 @@ export default function StudentDashboard({
       }
 
       // Initialize jsPDF with landscape orientation, A4 measurements (297mm x 210mm)
+      const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',

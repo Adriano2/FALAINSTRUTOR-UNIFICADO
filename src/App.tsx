@@ -7,12 +7,13 @@ import React from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
-import CourseDetail from './components/CourseDetail';
-import CartView from './components/CartView';
-import ValidationView from './components/ValidationView';
-import StudentDashboard from './components/StudentDashboard';
-import AdminDashboard from './components/AdminDashboard';
-import ProjetoPedagogico from './components/ProjetoPedagogico';
+// Telas pesadas/secundárias carregadas sob demanda (code-splitting).
+const CourseDetail = React.lazy(() => import('./components/CourseDetail'));
+const CartView = React.lazy(() => import('./components/CartView'));
+const ValidationView = React.lazy(() => import('./components/ValidationView'));
+const StudentDashboard = React.lazy(() => import('./components/StudentDashboard'));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
+const ProjetoPedagogico = React.lazy(() => import('./components/ProjetoPedagogico'));
 
 import { 
   INITIAL_LAYOUT_CONFIG, 
@@ -631,9 +632,9 @@ export default function App() {
 
       {/* Main Content Workspace routing */}
       <main className="flex-grow">
-        
+        <React.Suspense fallback={<div className="flex items-center justify-center py-32 text-slate-400 text-sm">Carregando…</div>}>
         {currentScreen === 'home' && (
-          <LandingPage 
+          <LandingPage
             courses={courses}
             onSelectCourse={(course) => handleNavigate('course-detail', course)}
             onSubmitContact={handleContactSubmission}
@@ -917,6 +918,7 @@ export default function App() {
           </div>
         )}
 
+        </React.Suspense>
       </main>
 
       {/* Dynamic Footer Component */}
