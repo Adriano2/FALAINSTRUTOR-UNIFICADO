@@ -365,25 +365,33 @@ export default function App() {
   // Evaluator Quick Login shortcut — faz login real (token) com as contas
   // semente para que os dados venham do banco. Cai para sessão local apenas
   // se o backend estiver indisponível.
-  const handleEvaluatorShortcut = async (role: 'admin' | 'student') => {
-    const creds = role === 'admin'
-      ? { email: 'adriano.ricardo01@gmail.com', password: 'Anthony9936#' }
-      : { email: 'jessica@gmail.com', password: 'aluno123' };
+  const handleEvaluatorShortcut = async (role: 'admin' | 'student' | 'company') => {
+    const creds =
+      role === 'admin'
+        ? { email: 'adriano.ricardo01@gmail.com', password: 'Anthony9936#' }
+        : role === 'company'
+          ? { email: 'empresa@gmail.com', password: 'empresa123' }
+          : { email: 'jessica@gmail.com', password: 'aluno123' };
+    const label = role === 'admin' ? 'Administrador' : role === 'company' ? 'Empresa' : 'Aluno';
     try {
       const user = await authApi.login(creds.email, creds.password);
       setCurrentUser(user);
       await refreshMyEnrollments(user);
       if (user.role === 'admin') await loadAdminData();
       handleNavigate(dashboardForRole(user.role));
-      alert(`Sessão ${user.role === 'admin' ? 'Administrador' : 'Aluno'}: ${user.name}`);
+      alert(`Sessão ${label}: ${user.name}`);
     } catch {
+      if (role === 'company') {
+        alert('Não foi possível acessar a conta de empresa de demonstração. Verifique se o servidor está ativo.');
+        return;
+      }
       // Fallback local (offline / sem backend)
       const acc = role === 'admin'
         ? users.find((u) => u.role === 'admin') || SEED_USERS[0]
         : users.find((u) => u.email === 'jessica@gmail.com') || SEED_USERS[1];
       setCurrentUser(acc);
-      handleNavigate(role === 'admin' ? 'admin-dashboard' : 'student-dashboard');
-      alert(`Sessão ${role === 'admin' ? 'Administrador' : 'Aluno'} (local): ${acc.name}`);
+      handleNavigate(dashboardForRole(role));
+      alert(`Sessão ${label} (local): ${acc.name}`);
     }
   };
 
@@ -741,20 +749,26 @@ export default function App() {
                 <Info className="w-4 h-4 shrink-0" /> Guia de avaliação ágil
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                Para fins de teste das duas perspectivas (Painel do Administrador ou Painel do Aluno), utilize os atalhos de acesso instantâneo abaixo:
+                Para fins de teste das perspectivas (Administrador, Aluno ou Empresa), utilize os atalhos de acesso instantâneo abaixo:
               </p>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => handleEvaluatorShortcut('admin')}
                   className="flex-1 py-1.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
                 >
                   Administrador
                 </button>
-                <button 
+                <button
                   onClick={() => handleEvaluatorShortcut('student')}
                   className="flex-1 py-1.5 bg-slate-905 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
                 >
                   Aluno
+                </button>
+                <button
+                  onClick={() => handleEvaluatorShortcut('company')}
+                  className="flex-1 py-1.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
+                >
+                  Empresa
                 </button>
               </div>
             </div>

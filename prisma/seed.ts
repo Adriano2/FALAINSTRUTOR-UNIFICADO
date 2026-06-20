@@ -161,6 +161,33 @@ async function main() {
     });
   }
 
+  // 3c) Empresa de demonstração + gestor + funcionários vinculados
+  await prisma.company.upsert({
+    where: { id: 'comp-demo' },
+    update: { name: 'Construtora Modelo Ltda' },
+    create: { id: 'comp-demo', name: 'Construtora Modelo Ltda', cnpj: '12.345.678/0001-90', email: 'contato@construtoramodelo.com.br', phone: '(11) 4000-0000', isActive: true },
+  });
+  const companyHash = await bcrypt.hash('empresa123', 10);
+  await prisma.user.upsert({
+    where: { email: 'empresa@gmail.com' },
+    update: { role: 'COMPANY', companyId: 'comp-demo' },
+    create: {
+      id: 'usr-company',
+      name: 'Gestor Construtora Modelo',
+      cpf: '999.888.777-66',
+      email: 'empresa@gmail.com',
+      passwordHash: companyHash,
+      role: 'COMPANY',
+      companyId: 'comp-demo',
+      isActive: true,
+    },
+  });
+  // Vincula os alunos de demonstração à empresa (certificados aparecem no painel).
+  await prisma.user.updateMany({
+    where: { id: { in: ['usr-2', 'usr-3'] } },
+    data: { companyId: 'comp-demo' },
+  });
+
   // 4) Configurações globais (layout + pagamento)
   const layout = INITIAL_LAYOUT_CONFIG as unknown as Prisma.InputJsonValue;
   const payment = INITIAL_PAYMENT_CONFIG as unknown as Prisma.InputJsonValue;
