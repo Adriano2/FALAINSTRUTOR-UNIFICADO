@@ -12,6 +12,7 @@
 import React from 'react';
 import { Plus, Loader2, Building2, ToggleLeft, ToggleRight, UserPlus, Users, Check, Search } from 'lucide-react';
 import { adminApi, ApiCompany } from '../../api';
+import { lookupCnpjClient } from '../../lib/cnpj';
 import { User } from '../../types';
 
 interface CompanyManagerProps {
@@ -59,7 +60,7 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
     setLookingUp(true);
     setCnpjStatus('Consultando CNPJ...');
     try {
-      const { info } = await adminApi.lookupCnpj(cnpj);
+      const info = await lookupCnpjClient(cnpj);
       if (info.razaoSocial) setName(info.razaoSocial); // preenche Razão social automaticamente
       if (info.cnae) setCnae(info.cnae);
       if (info.cnaeDescription) setCnaeDescription(info.cnaeDescription);

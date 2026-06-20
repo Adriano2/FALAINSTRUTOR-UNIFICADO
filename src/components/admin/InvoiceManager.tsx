@@ -13,6 +13,7 @@
 import React from 'react';
 import { Plus, Trash2, Loader2, FileText, Info } from 'lucide-react';
 import { adminApi, ApiInvoice } from '../../api';
+import { lookupCnpjClient } from '../../lib/cnpj';
 
 const STATUS_LABEL: Record<ApiInvoice['status'], string> = {
   PENDING: 'Pendente',
@@ -63,9 +64,8 @@ export default function InvoiceManager() {
     lastCnpj.current = digits;
     let alive = true;
     setCnpjStatus('Consultando CNPJ...');
-    adminApi
-      .lookupCnpj(document)
-      .then(({ info }) => {
+    lookupCnpjClient(document)
+      .then((info) => {
         if (!alive) return;
         if (info.razaoSocial) setRecipientName(info.razaoSocial);
         setCnpjStatus(`✓ ${info.razaoSocial ?? 'Empresa localizada'}`);
