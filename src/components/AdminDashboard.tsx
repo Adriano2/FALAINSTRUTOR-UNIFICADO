@@ -50,7 +50,7 @@ interface AdminDashboardProps {
   onToggleCoupon: (id: string, isActive: boolean) => void;
   onAddInstructor: (courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) => void;
   onAddModule: (courseId: string, module: string) => void;
-  onSaveCourseContent: (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[] }) => void;
+  onSaveCourseContent: (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[]; modality?: string }) => void;
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
   onRefreshCourses?: () => void;
 }
@@ -121,6 +121,7 @@ export default function AdminDashboard({
   const [courseModalType, setCourseModalType] = React.useState<'instructors' | 'modules' | 'content' | null>(null);
   // Conteúdo de mídia do curso (vídeo aula + materiais de apoio)
   const [contentVideoUrl, setContentVideoUrl] = React.useState('');
+  const [contentModality, setContentModality] = React.useState('EaD');
   const [contentModuleVideos, setContentModuleVideos] = React.useState<string[]>([]);
   const [contentDocs, setContentDocs] = React.useState<{ name: string; url: string }[]>([]);
   const [newDocName, setNewDocName] = React.useState('');
@@ -255,6 +256,7 @@ export default function AdminDashboard({
       videoUrl: contentVideoUrl.trim(),
       moduleVideos: contentModuleVideos.map((v) => v.trim()),
       documents: contentDocs,
+      modality: contentModality,
     });
     setManagingCourse(null);
     setCourseModalType(null);
@@ -614,6 +616,7 @@ export default function AdminDashboard({
                         onClick={() => {
                           setManagingCourse(course);
                           setContentVideoUrl(course.videoUrl || '');
+                          setContentModality(course.modality || 'EaD');
                           setContentModuleVideos(course.modules.map((_, i) => course.moduleVideos?.[i] || ''));
                           setContentDocs(course.documents || []);
                           setNewDocName('');
@@ -1732,6 +1735,21 @@ export default function AdminDashboard({
             <div className="flex items-center justify-between border-b pb-2">
               <h3 className="font-black text-sm uppercase tracking-tight">Vídeo & Materiais — {managingCourse.code}</h3>
               <button onClick={() => { setManagingCourse(null); setCourseModalType(null); }} className="text-slate-400 hover:text-red-500 font-black">X</button>
+            </div>
+
+            {/* Modalidade do curso */}
+            <div className="space-y-1 border-b border-slate-100 pb-3">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Modalidade do curso</label>
+              <select
+                value={contentModality}
+                onChange={(e) => setContentModality(e.target.value)}
+                className="w-full p-2.5 rounded bg-slate-50 border text-xs focus:outline-none"
+              >
+                <option value="EaD">EaD (100% online)</option>
+                <option value="Semipresencial">Semipresencial (híbrido)</option>
+                <option value="Presencial">Presencial</option>
+              </select>
+              <p className="text-[10px] text-slate-400">Exibida na página do curso. Ex.: NR-33 e NR-35 são Semipresencial.</p>
             </div>
 
             {/* Vídeo por módulo */}

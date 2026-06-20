@@ -603,7 +603,7 @@ export default function App() {
     catch (err) { alert(err instanceof Error ? err.message : "Não foi possível adicionar o módulo."); }
   };
 
-  const handleAdminSaveCourseContent = async (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[] }) => {
+  const handleAdminSaveCourseContent = async (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[]; modality?: string }) => {
     try { await adminApi.saveCourseContent(courseId, input); await refreshCourses(); alert("Conteúdo do curso salvo com sucesso!"); }
     catch (err) { alert(err instanceof Error ? err.message : "Não foi possível salvar o conteúdo do curso."); }
   };

@@ -437,7 +437,7 @@ export const adminApi = {
   addModule(courseId: string, module: string) {
     return apiFetch(`/admin/courses/${courseId}/modules`, { method: 'POST', body: JSON.stringify({ module }) });
   },
-  saveCourseContent(courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[] }) {
+  saveCourseContent(courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[]; modality?: string }) {
     return apiFetch(`/admin/courses/${courseId}/content`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   saveExam(courseId: string, questions: { question: string; options: string[]; correctIndex: number }[]) {

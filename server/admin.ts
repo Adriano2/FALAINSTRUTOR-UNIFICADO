@@ -287,6 +287,7 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
       videoUrl: z.string().optional(),
       moduleVideos: z.array(z.string()).optional(),
       documents: z.array(z.object({ name: z.string().min(1), url: z.string().min(1) })).optional(),
+      modality: z.enum(['EaD', 'Semipresencial', 'Presencial']).optional(),
     })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Conteúdo do curso inválido.' });
@@ -294,6 +295,7 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
   if (parsed.data.videoUrl !== undefined) data.videoUrl = parsed.data.videoUrl || null;
   if (parsed.data.moduleVideos !== undefined) data.moduleVideos = parsed.data.moduleVideos as unknown as Prisma.InputJsonValue;
   if (parsed.data.documents !== undefined) data.documents = parsed.data.documents as unknown as Prisma.InputJsonValue;
+  if (parsed.data.modality !== undefined) data.modality = parsed.data.modality;
   const course = await prisma.course.update({
     where: { id: req.params.id },
     data,
