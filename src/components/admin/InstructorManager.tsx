@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { Plus, Trash2, Loader2, GraduationCap, BadgeCheck } from 'lucide-react';
+import { Plus, Trash2, Loader2, GraduationCap, BadgeCheck, Check } from 'lucide-react';
 import { adminApi, ApiInstructor } from '../../api';
 import { Course } from '../../types';
 
@@ -83,6 +83,31 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
       await adminApi.deleteInstructor(id);
       setInstructors((prev) => prev.filter((i) => i.id !== id));
     } catch { /* ignore */ }
+  };
+
+  // Vincular cursos adicionais a um instrutor já cadastrado (reaproveita seus dados).
+  const [linkingKey, setLinkingKey] = React.useState<string | null>(null);
+  const [linkCourseIds, setLinkCourseIds] = React.useState<string[]>([]);
+
+  const handleLinkCourses = async (head: ApiInstructor) => {
+    if (linkCourseIds.length === 0) { alert('Selecione ao menos um curso para vincular.'); return; }
+    try {
+      const res = await adminApi.createInstructor({
+        name: head.name,
+        formation: head.formation,
+        mte: head.mte ?? undefined,
+        crea: head.crea ?? undefined,
+        crq: head.crq ?? undefined,
+        signatureUrl: head.signatureUrl ?? undefined,
+        icpEnabled: head.icpEnabled,
+        courseIds: linkCourseIds,
+      }) as { instructors: ApiInstructor[] };
+      setInstructors(Array.isArray(res.instructors) ? res.instructors : []);
+      setLinkingKey(null);
+      setLinkCourseIds([]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Não foi possível vincular os cursos.');
+    }
   };
 
   // Agrupa as associações por instrutor (nome + MTE) para uma visão de registro.
@@ -192,7 +217,7 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
                   {rows.map((r) => (
                     <span key={r.id} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[10px] font-semibold text-slate-700 dark:text-slate-300">
                       {r.course?.code ?? 'Curso'}
@@ -201,7 +226,45 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
                       </button>
                     </span>
                   ))}
+                  <button
+                    onClick={() => { setLinkingKey(linkingKey === head.id ? null : head.id); setLinkCourseIds([]); }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-blue-600 border border-blue-200 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    <Plus className="w-3 h-3" /> Vincular cursos
+                  </button>
                 </div>
+
+                {/* Seletor de cursos adicionais (apenas os ainda não vinculados) */}
+                {linkingKey === head.id && (() => {
+                  const linkedIds = new Set(rows.map((r) => r.course?.id).filter(Boolean) as string[]);
+                  const available = courses.filter((c) => !linkedIds.has(c.id));
+                  return (
+                    <div className="pt-2 space-y-2">
+                      {available.length === 0 ? (
+                        <p className="text-[11px] text-slate-400">Este instrutor já está vinculado a todos os cursos.</p>
+                      ) : (
+                        <>
+                          <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded p-2 bg-slate-50/50 dark:bg-slate-950 grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            {available.map((c) => (
+                              <label key={c.id} className="flex items-center gap-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300 cursor-pointer p-1">
+                                <input
+                                  type="checkbox"
+                                  checked={linkCourseIds.includes(c.id)}
+                                  onChange={() => setLinkCourseIds((p) => p.includes(c.id) ? p.filter((x) => x !== c.id) : [...p, c.id])}
+                                  className="accent-blue-600"
+                                />
+                                <span className="truncate">{c.code} — {c.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <button onClick={() => handleLinkCourses(head)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] uppercase rounded">
+                            <Check className="w-3.5 h-3.5" /> Vincular selecionados
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })
