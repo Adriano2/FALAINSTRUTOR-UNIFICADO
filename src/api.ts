@@ -70,6 +70,7 @@ interface ApiCourse {
   name: string;
   description: string;
   duration: number;
+  modality: string | null;
   price: number;
   coverImage: string | null;
   isActive: boolean;
@@ -177,6 +178,7 @@ export function mapApiCourse(c: ApiCourse): Course {
     name: c.name,
     description: c.description,
     duration: c.duration,
+    modality: c.modality ?? undefined,
     price: c.price,
     coverImage: c.coverImage ?? undefined,
     isActive: c.isActive,

@@ -98,6 +98,7 @@ model Course {
   isFeatured       Boolean  @default(false)
   modules          String[]
   manualActivities String[]
+  modality         String  @default("EaD") // EaD | Semipresencial | Presencial
   videoUrl         String? // link da vídeo aula (fallback) visível ao aluno
   moduleVideos     Json    @default("[]") // links por módulo (alinhado a "modules")
   documents        Json    @default("[]") // materiais de apoio: [{ name, url }]

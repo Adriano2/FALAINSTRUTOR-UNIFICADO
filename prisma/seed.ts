@@ -61,6 +61,7 @@ async function main() {
         isFeatured: c.isFeatured,
         modules: c.modules,
         manualActivities: c.manualActivities,
+        modality: c.modality ?? 'EaD',
       },
       create: {
         id: c.id,
@@ -74,6 +75,7 @@ async function main() {
         isFeatured: c.isFeatured,
         modules: c.modules,
         manualActivities: c.manualActivities,
+        modality: c.modality ?? 'EaD',
         instructors: {
           create: c.instructors.map((i) => ({
             name: i.name,

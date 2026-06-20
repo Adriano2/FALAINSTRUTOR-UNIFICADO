@@ -35,6 +35,7 @@ export interface Course {
   name: string;
   description: string;
   duration: number; // in hours
+  modality?: string; // EaD | Semipresencial | Presencial
   price: number;
   coverImage?: string;
   isActive: boolean;

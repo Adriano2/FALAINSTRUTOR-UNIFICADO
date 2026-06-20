@@ -52,7 +52,9 @@ export default function CourseDetail({ course, onAddToCart, onNavigateHome }: Co
                 <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded">
                   <span className="text-[10px] text-slate-400 uppercase font-bold block">Modalidade</span>
                   <p className="text-base font-extrabold text-slate-900 dark:text-amber-500">
-                    {course.description.toLowerCase().includes('semipresencial') ? 'Híbrido' : 'EAD Online'}
+                    {course.modality
+                      ? (course.modality.toLowerCase().startsWith('semi') ? 'Semipresencial' : course.modality)
+                      : (course.description.toLowerCase().includes('semipresencial') ? 'Semipresencial' : 'EAD Online')}
                   </p>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded">

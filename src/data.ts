@@ -213,14 +213,14 @@ export const SEED_COURSES: Course[] = [
   {
     id: "course-nr33", code: "NR 33", name: "NR 33 - Segurança e Saúde nos Trabalhos em Espaços Confinados",
     description: "Capacitação para trabalho em espaços confinados: identificação, monitoramento atmosférico, permissão de entrada e trabalho (PET) e resgate.",
-    duration: 16, price: 280, isActive: true, isFeatured: false, coverImage: IMG.maquinas,
+    duration: 16, price: 280, isActive: true, isFeatured: false, coverImage: IMG.maquinas, modality: "Semipresencial",
     modules: ["Módulo 01 - Definições e Reconhecimento de Espaços Confinados", "Módulo 02 - Riscos e Monitoramento Atmosférico", "Módulo 03 - Permissão de Entrada e Trabalho (PET)", "Módulo 04 - Resgate e Primeiros Socorros"],
     instructors: [INSTRUTOR_PADRAO], manualActivities: ["Monitoramento de Gases e Ventilação", "Simulado de Resgate"],
   },
   {
     id: "course-nr35", code: "NR 35", name: "NR 35 - Segurança no Trabalho em Altura",
     description: "Capacitação para trabalho acima de 2 metros: análise de risco, sistemas de ancoragem, EPI antiqueda e resgate em altura.",
-    duration: 8, price: 199, isActive: true, isFeatured: true, coverImage: IMG.altura,
+    duration: 8, price: 199, isActive: true, isFeatured: true, coverImage: IMG.altura, modality: "Semipresencial",
     modules: ["Módulo 01 - Regulamentação Jurídica Aplicável - NR 35", "Módulo 02 - Análise de Riscos e Condições Impeditivas", "Módulo 03 - Sistemas, Equipamentos e Procedimentos de Proteção Coletiva", "Módulo 04 - Linha de Vida, Cabo de Aço e Pontos de Ancoragem Seguros", "Módulo 05 - EPI Para Trabalho em Altura: Seleção, Uso e Critérios de Inspeção", "Módulo 06 - Resgate Emergencial em Altura e Primeiros Socorros"],
     instructors: [INSTRUTOR_PADRAO], manualActivities: ["Instalação com Ancoragem de Cabos Recartilhados", "Inspeção e Descarte de Cinto de Segurança"],
   },
