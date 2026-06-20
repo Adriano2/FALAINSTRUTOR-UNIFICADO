@@ -27,6 +27,24 @@
   --color-slate-850: #1e293b;
   --color-slate-905: #020617;
 
+  /* Shades ausentes normalizados (evitam classes sem efeito / texto invisível) */
+  --color-slate-105: #edf1f6;
+  --color-slate-150: #e9eef4;
+  --color-slate-305: #cbd5e1;
+  --color-slate-350: #aeb9c9;
+  --color-slate-805: #1e293b;
+  --color-slate-855: #19222f;
+  --color-slate-955: #090e1b;
+  --color-slate-2D: #cbd5e1;
+
+  --color-amber-505: #f59e0b;
+  --color-amber-550: #e78a09;
+  --color-emerald-450: #22c58b;
+  --color-emerald-650: #058a62;
+  --color-red-550: #e63535;
+  --color-rose-650: #cf1842;
+  --color-blue-105: #cdfadc;
+
   /* Redefining blue classes to green/emerald shades for dynamic site-wide conversion */
   --color-blue-50: #f0fdf4;
   --color-blue-100: #dcfce7;
