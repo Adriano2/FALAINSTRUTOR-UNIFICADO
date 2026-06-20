@@ -16,6 +16,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, authorize, type AuthedRequest } from './auth';
 import { getSignerInfo, signPayload, isIcpConfigured } from './icp';
+import { sendCertificateEmail } from './email';
 
 export const apiRouter = Router();
 
@@ -170,6 +171,11 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
       answers: (answers ?? {}) as Prisma.InputJsonValue,
     },
   });
+
+  // E-mail de certificado emitido (fire-and-forget) quando aprovado.
+  if (passed && certificateCode) {
+    void sendCertificateEmail({ name: enr.user.name, email: enr.user.email }, enr.course.name, certificateCode);
+  }
 
   res.json({ enrollment });
 });

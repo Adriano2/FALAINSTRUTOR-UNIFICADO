@@ -15,6 +15,7 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import type { Role } from '@prisma/client';
 import { prisma } from './db';
+import { sendWelcomeEmail } from './email';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'insecure-dev-secret';
 const JWT_EXPIRES_IN = '7d';
@@ -76,6 +77,8 @@ authRouter.post('/register', async (req: Request, res: Response) => {
   });
 
   const token = signToken({ sub: user.id, role: user.role });
+  // E-mail de boas-vindas (fire-and-forget — não bloqueia o cadastro).
+  void sendWelcomeEmail({ name: user.name, email: user.email });
   res.status(201).json({ token, user: publicUser(user) });
 });
 

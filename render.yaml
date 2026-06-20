@@ -47,6 +47,12 @@ services:
         sync: false
       - key: ICP_PFX_PASSWORD
         sync: false
+      # E-mails transacionais (Resend). Opcionais: sem eles, o envio é apenas
+      # registrado no log e nada quebra.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       # PUBLIC_URL não é necessária: o Render injeta RENDER_EXTERNAL_URL
       # (URL https completa), já usada pelo servidor para retornos e webhook.
 
