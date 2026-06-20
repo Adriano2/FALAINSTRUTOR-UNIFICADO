@@ -13,77 +13,12 @@ import { Plus, Trash2, Loader2, Save, CheckCircle2, BookOpenCheck, Download, Fil
 import { adminApi } from '../../api';
 import { getExamQuestions } from '../../data';
 import { Course, ExamQuestion } from '../../types';
+import { questionsToCsv, templateCsv, csvToQuestions, rowsToQuestions } from '../../lib/examCsv';
 
 interface ExamEditorProps {
   courses: Course[];
   onSaved?: () => void;
   initialCourseId?: string;
-}
-
-// --- CSV (Excel-friendly, delimitador ";") -------------------------------
-const CSV_HEADER = ['Pergunta', 'Alternativa 1', 'Alternativa 2', 'Alternativa 3', 'Alternativa 4', 'Resposta correta (numero)'];
-
-function csvEscape(v: string): string {
-  const s = String(v ?? '');
-  return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
-function questionsToCsv(qs: ExamQuestion[]): string {
-  const maxOpts = Math.max(4, ...qs.map((q) => q.options.length));
-  const header = ['Pergunta', ...Array.from({ length: maxOpts }, (_, i) => `Alternativa ${i + 1}`), 'Resposta correta (numero)'];
-  const rows = qs.map((q) => {
-    const opts = Array.from({ length: maxOpts }, (_, i) => q.options[i] ?? '');
-    return [q.question, ...opts, String(q.correctIndex + 1)];
-  });
-  return '﻿' + [header, ...rows].map((r) => r.map(csvEscape).join(';')).join('\r\n');
-}
-
-function templateCsv(): string {
-  const examples = [
-    ['Qual é a altura mínima considerada trabalho em altura pela NR-35?', 'Acima de 1,50 m', 'Acima de 2,00 m', 'Acima de 3,00 m', 'Acima de 5,00 m', '2'],
-    ['O EPI deve ser inspecionado antes do uso?', 'Sim, sempre', 'Não é necessário', 'Apenas se for novo', 'Somente uma vez por ano', '1'],
-  ];
-  return '﻿' + [CSV_HEADER, ...examples].map((r) => r.map(csvEscape).join(';')).join('\r\n');
-}
-
-// Parser de CSV que respeita aspas e detecta o delimitador (";" ou ",").
-function parseCsv(text: string): string[][] {
-  const clean = text.replace(/^﻿/, '');
-  const delim = (clean.split('\n')[0].match(/;/g)?.length ?? 0) >= (clean.split('\n')[0].match(/,/g)?.length ?? 0) ? ';' : ',';
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let inQuotes = false;
-  for (let i = 0; i < clean.length; i++) {
-    const ch = clean[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (clean[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
-      } else field += ch;
-    } else if (ch === '"') inQuotes = true;
-    else if (ch === delim) { row.push(field); field = ''; }
-    else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else if (ch !== '\r') field += ch;
-  }
-  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
-  return rows.filter((r) => r.some((c) => c.trim()));
-}
-
-function csvToQuestions(text: string): ExamQuestion[] {
-  const rows = parseCsv(text);
-  const out: ExamQuestion[] = [];
-  for (const r of rows) {
-    if (r.length < 3) continue;
-    const question = (r[0] ?? '').trim();
-    const correctRaw = (r[r.length - 1] ?? '').trim();
-    const correctNum = parseInt(correctRaw, 10);
-    if (!question || Number.isNaN(correctNum)) continue; // ignora cabeçalho/linhas inválidas
-    const options = r.slice(1, r.length - 1).map((o) => o.trim()).filter((o) => o.length > 0);
-    if (options.length < 2) continue;
-    const correctIndex = Math.min(Math.max(correctNum - 1, 0), options.length - 1);
-    out.push({ question, options, correctIndex });
-  }
-  return out;
 }
 
 function downloadCsv(filename: string, content: string) {
@@ -160,17 +95,25 @@ export default function ExamEditor({ courses, onSaved, initialCourseId }: ExamEd
     downloadCsv(`prova_${code}.csv`, questionsToCsv(questions));
   };
 
-  // Importa questões de um arquivo CSV para o editor (substitui as atuais).
-  const handleImportCsv = async (file: File) => {
+  // Importa questões de um arquivo CSV ou Excel (.xlsx) para o editor.
+  const handleImportFile = async (file: File) => {
     try {
-      const text = await file.text();
-      const parsed = csvToQuestions(text);
+      const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+      let parsed: ExamQuestion[];
+      if (isExcel) {
+        // read-excel-file (parser no main thread) carregado sob demanda.
+        const readXlsxFile = (await import('read-excel-file/browser')).default;
+        const rows = await readXlsxFile(file);
+        parsed = rowsToQuestions(rows as unknown as (string | number | null)[][]);
+      } else {
+        parsed = csvToQuestions(await file.text());
+      }
       if (parsed.length === 0) { alert('Nenhuma questão válida encontrada no arquivo. Confira o formato do modelo.'); return; }
       if (questions.length > 0 && !confirm(`Importar ${parsed.length} questão(ões)? Isso substituirá as questões atuais do editor.`)) return;
       setQuestions(parsed);
       alert(`${parsed.length} questão(ões) importada(s). Revise e clique em "Salvar Prova".`);
     } catch {
-      alert('Não foi possível ler o arquivo. Use um CSV no formato do modelo.');
+      alert('Não foi possível ler o arquivo. Use o formato do modelo (CSV ou Excel .xlsx).');
     }
   };
 
@@ -243,12 +186,12 @@ export default function ExamEditor({ courses, onSaved, initialCourseId }: ExamEd
           <FileUp className="w-3.5 h-3.5" /> Importar arquivo
           <input
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportCsv(f); e.target.value = ''; }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportFile(f); e.target.value = ''; }}
           />
         </label>
-        <span className="text-[10px] text-slate-400 w-full sm:w-auto">Formato: Pergunta; Alternativas; nº da resposta correta. Abra no Excel/Planilhas.</span>
+        <span className="text-[10px] text-slate-400 w-full sm:w-auto">Aceita CSV e Excel (.xlsx). Formato: Pergunta; Alternativas; nº da resposta correta.</span>
       </div>
 
       {/* Lista de questões */}
