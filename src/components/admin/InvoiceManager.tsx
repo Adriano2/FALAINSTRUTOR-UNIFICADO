@@ -33,6 +33,8 @@ export default function InvoiceManager() {
   const [recipientType, setRecipientType] = React.useState<'PF' | 'PJ'>('PF');
   const [document, setDocument] = React.useState('');
   const [recipientName, setRecipientName] = React.useState('');
+  const [cnpjStatus, setCnpjStatus] = React.useState('');
+  const lastCnpj = React.useRef('');
   const [email, setEmail] = React.useState('');
   const [serviceDesc, setServiceDesc] = React.useState('');
   const [amount, setAmount] = React.useState('');
@@ -48,6 +50,30 @@ export default function InvoiceManager() {
   }, []);
 
   React.useEffect(() => { load(); }, [load]);
+
+  // Para tomador PJ: ao completar o CNPJ (14 dígitos), busca a razão social
+  // automaticamente na BrasilAPI e preenche o nome.
+  React.useEffect(() => {
+    if (recipientType !== 'PJ') { setCnpjStatus(''); return; }
+    const digits = document.replace(/\D/g, '');
+    if (digits.length !== 14 || digits === lastCnpj.current) {
+      if (digits.length < 14) lastCnpj.current = '';
+      return;
+    }
+    lastCnpj.current = digits;
+    let alive = true;
+    setCnpjStatus('Consultando CNPJ...');
+    adminApi
+      .lookupCnpj(document)
+      .then(({ info }) => {
+        if (!alive) return;
+        if (info.razaoSocial) setRecipientName(info.razaoSocial);
+        setCnpjStatus(`✓ ${info.razaoSocial ?? 'Empresa localizada'}`);
+      })
+      .catch(() => { if (alive) setCnpjStatus('CNPJ não encontrado — preencha a razão social manualmente.'); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [document, recipientType]);
 
   const totals = React.useMemo(() => {
     const issued = invoices.filter((i) => i.status === 'ISSUED');
@@ -152,6 +178,9 @@ export default function InvoiceManager() {
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase">{recipientType === 'PF' ? 'CPF' : 'CNPJ'} *</label>
             <input type="text" value={document} onChange={(e) => setDocument(e.target.value)} placeholder={recipientType === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'} className={inputCls} />
+            {recipientType === 'PJ' && cnpjStatus && (
+              <p className={`text-[10px] ${cnpjStatus.startsWith('✓') ? 'text-emerald-600' : 'text-slate-400'}`}>{cnpjStatus}</p>
+            )}
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase">{recipientType === 'PF' ? 'Nome completo' : 'Razão social'} *</label>

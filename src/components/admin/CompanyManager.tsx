@@ -33,6 +33,8 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
   const [cnaeDescription, setCnaeDescription] = React.useState('');
   const [riskGrade, setRiskGrade] = React.useState<number | ''>('');
   const [lookingUp, setLookingUp] = React.useState(false);
+  const [cnpjStatus, setCnpjStatus] = React.useState('');
+  const lastLookup = React.useRef('');
 
   // Gestor por empresa
   const [mgr, setMgr] = React.useState<{ name: string; email: string; cpf: string; password: string }>({ name: '', email: '', cpf: '', password: '' });
@@ -51,21 +53,34 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
   };
 
   const handleCnpjLookup = async () => {
-    if (!cnpj.replace(/\D/g, '')) { alert('Informe o CNPJ.'); return; }
+    const digits = cnpj.replace(/\D/g, '');
+    if (digits.length !== 14) { setCnpjStatus('Informe um CNPJ com 14 dígitos.'); return; }
+    lastLookup.current = digits;
     setLookingUp(true);
+    setCnpjStatus('Consultando CNPJ...');
     try {
       const { info } = await adminApi.lookupCnpj(cnpj);
-      if (info.razaoSocial && !name.trim()) setName(info.razaoSocial);
+      if (info.razaoSocial) setName(info.razaoSocial); // preenche Razão social automaticamente
       if (info.cnae) setCnae(info.cnae);
       if (info.cnaeDescription) setCnaeDescription(info.cnaeDescription);
       if (info.riskGrade) setRiskGrade(info.riskGrade);
-      alert(`CNPJ consultado.\nCNAE: ${info.cnae ?? '—'} ${info.cnaeDescription ?? ''}\nGrau de risco sugerido (NR-04): ${info.riskGrade ?? '—'}`);
+      setCnpjStatus(`✓ ${info.razaoSocial ?? 'Empresa'} • CNAE ${info.cnae ?? '—'} • Grau de risco ${info.riskGrade ?? '—'}`);
     } catch (err) {
-      alert((err instanceof Error ? err.message : 'Falha na consulta.') + ' Você pode preencher o CNAE e o grau de risco manualmente.');
+      setCnpjStatus((err instanceof Error ? err.message : 'Falha na consulta.') + ' Preencha os dados manualmente.');
     } finally {
       setLookingUp(false);
     }
   };
+
+  // Busca automática quando o CNPJ fica completo (14 dígitos).
+  React.useEffect(() => {
+    const digits = cnpj.replace(/\D/g, '');
+    if (digits.length === 14 && digits !== lastLookup.current) {
+      handleCnpjLookup();
+    }
+    if (digits.length < 14) lastLookup.current = '';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cnpj]);
 
   const load = React.useCallback(() => {
     setLoading(true);
@@ -147,7 +162,11 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
               {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Buscar
             </button>
           </div>
-          <p className="text-[10px] text-slate-400">A busca preenche razão social, CNAE principal e sugere o grau de risco (NR-04).</p>
+          {cnpjStatus ? (
+            <p className={`text-[10px] ${cnpjStatus.startsWith('✓') ? 'text-emerald-600' : 'text-slate-400'}`}>{cnpjStatus}</p>
+          ) : (
+            <p className="text-[10px] text-slate-400">Ao digitar os 14 dígitos, a razão social, o CNAE e o grau de risco (NR-04) são preenchidos automaticamente.</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
