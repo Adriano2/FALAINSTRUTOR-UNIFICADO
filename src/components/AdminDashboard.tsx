@@ -579,6 +579,64 @@ export default function AdminDashboard({
                 Gestão e Homologação de Cursos
               </h2>
 
+              {/* Dashboard de vínculos: instrutores por treinamento (atualiza a cada alteração) */}
+              {(() => {
+                const instructorNames = new Set<string>();
+                let withoutInstructor = 0;
+                courses.forEach((c) => {
+                  if (c.instructors.length === 0) withoutInstructor++;
+                  c.instructors.forEach((i) => instructorNames.add(i.name.trim().toLowerCase()));
+                });
+                return (
+                  <div className="bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Vínculos de Instrutores</h3>
+                        <span className="text-[11px] text-slate-400">Quem está vinculado a cada treinamento — atualiza a cada mudança de vínculo.</span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-2 text-[10px]">
+                        <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-600 font-bold">{courses.length} cursos</span>
+                        <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-600 font-bold">{instructorNames.size} instrutores</span>
+                        <span className={`px-2 py-1 rounded font-bold ${withoutInstructor > 0 ? 'bg-amber-500/10 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>{withoutInstructor} sem instrutor</span>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto max-h-72 overflow-y-auto">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px] sticky top-0">
+                          <tr>
+                            <th className="p-2.5">Treinamento</th>
+                            <th className="p-2.5">Instrutores vinculados</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {courses.map((c) => (
+                            <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                              <td className="p-2.5 align-top whitespace-nowrap">
+                                <span className="font-bold text-amber-500">{c.code}</span>
+                                <span className="text-slate-500 dark:text-slate-400"> — {c.name}</span>
+                              </td>
+                              <td className="p-2.5">
+                                {c.instructors.length === 0 ? (
+                                  <span className="text-[10px] font-bold text-amber-600 uppercase">⚠ Sem instrutor vinculado</span>
+                                ) : (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {c.instructors.map((i) => (
+                                      <span key={i.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300" title={[i.mte && `MTE ${i.mte}`, i.crea && `CREA ${i.crea}`, i.crq && `CRQ ${i.crq}`].filter(Boolean).join(' • ')}>
+                                        <GraduationCap className="w-3 h-3 text-blue-600" /> {i.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {courses.map(course => (
                   <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex flex-col justify-between space-y-4 shadow-sm">
@@ -651,7 +709,7 @@ export default function AdminDashboard({
 
           {/* TAB: GESTÃO DE INSTRUTORES */}
           {activeTab === 'instructors' && (
-            <InstructorManager courses={courses} />
+            <InstructorManager courses={courses} onChanged={onRefreshCourses} />
           )}
 
           {/* TAB: NOTAS FISCAIS (NFS-e) */}

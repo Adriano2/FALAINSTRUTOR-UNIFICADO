@@ -15,9 +15,10 @@ import { Course } from '../../types';
 
 interface InstructorManagerProps {
   courses: Course[];
+  onChanged?: () => void;
 }
 
-export default function InstructorManager({ courses }: InstructorManagerProps) {
+export default function InstructorManager({ courses, onChanged }: InstructorManagerProps) {
   const [instructors, setInstructors] = React.useState<ApiInstructor[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -70,6 +71,7 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
       }) as { instructors: ApiInstructor[] };
       setInstructors(Array.isArray(res.instructors) ? res.instructors : []);
       setName(''); setFormation(''); setMte(''); setCrea(''); setCrq(''); setSignatureUrl(''); setIcpEnabled(true); setCourseIds([]);
+      onChanged?.();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Não foi possível cadastrar o instrutor.');
     } finally {
@@ -82,6 +84,7 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
     try {
       await adminApi.deleteInstructor(id);
       setInstructors((prev) => prev.filter((i) => i.id !== id));
+      onChanged?.();
     } catch { /* ignore */ }
   };
 
@@ -105,6 +108,7 @@ export default function InstructorManager({ courses }: InstructorManagerProps) {
       setInstructors(Array.isArray(res.instructors) ? res.instructors : []);
       setLinkingKey(null);
       setLinkCourseIds([]);
+      onChanged?.();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Não foi possível vincular os cursos.');
     }
