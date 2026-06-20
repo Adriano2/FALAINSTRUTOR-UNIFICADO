@@ -39,7 +39,7 @@ export default function CourseDetail({ course, onAddToCart, onNavigateHome }: Co
               <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
                 {course.name}
               </h1>
-              <p className="text-sm text-slate-650 dark:text-slate-350 leading-relaxed">
+              <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
                 {course.description}
               </p>
 
@@ -78,7 +78,7 @@ export default function CourseDetail({ course, onAddToCart, onNavigateHome }: Co
                       <div className="flex w-6 h-6 rounded-full items-center justify-center bg-amber-500/10 text-amber-500 font-bold shrink-0 text-xs">
                         {(index + 1).toString().padStart(2, '0')}
                       </div>
-                      <span className="text-sm font-medium text-slate-750 dark:text-slate-350">{mod}</span>
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{mod}</span>
                     </div>
                   ))
                 ) : (
@@ -122,7 +122,7 @@ export default function CourseDetail({ course, onAddToCart, onNavigateHome }: Co
                     <div>
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">{inst.name}</h3>
                       <p className="text-xs text-amber-500 font-bold mb-1 uppercase tracking-wider">{inst.formation}</p>
-                      <p className="text-xs text-slate-450 dark:text-slate-400 leading-relaxed">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                         Profissional engenheiro habilitado, cadastrado e regularizado perante o CREA regional, atuando conforme as portarias da Previdência Social e diretrizes regulamentares de SST do trânsito e indústria.
                       </p>
                     </div>
@@ -153,7 +153,7 @@ export default function CourseDetail({ course, onAddToCart, onNavigateHome }: Co
               </div>
 
               {/* Course indicators list */}
-              <div className="space-y-3.5 text-xs border-y border-slate-100 dark:border-slate-800 py-4 font-semibold text-slate-650 dark:text-slate-350">
+              <div className="space-y-3.5 text-xs border-y border-slate-100 dark:border-slate-800 py-4 font-semibold text-slate-700 dark:text-slate-200">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>Carga horária total: {course.duration} horas</span>
@@ -178,7 +178,7 @@ export default function CourseDetail({ course, onAddToCart, onNavigateHome }: Co
               </button>
 
               <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded">
-                <p className="text-[10px] text-slate-450 dark:text-slate-400 leading-relaxed text-center">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed text-center">
                   * Faturamento em lote corporativo disponível via formulário comercial na página de início ou central telefônica institucional.
                 </p>
               </div>

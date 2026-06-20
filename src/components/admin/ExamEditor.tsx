@@ -17,6 +17,7 @@ import { Course, ExamQuestion } from '../../types';
 interface ExamEditorProps {
   courses: Course[];
   onSaved?: () => void;
+  initialCourseId?: string;
 }
 
 // --- CSV (Excel-friendly, delimitador ";") -------------------------------
@@ -97,11 +98,16 @@ function downloadCsv(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function ExamEditor({ courses, onSaved }: ExamEditorProps) {
-  const [courseId, setCourseId] = React.useState<string>(courses[0]?.id ?? '');
+export default function ExamEditor({ courses, onSaved, initialCourseId }: ExamEditorProps) {
+  const [courseId, setCourseId] = React.useState<string>(initialCourseId || courses[0]?.id || '');
   const [questions, setQuestions] = React.useState<ExamQuestion[]>([]);
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
+
+  // Permite abrir o editor já no curso indicado (associação a partir da gestão de cursos).
+  React.useEffect(() => {
+    if (initialCourseId) setCourseId(initialCourseId);
+  }, [initialCourseId]);
 
   const selectedCourse = courses.find((c) => c.id === courseId);
 

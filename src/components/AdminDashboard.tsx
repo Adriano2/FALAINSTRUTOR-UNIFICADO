@@ -87,6 +87,7 @@ export default function AdminDashboard({
 }: AdminDashboardProps) {
   // Sidebar State
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
+  const [examCourseId, setExamCourseId] = React.useState<string | undefined>(undefined);
   const [dashboardDaysFilter, setDashboardDaysFilter] = React.useState<number>(30);
 
   // General CSV Downloader helper
@@ -619,6 +620,19 @@ export default function AdminDashboard({
                         <Video className="w-3.5 h-3.5" /> Vídeo & Materiais
                         {course.videoUrl ? <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" title="Vídeo configurado" /> : null}
                       </button>
+
+                      <button
+                        onClick={() => {
+                          setExamCourseId(course.id);
+                          setActiveTab('exam-editor');
+                        }}
+                        className="col-span-2 p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-center text-[11px] transition select-none cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <BookOpenCheck className="w-3.5 h-3.5" /> Prova Final
+                        <span className="text-[10px] font-semibold opacity-90">
+                          ({course.examQuestions?.length ?? 0} questões)
+                        </span>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -639,7 +653,7 @@ export default function AdminDashboard({
 
           {/* TAB: EDITOR DE PROVAS */}
           {activeTab === 'exam-editor' && (
-            <ExamEditor courses={courses} onSaved={onRefreshCourses} />
+            <ExamEditor courses={courses} onSaved={onRefreshCourses} initialCourseId={examCourseId} />
           )}
 
           {/* TAB 3: MATRICULAS (ENROLLMENTS) */}
