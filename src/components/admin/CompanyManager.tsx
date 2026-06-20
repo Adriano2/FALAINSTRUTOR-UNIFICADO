@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Plus, Loader2, Building2, ToggleLeft, ToggleRight, UserPlus, Users, Check } from 'lucide-react';
+import { Plus, Loader2, Building2, ToggleLeft, ToggleRight, UserPlus, Users, Check, Search } from 'lucide-react';
 import { adminApi, ApiCompany } from '../../api';
 import { User } from '../../types';
 
@@ -28,6 +28,11 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
   const [cnpj, setCnpj] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [phone, setPhone] = React.useState('');
+  const [employeeCount, setEmployeeCount] = React.useState('');
+  const [cnae, setCnae] = React.useState('');
+  const [cnaeDescription, setCnaeDescription] = React.useState('');
+  const [riskGrade, setRiskGrade] = React.useState<number | ''>('');
+  const [lookingUp, setLookingUp] = React.useState(false);
 
   // Gestor por empresa
   const [mgr, setMgr] = React.useState<{ name: string; email: string; cpf: string; password: string }>({ name: '', email: '', cpf: '', password: '' });
@@ -35,6 +40,32 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
   const [selected, setSelected] = React.useState<string[]>([]);
 
   const students = users.filter((u) => u.role === 'student');
+
+  // Baseline de treinamentos obrigatórios por grau de risco (NR-04) — apenas
+  // para pré-visualização no cadastro (a regra autoritativa está no servidor).
+  const OBLIGATORY_BY_RISK: Record<number, string[]> = {
+    1: ['NR 01', 'NR 05', 'NR 06'],
+    2: ['NR 01', 'NR 05', 'NR 06', 'NR 23'],
+    3: ['NR 01', 'NR 05', 'NR 06', 'NR 23', 'NR 17', 'NR 35'],
+    4: ['NR 01', 'NR 05', 'NR 06', 'NR 23', 'NR 17', 'NR 35', 'NR 33', 'NR 20'],
+  };
+
+  const handleCnpjLookup = async () => {
+    if (!cnpj.replace(/\D/g, '')) { alert('Informe o CNPJ.'); return; }
+    setLookingUp(true);
+    try {
+      const { info } = await adminApi.lookupCnpj(cnpj);
+      if (info.razaoSocial && !name.trim()) setName(info.razaoSocial);
+      if (info.cnae) setCnae(info.cnae);
+      if (info.cnaeDescription) setCnaeDescription(info.cnaeDescription);
+      if (info.riskGrade) setRiskGrade(info.riskGrade);
+      alert(`CNPJ consultado.\nCNAE: ${info.cnae ?? '—'} ${info.cnaeDescription ?? ''}\nGrau de risco sugerido (NR-04): ${info.riskGrade ?? '—'}`);
+    } catch (err) {
+      alert((err instanceof Error ? err.message : 'Falha na consulta.') + ' Você pode preencher o CNAE e o grau de risco manualmente.');
+    } finally {
+      setLookingUp(false);
+    }
+  };
 
   const load = React.useCallback(() => {
     setLoading(true);
@@ -45,10 +76,16 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { alert('Informe o nome da empresa.'); return; }
+    const count = parseInt(employeeCount, 10);
+    if (!Number.isInteger(count) || count < 1) { alert('Informe o total de funcionários (obrigatório, mínimo 1).'); return; }
     try {
-      const res = await adminApi.createCompany({ name: name.trim(), cnpj: cnpj.trim() || undefined, email: email.trim() || undefined, phone: phone.trim() || undefined });
+      const res = await adminApi.createCompany({
+        name: name.trim(), cnpj: cnpj.trim() || undefined, email: email.trim() || undefined, phone: phone.trim() || undefined,
+        employeeCount: count, cnae: cnae.trim() || undefined, cnaeDescription: cnaeDescription.trim() || undefined,
+        riskGrade: riskGrade === '' ? undefined : Number(riskGrade),
+      });
       setCompanies((prev) => [{ ...res.company, _count: { members: 0 } }, ...prev]);
-      setName(''); setCnpj(''); setEmail(''); setPhone('');
+      setName(''); setCnpj(''); setEmail(''); setPhone(''); setEmployeeCount(''); setCnae(''); setCnaeDescription(''); setRiskGrade('');
     } catch (err) { alert(err instanceof Error ? err.message : 'Não foi possível criar a empresa.'); }
   };
 
@@ -101,12 +138,42 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-2">
           <Building2 className="w-4 h-4 text-blue-600" /><span className="text-xs font-black uppercase tracking-wide">Cadastrar Empresa</span>
         </div>
+        {/* CNPJ com busca automática (CNAE + grau de risco NR-04) */}
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-slate-400 uppercase">CNPJ</label>
+          <div className="flex gap-2">
+            <input value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" className={inputCls} />
+            <button type="button" onClick={handleCnpjLookup} disabled={lookingUp} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold text-[11px] uppercase rounded cursor-pointer">
+              {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Buscar
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-400">A busca preenche razão social, CNAE principal e sugere o grau de risco (NR-04).</p>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1"><label className="text-[10px] font-bold text-slate-400 uppercase">Nome / Razão social *</label><input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} /></div>
-          <div className="space-y-1"><label className="text-[10px] font-bold text-slate-400 uppercase">CNPJ</label><input value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" className={inputCls} /></div>
+          <div className="space-y-1"><label className="text-[10px] font-bold text-slate-400 uppercase">Total de funcionários *</label><input type="number" min={1} value={employeeCount} onChange={(e) => setEmployeeCount(e.target.value)} placeholder="Ex: 45" className={inputCls} /></div>
+          <div className="space-y-1"><label className="text-[10px] font-bold text-slate-400 uppercase">CNAE principal</label><input value={cnae} onChange={(e) => setCnae(e.target.value)} placeholder="Ex: 4120-4/00" className={inputCls} /></div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Grau de risco (NR-04)</label>
+            <select value={riskGrade} onChange={(e) => setRiskGrade(e.target.value === '' ? '' : Number(e.target.value))} className={inputCls}>
+              <option value="">— selecione —</option>
+              {[1, 2, 3, 4].map((g) => <option key={g} value={g}>Grau {g}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1 sm:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Descrição do CNAE</label><input value={cnaeDescription} onChange={(e) => setCnaeDescription(e.target.value)} className={inputCls} /></div>
           <div className="space-y-1"><label className="text-[10px] font-bold text-slate-400 uppercase">E-mail</label><input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} /></div>
           <div className="space-y-1"><label className="text-[10px] font-bold text-slate-400 uppercase">Telefone</label><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} /></div>
         </div>
+
+        {/* Pré-visualização dos treinamentos obrigatórios pelo grau de risco */}
+        {riskGrade !== '' && (
+          <div className="text-[11px] text-slate-500 bg-blue-500/5 border border-blue-500/15 rounded p-2.5">
+            <span className="font-bold text-slate-600 dark:text-slate-300">Treinamentos obrigatórios (grau {riskGrade}):</span>{' '}
+            {OBLIGATORY_BY_RISK[Number(riskGrade)].join(', ')}
+          </div>
+        )}
+
         <button type="submit" className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer"><Plus className="w-4 h-4" /> Cadastrar Empresa</button>
       </form>
 

@@ -1,0 +1,4 @@
+ALTER TABLE "Company" ADD COLUMN "employeeCount" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Company" ADD COLUMN "cnae" TEXT;
+ALTER TABLE "Company" ADD COLUMN "cnaeDescription" TEXT;
+ALTER TABLE "Company" ADD COLUMN "riskGrade" INTEGER;

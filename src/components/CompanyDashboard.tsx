@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download } from 'lucide-react';
+import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2 } from 'lucide-react';
 import { companyApi, CompanyDashboardData } from '../api';
 
 interface CompanyDashboardProps {
@@ -48,31 +48,81 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
       {/* Cabeçalho da empresa */}
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 rounded-xl bg-blue-600/10 text-blue-600"><Building2 className="w-7 h-7" /></div>
-        <div>
-          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">{data.company?.name ?? 'Minha Empresa'}</h1>
-          <p className="text-xs text-slate-400">
-            {data.company?.cnpj ? `CNPJ ${data.company.cnpj}` : 'Painel corporativo'} • Certificados da sua equipe
+        <div className="min-w-0">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white truncate">{data.company?.name ?? 'Minha Empresa'}</h1>
+          <p className="text-xs text-slate-400 truncate">
+            {data.company?.cnpj ? `CNPJ ${data.company.cnpj}` : 'Painel corporativo'}
+            {data.company?.riskGrade ? ` • Grau de risco ${data.company.riskGrade} (NR-04)` : ''}
+            {data.company?.cnae ? ` • CNAE ${data.company.cnae}` : ''}
           </p>
         </div>
       </div>
 
-      {/* Indicadores */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      {/* Indicadores: total de funcionários vs. concluíram os obrigatórios */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
           <div className="p-3 bg-blue-500/10 text-blue-500 rounded-full"><Users className="w-5 h-5" /></div>
           <div>
-            <span className="text-[10px] text-slate-450 uppercase font-black block">Funcionários</span>
-            <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.employees}</strong>
+            <span className="text-[10px] text-slate-450 uppercase font-black block">Total funcionários</span>
+            <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.declaredEmployees}</strong>
           </div>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
-          <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-full"><Award className="w-5 h-5" /></div>
+          <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-full"><CheckCircle2 className="w-5 h-5" /></div>
           <div>
-            <span className="text-[10px] text-slate-450 uppercase font-black block">Certificados emitidos</span>
-            <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.certificates}</strong>
+            <span className="text-[10px] text-slate-450 uppercase font-black block">Concluíram obrigatórios</span>
+            <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.compliant}<span className="text-xs text-slate-400 font-bold"> / {data.stats.declaredEmployees}</span></strong>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+          <div className="p-3 bg-amber-500/10 text-amber-500 rounded-full"><Award className="w-5 h-5" /></div>
+          <div>
+            <span className="text-[10px] text-slate-450 uppercase font-black block">Conformidade</span>
+            <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.compliancePct}%</strong>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+          <div className="p-3 bg-indigo-500/10 text-indigo-500 rounded-full"><ShieldCheck className="w-5 h-5" /></div>
+          <div>
+            <span className="text-[10px] text-slate-450 uppercase font-black block">Cadastrados / Certificados</span>
+            <strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.registeredEmployees} / {data.stats.certificates}</strong>
           </div>
         </div>
       </div>
+
+      {/* Barra de conformidade */}
+      <div className="mb-6">
+        <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+          <span>Funcionários em conformidade com os treinamentos obrigatórios</span>
+          <span className="font-bold">{data.stats.compliancePct}%</span>
+        </div>
+        <div className="w-full bg-slate-150 dark:bg-slate-800 rounded-full h-3">
+          <div className={`h-3 rounded-full ${data.stats.compliancePct >= 100 ? 'bg-emerald-500' : data.stats.compliancePct >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${Math.min(100, data.stats.compliancePct)}%` }} />
+        </div>
+      </div>
+
+      {/* Treinamentos obrigatórios (NR-04) e quantos concluíram */}
+      {data.obligatory.length > 0 && (
+        <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+          <h3 className="text-xs font-black uppercase text-slate-500 mb-3">Treinamentos obrigatórios pelo grau de risco</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {data.obligatory.map((o) => {
+              const total = data.stats.declaredEmployees || 1;
+              const pct = Math.round((o.completed / total) * 100);
+              return (
+                <div key={o.code} className="p-2.5 rounded border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="font-bold text-slate-700 dark:text-slate-200 truncate">{o.code} — {o.name}</span>
+                    <span className="text-slate-400 shrink-0 ml-2">{o.completed}/{data.stats.declaredEmployees}</span>
+                  </div>
+                  <div className="w-full bg-slate-150 dark:bg-slate-800 rounded-full h-1.5"><div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, pct)}%` }} /></div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-slate-400 mt-3">Baseline conforme o grau de risco (NR-04). Não substitui a análise de riscos (PGR) da empresa.</p>
+        </div>
+      )}
 
       {/* Busca */}
       <input

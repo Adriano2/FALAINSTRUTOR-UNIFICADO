@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, authorize, type AuthedRequest } from './auth';
+import { lookupCnpj } from './nr04';
 
 export const adminRouter = Router();
 
@@ -155,18 +156,47 @@ adminRouter.get('/companies', async (_req, res) => {
   res.json({ companies });
 });
 
+// Consulta de CNPJ (BrasilAPI) → razão social, CNAE principal e grau de risco (NR-04).
+adminRouter.get('/cnpj/:cnpj', async (req, res) => {
+  try {
+    const info = await lookupCnpj(req.params.cnpj);
+    res.json({ info });
+  } catch (err) {
+    res.status(502).json({ error: err instanceof Error ? err.message : 'Falha na consulta do CNPJ.' });
+  }
+});
+
 adminRouter.post('/companies', async (req, res) => {
   const parsed = z
-    .object({ name: z.string().min(2), cnpj: z.string().optional(), email: z.string().optional(), phone: z.string().optional() })
+    .object({
+      name: z.string().min(2),
+      cnpj: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      employeeCount: z.number().int().min(1),
+      cnae: z.string().optional(),
+      cnaeDescription: z.string().optional(),
+      riskGrade: z.number().int().min(1).max(4).optional(),
+    })
     .safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: 'Dados da empresa inválidos.' });
+  if (!parsed.success) return res.status(400).json({ error: 'Dados da empresa inválidos. Informe o total de funcionários (mínimo 1).' });
   const company = await prisma.company.create({ data: parsed.data as Prisma.CompanyCreateInput });
   res.status(201).json({ company });
 });
 
 adminRouter.patch('/companies/:id', async (req, res) => {
   const parsed = z
-    .object({ name: z.string().optional(), cnpj: z.string().optional(), email: z.string().optional(), phone: z.string().optional(), isActive: z.boolean().optional() })
+    .object({
+      name: z.string().optional(),
+      cnpj: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      employeeCount: z.number().int().min(1).optional(),
+      cnae: z.string().optional(),
+      cnaeDescription: z.string().optional(),
+      riskGrade: z.number().int().min(1).max(4).optional(),
+      isActive: z.boolean().optional(),
+    })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Atualização inválida.' });
   const company = await prisma.company.update({ where: { id: req.params.id }, data: parsed.data });

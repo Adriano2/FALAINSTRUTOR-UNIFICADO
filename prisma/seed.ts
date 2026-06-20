@@ -164,8 +164,8 @@ async function main() {
   // 3c) Empresa de demonstração + gestor + funcionários vinculados
   await prisma.company.upsert({
     where: { id: 'comp-demo' },
-    update: { name: 'Construtora Modelo Ltda' },
-    create: { id: 'comp-demo', name: 'Construtora Modelo Ltda', cnpj: '12.345.678/0001-90', email: 'contato@construtoramodelo.com.br', phone: '(11) 4000-0000', isActive: true },
+    update: { name: 'Construtora Modelo Ltda', employeeCount: 10, cnae: '4120-4/00', cnaeDescription: 'Construção de edifícios', riskGrade: 3 },
+    create: { id: 'comp-demo', name: 'Construtora Modelo Ltda', cnpj: '12.345.678/0001-90', email: 'contato@construtoramodelo.com.br', phone: '(11) 4000-0000', employeeCount: 10, cnae: '4120-4/00', cnaeDescription: 'Construção de edifícios', riskGrade: 3, isActive: true },
   });
   const companyHash = await bcrypt.hash('empresa123', 10);
   await prisma.user.upsert({

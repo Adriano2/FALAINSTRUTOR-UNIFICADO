@@ -76,6 +76,10 @@ model Company {
   cnpj      String?
   email     String?
   phone     String?
+  employeeCount   Int     @default(0) // total de funcionários (obrigatório no cadastro)
+  cnae            String? // CNAE principal
+  cnaeDescription String?
+  riskGrade       Int?    // grau de risco (NR-04): 1 a 4
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 

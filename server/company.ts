@@ -12,6 +12,7 @@
 import { Router, type Response } from 'express';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
+import { obligatoryTrainings } from './nr04';
 
 export const companyRouter = Router();
 
@@ -66,9 +67,43 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
     0,
   );
 
+  // Treinamentos obrigatórios pelo grau de risco (NR-04) e conformidade.
+  const obligatoryCodes = obligatoryTrainings(company?.riskGrade);
+  const courses = await prisma.course.findMany({
+    where: { code: { in: obligatoryCodes } },
+    select: { code: true, name: true },
+  });
+  const codeToName = new Map(courses.map((c) => [c.code, c.name]));
+
+  // Conjunto de cursos concluídos (aprovado + certificado) por funcionário.
+  const completedSets = employees.map(
+    (e) => new Set(e.enrollments.filter((en) => en.passed && en.certificateCode).map((en) => en.courseCode)),
+  );
+  const compliantCount = completedSets.filter((s) => obligatoryCodes.every((c) => s.has(c))).length;
+
+  const obligatory = obligatoryCodes.map((code) => ({
+    code,
+    name: codeToName.get(code) ?? code,
+    completed: completedSets.filter((s) => s.has(code)).length,
+  }));
+
+  const declaredTotal = company?.employeeCount ?? employees.length;
+
   res.json({
-    company: company ? { id: company.id, name: company.name, cnpj: company.cnpj, email: company.email, phone: company.phone } : null,
+    company: company
+      ? {
+          id: company.id, name: company.name, cnpj: company.cnpj, email: company.email, phone: company.phone,
+          employeeCount: company.employeeCount, cnae: company.cnae, cnaeDescription: company.cnaeDescription, riskGrade: company.riskGrade,
+        }
+      : null,
     employees,
-    stats: { employees: employees.length, certificates: totalCertificates },
+    obligatory,
+    stats: {
+      declaredEmployees: declaredTotal,
+      registeredEmployees: employees.length,
+      certificates: totalCertificates,
+      compliant: compliantCount,
+      compliancePct: declaredTotal > 0 ? Math.round((compliantCount / declaredTotal) * 100) : 0,
+    },
   });
 });

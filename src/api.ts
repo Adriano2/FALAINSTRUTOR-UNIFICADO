@@ -110,13 +110,26 @@ export interface ApiCompany {
   cnpj: string | null;
   email: string | null;
   phone: string | null;
+  employeeCount: number;
+  cnae: string | null;
+  cnaeDescription: string | null;
+  riskGrade: number | null;
   isActive: boolean;
   createdAt: string;
   _count?: { members: number };
 }
 
+export interface CnpjInfo {
+  cnpj: string;
+  razaoSocial: string | null;
+  nomeFantasia: string | null;
+  cnae: string | null;
+  cnaeDescription: string | null;
+  riskGrade: number | null;
+}
+
 export interface CompanyDashboardData {
-  company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null } | null;
+  company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null; employeeCount: number; cnae: string | null; cnaeDescription: string | null; riskGrade: number | null } | null;
   employees: {
     id: string;
     name: string;
@@ -133,7 +146,8 @@ export interface CompanyDashboardData {
       date: string;
     }[];
   }[];
-  stats: { employees: number; certificates: number };
+  obligatory: { code: string; name: string; completed: number }[];
+  stats: { declaredEmployees: number; registeredEmployees: number; certificates: number; compliant: number; compliancePct: number };
 }
 
 // Nota Fiscal de Serviço (NFS-e) — base de gerenciamento.
@@ -373,11 +387,14 @@ export const adminApi = {
   listCompanies() {
     return apiFetch<{ companies: ApiCompany[] }>(`/admin/companies`);
   },
-  createCompany(input: { name: string; cnpj?: string; email?: string; phone?: string }) {
+  createCompany(input: { name: string; cnpj?: string; email?: string; phone?: string; employeeCount: number; cnae?: string; cnaeDescription?: string; riskGrade?: number }) {
     return apiFetch<{ company: ApiCompany }>(`/admin/companies`, { method: 'POST', body: JSON.stringify(input) });
   },
-  updateCompany(id: string, input: { name?: string; cnpj?: string; email?: string; phone?: string; isActive?: boolean }) {
+  updateCompany(id: string, input: { name?: string; cnpj?: string; email?: string; phone?: string; employeeCount?: number; cnae?: string; cnaeDescription?: string; riskGrade?: number; isActive?: boolean }) {
     return apiFetch<{ company: ApiCompany }>(`/admin/companies/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  lookupCnpj(cnpj: string) {
+    return apiFetch<{ info: CnpjInfo }>(`/admin/cnpj/${encodeURIComponent(cnpj.replace(/\D/g, ''))}`);
   },
   createCompanyManager(companyId: string, input: { name: string; email: string; password: string; cpf: string }) {
     return apiFetch(`/admin/companies/${companyId}/manager`, { method: 'POST', body: JSON.stringify(input) });
