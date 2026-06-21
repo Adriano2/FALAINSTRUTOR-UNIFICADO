@@ -9,6 +9,7 @@ import {
   ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission 
 } from '../types';
 import { getExamQuestions } from '../data';
+import { adminApi } from '../api';
 import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
@@ -115,6 +116,52 @@ export default function AdminDashboard({
       totalProducts: courses.length,
     };
   }, [users, enrollments, transactions, courses, dashboardDaysFilter]);
+
+  // Comissões por instrutor (percentual editável, persistido no banco).
+  const [commissions, setCommissions] = React.useState<Record<string, number>>({});
+  const [savingCommissions, setSavingCommissions] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    adminApi.getContent('commissions')
+      .then((list) => {
+        if (!alive) return;
+        const map: Record<string, number> = {};
+        (Array.isArray(list) ? list : []).forEach((c: any) => { if (c?.name) map[c.name] = Number(c.percent) || 0; });
+        setCommissions(map);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  // Vendas e faturamento por instrutor (a partir dos cursos associados e das transações pagas).
+  const instructorSales = React.useMemo(() => {
+    const byName = new Map<string, { name: string; courses: Set<string>; sales: number; revenue: number }>();
+    courses.forEach((c) => {
+      c.instructors.forEach((i) => {
+        if (!byName.has(i.name)) byName.set(i.name, { name: i.name, courses: new Set(), sales: 0, revenue: 0 });
+        byName.get(i.name)!.courses.add(c.code);
+      });
+    });
+    transactions.filter((t) => t.status === 'active').forEach((t) => {
+      const course = courses.find((c) => c.name === t.courseName);
+      if (!course) return;
+      course.instructors.forEach((i) => {
+        const e = byName.get(i.name);
+        if (e) { e.sales += 1; e.revenue += t.total; }
+      });
+    });
+    return [...byName.values()].sort((a, b) => b.revenue - a.revenue);
+  }, [courses, transactions]);
+
+  const handleSaveCommissions = async () => {
+    setSavingCommissions(true);
+    try {
+      const list = instructorSales.map((i) => ({ name: i.name, percent: commissions[i.name] ?? 0 }));
+      await adminApi.saveContent('commissions', list);
+    } catch { /* ignore */ }
+    setSavingCommissions(false);
+  };
 
   // General course modal states
   const [managingCourse, setManagingCourse] = React.useState<Course | null>(null);
@@ -567,6 +614,68 @@ export default function AdminDashboard({
                   </div>
                 </div>
 
+              </div>
+
+              {/* Vendas e comissão por instrutor */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Vendas e Comissão por Instrutor</h3>
+                    <span className="text-[11px] text-slate-400">Vendas e faturamento dos cursos associados a cada instrutor. Defina o % de comissão.</span>
+                  </div>
+                  <button
+                    onClick={handleSaveCommissions}
+                    disabled={savingCommissions}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 font-bold text-[11px] uppercase rounded cursor-pointer"
+                  >
+                    {savingCommissions ? 'Salvando...' : 'Salvar comissões'}
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase text-[10px]">
+                      <tr>
+                        <th className="p-2.5">Instrutor</th>
+                        <th className="p-2.5">Cursos</th>
+                        <th className="p-2.5 text-center">Vendas</th>
+                        <th className="p-2.5 text-right">Faturamento</th>
+                        <th className="p-2.5 text-center">% Comissão</th>
+                        <th className="p-2.5 text-right">Valor da Comissão</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {instructorSales.length === 0 ? (
+                        <tr><td colSpan={6} className="p-6 text-center text-slate-400">Nenhum instrutor com cursos associados.</td></tr>
+                      ) : instructorSales.map((i) => {
+                        const pct = commissions[i.name] ?? 0;
+                        const commissionValue = i.revenue * (pct / 100);
+                        return (
+                          <tr key={i.name} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                            <td className="p-2.5 font-bold text-slate-900 dark:text-slate-150">{i.name}</td>
+                            <td className="p-2.5 text-slate-500">{[...i.courses].join(', ')}</td>
+                            <td className="p-2.5 text-center font-bold text-emerald-600">{i.sales}</td>
+                            <td className="p-2.5 text-right font-black text-slate-900 dark:text-white">R$ {i.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="p-2.5 text-center">
+                              <div className="inline-flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={pct}
+                                  onChange={(e) => setCommissions({ ...commissions, [i.name]: Number(e.target.value) })}
+                                  className="w-16 text-center text-xs p-1 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                                />
+                                <span className="text-slate-400">%</span>
+                              </div>
+                            </td>
+                            <td className="p-2.5 text-right font-bold text-amber-600">R$ {commissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[10px] text-slate-400 px-4 py-2">Faturamento = soma das vendas pagas dos cursos do instrutor. A tabela de percentuais será definida posteriormente — ajuste e salve quando quiser.</p>
               </div>
 
             </div>
