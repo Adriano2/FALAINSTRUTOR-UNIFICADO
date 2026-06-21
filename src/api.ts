@@ -158,7 +158,7 @@ export interface InstructorDashboardData {
   instructor: { name: string };
   courses: { id: string; code: string; name: string; examQuestions: { question: string; options: string[]; correctIndex: number }[]; sales: number; enrollments: number; examsCount: number; approved: number; revenue: number }[];
   exams: { id: string; studentName: string; studentCpf: string; courseId: string; courseCode: string; courseName: string; score: number; passed: boolean; answers: Record<number, number>; date: string }[];
-  stats: { courses: number; totalSales: number; totalEnrollments: number; totalExams: number; totalRevenue: number };
+  stats: { courses: number; totalSales: number; totalEnrollments: number; totalExams: number; totalRevenue: number; commissionPercent: number; commissionValue: number };
 }
 
 // Nota Fiscal de Serviço (NFS-e) — base de gerenciamento.

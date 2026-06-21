@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { GraduationCap, DollarSign, Users, BookOpenCheck, Loader2, X } from 'lucide-react';
+import { GraduationCap, DollarSign, Percent, BookOpenCheck, Loader2, X } from 'lucide-react';
 import { instructorApi, InstructorDashboardData } from '../api';
 import { getExamQuestions } from '../data';
 
@@ -65,8 +65,8 @@ export default function InstructorDashboard() {
           <div><span className="text-[10px] text-slate-450 uppercase font-black block">Faturamento</span><strong className="text-sm font-extrabold text-slate-900 dark:text-white">{brl(data.stats.totalRevenue)}</strong></div>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
-          <div className="p-3 bg-amber-500/10 text-amber-500 rounded-full"><Users className="w-5 h-5" /></div>
-          <div><span className="text-[10px] text-slate-450 uppercase font-black block">Matrículas</span><strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.totalEnrollments}</strong></div>
+          <div className="p-3 bg-amber-500/10 text-amber-500 rounded-full"><Percent className="w-5 h-5" /></div>
+          <div><span className="text-[10px] text-slate-450 uppercase font-black block">Comissão ({data.stats.commissionPercent}%)</span><strong className="text-sm font-extrabold text-amber-600">{brl(data.stats.commissionValue)}</strong></div>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
           <div className="p-3 bg-indigo-500/10 text-indigo-500 rounded-full"><BookOpenCheck className="w-5 h-5" /></div>

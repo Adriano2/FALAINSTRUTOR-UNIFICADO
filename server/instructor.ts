@@ -77,6 +77,14 @@ instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
     date: s.date,
   }));
 
+  // Percentual de comissão definido pelo admin (SiteContent "commissions").
+  const commRow = await prisma.siteContent.findUnique({ where: { key: 'commissions' } });
+  const commList = Array.isArray(commRow?.data) ? (commRow!.data as Array<{ name?: string; percent?: number }>) : [];
+  const myComm = commList.find((c) => norm(c?.name ?? '') === norm(user.name));
+  const commissionPercent = myComm ? Number(myComm.percent) || 0 : 0;
+  const totalRevenue = Number(courses.reduce((a, c) => a + c.revenue, 0).toFixed(2));
+  const commissionValue = Number((totalRevenue * (commissionPercent / 100)).toFixed(2));
+
   res.json({
     instructor: { name: user.name },
     courses,
@@ -86,7 +94,9 @@ instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
       totalSales: courses.reduce((a, c) => a + c.sales, 0),
       totalEnrollments: courses.reduce((a, c) => a + c.enrollments, 0),
       totalExams: exams.length,
-      totalRevenue: Number(courses.reduce((a, c) => a + c.revenue, 0).toFixed(2)),
+      totalRevenue,
+      commissionPercent,
+      commissionValue,
     },
   });
 });
