@@ -49,3 +49,26 @@ de edições posteriores.
   submissão quando existir, em vez das questões atuais do curso.
 
 **Mitigação atual:** finalizar a prova no Editor antes de aplicá-la aos alunos.
+
+## 🌐 Integração do site unificado / CMS de páginas (futuro)
+
+**Status:** combinado para mais adiante (o projeto ainda será ajustado).
+
+**Recomendação:** implementar um **CMS de páginas** no painel admin — tornar as
+páginas institucionais editáveis e navegáveis, sem depender de código.
+
+**Escopo sugerido:**
+- Renderizar as páginas cadastradas em "Gestão de páginas" como **rotas reais**
+  (ex.: `/p/{slug}`), com links no rodapé/menu.
+- Editor no admin com título, slug, conteúdo (com formatação) e publicar/ocultar.
+- Editar blocos da home (hero, seções) pelo admin.
+
+**Onde ligar:**
+- `src/components/admin/ContentManager.tsx` (módulo "pages" já existe — guarda
+  title/slug/content).
+- `src/App.tsx` — adicionar rota para `/p/:slug` lendo de `contentApi.get('pages')`.
+- Novo componente `src/components/PageView.tsx` para renderizar a página.
+
+**Alternativas (se mudar o objetivo):** importar um site externo já existente
+(WordPress/HTML) para dentro; ou login único/SSO com outro sistema (mais
+sensível — combinar com a etapa final).
