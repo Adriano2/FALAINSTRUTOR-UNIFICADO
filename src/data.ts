@@ -245,6 +245,20 @@ export const SEED_COURSES: Course[] = [
     ],
     instructors: [INSTRUTOR_GILVAN], manualActivities: [],
   },
+  {
+    id: "course-class-rotulagem", code: "GHS", name: "Classificação e Rotulagem de Produtos Químicos (FISPQ, GHS, NBR 14725 e NR-26)",
+    description: "Classificação de perigos e rotulagem de produtos químicos conforme o GHS e a ABNT NBR 14725, elaboração e leitura da FISPQ e sinalização de segurança da NR-26.",
+    duration: 8, price: 149, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: [
+      "Módulo 01 - Fundamentos da Classificação de Perigos Químicos",
+      "Módulo 02 - Sistema GHS (Sistema Globalmente Harmonizado)",
+      "Módulo 03 - ABNT NBR 14725: Classificação e Rotulagem",
+      "Módulo 04 - Elaboração e Interpretação da FISPQ (SDS)",
+      "Módulo 05 - Rótulos: Elementos, Pictogramas e Frases de Perigo",
+      "Módulo 06 - NR-26: Sinalização de Segurança",
+    ],
+    instructors: [INSTRUTOR_GILVAN], manualActivities: [],
+  },
 ];
 
 /**
@@ -405,6 +419,18 @@ export const CONTEUDO_PROGRAMATICO: Record<string, string[]> = {
     "Procedimentos operacionais seguros",
     "Vacinação e cuidados com a saúde do trabalhador",
     "Situações de emergência e primeiros socorros",
+  ],
+  "GHS": [
+    "Conceitos de classificação de perigos físicos, à saúde e ao meio ambiente",
+    "Sistema Globalmente Harmonizado (GHS): estrutura e objetivos",
+    "ABNT NBR 14725: classificação, rotulagem e FISPQ",
+    "Elementos do rótulo: pictogramas, palavra de advertência e frases H/P",
+    "Elaboração e interpretação da Ficha de Informações de Segurança (FISPQ/SDS)",
+    "Categorias e classes de perigo dos produtos químicos",
+    "NR-26: sinalização de segurança, cores e identificação de tubulações",
+    "Boas práticas de comunicação de perigos no ambiente de trabalho",
+    "Armazenamento e identificação de recipientes e embalagens",
+    "Atualizações normativas e responsabilidades legais",
   ],
   "IQ": [
     "Conceitos fundamentais de química aplicada à segurança",
