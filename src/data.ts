@@ -259,6 +259,20 @@ export const SEED_COURSES: Course[] = [
     ],
     instructors: [INSTRUTOR_GILVAN], manualActivities: [],
   },
+  {
+    id: "course-quimicos-controlados", code: "PQC", name: "Produtos Químicos Controlados (PF, PC-SP e Exército)",
+    description: "Controle de produtos químicos pelos órgãos fiscalizadores: Polícia Federal, Polícia Civil de São Paulo e Exército Brasileiro — licenças, mapas de movimentação e obrigações legais.",
+    duration: 8, price: 159, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: [
+      "Módulo 01 - Conceitos e Legislação dos Produtos Químicos Controlados",
+      "Módulo 02 - Controle pela Polícia Federal (Lei 10.357/2001 e Decreto 4.262/2002)",
+      "Módulo 03 - Controle pelo Exército Brasileiro (R-105 / DFPC)",
+      "Módulo 04 - Controle pela Polícia Civil de São Paulo (PC-SP)",
+      "Módulo 05 - Licenças, Certificados e Mapas de Movimentação",
+      "Módulo 06 - Fiscalização, Infrações e Responsabilidades",
+    ],
+    instructors: [INSTRUTOR_GILVAN], manualActivities: [],
+  },
 ];
 
 /**
@@ -419,6 +433,16 @@ export const CONTEUDO_PROGRAMATICO: Record<string, string[]> = {
     "Procedimentos operacionais seguros",
     "Vacinação e cuidados com a saúde do trabalhador",
     "Situações de emergência e primeiros socorros",
+  ],
+  "PQC": [
+    "Definição de produtos químicos controlados e órgãos fiscalizadores",
+    "Polícia Federal: Lei 10.357/2001 e Decreto 4.262/2002 (produtos químicos para drogas)",
+    "Exército Brasileiro: R-105 e a Diretoria de Fiscalização de Produtos Controlados (DFPC)",
+    "Polícia Civil de São Paulo: controle estadual de produtos químicos",
+    "Licença de Funcionamento, Certificado de Registro e Título de Registro",
+    "Mapa de movimentação, controle de estoque e prazos de envio",
+    "Transporte, armazenamento e segurança de produtos controlados",
+    "Fiscalização, infrações, penalidades e responsabilidade legal",
   ],
   "GHS": [
     "Conceitos de classificação de perigos físicos, à saúde e ao meio ambiente",
