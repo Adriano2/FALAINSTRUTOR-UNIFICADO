@@ -14,6 +14,7 @@ const ValidationView = React.lazy(() => import('./components/ValidationView'));
 const StudentDashboard = React.lazy(() => import('./components/StudentDashboard'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const CompanyDashboard = React.lazy(() => import('./components/CompanyDashboard'));
+const InstructorDashboard = React.lazy(() => import('./components/InstructorDashboard'));
 const ProjetoPedagogico = React.lazy(() => import('./components/ProjetoPedagogico'));
 
 import { 
@@ -343,7 +344,10 @@ export default function App() {
 
   // Tela inicial conforme o papel do usuário.
   const dashboardForRole = (role: string) =>
-    role === 'admin' ? 'admin-dashboard' : role === 'company' ? 'company-dashboard' : 'student-dashboard';
+    role === 'admin' ? 'admin-dashboard'
+      : role === 'company' ? 'company-dashboard'
+      : role === 'instructor' ? 'instructor-dashboard'
+      : 'student-dashboard';
 
   // Login handler — autentica no backend (senha verificada com bcrypt + JWT).
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -365,14 +369,16 @@ export default function App() {
   // Evaluator Quick Login shortcut — faz login real (token) com as contas
   // semente para que os dados venham do banco. Cai para sessão local apenas
   // se o backend estiver indisponível.
-  const handleEvaluatorShortcut = async (role: 'admin' | 'student' | 'company') => {
+  const handleEvaluatorShortcut = async (role: 'admin' | 'student' | 'company' | 'instructor') => {
     const creds =
       role === 'admin'
         ? { email: 'adriano.ricardo01@gmail.com', password: 'Anthony9936#' }
         : role === 'company'
           ? { email: 'empresa@gmail.com', password: 'empresa123' }
-          : { email: 'jessica@gmail.com', password: 'aluno123' };
-    const label = role === 'admin' ? 'Administrador' : role === 'company' ? 'Empresa' : 'Aluno';
+          : role === 'instructor'
+            ? { email: 'instrutor@gmail.com', password: 'instrutor123' }
+            : { email: 'jessica@gmail.com', password: 'aluno123' };
+    const label = role === 'admin' ? 'Administrador' : role === 'company' ? 'Empresa' : role === 'instructor' ? 'Instrutor' : 'Aluno';
     try {
       const user = await authApi.login(creds.email, creds.password);
       setCurrentUser(user);
@@ -381,8 +387,8 @@ export default function App() {
       handleNavigate(dashboardForRole(user.role));
       alert(`Sessão ${label}: ${user.name}`);
     } catch {
-      if (role === 'company') {
-        alert('Não foi possível acessar a conta de empresa de demonstração. Verifique se o servidor está ativo.');
+      if (role === 'company' || role === 'instructor') {
+        alert(`Não foi possível acessar a conta de ${label.toLowerCase()} de demonstração. Verifique se o servidor está ativo.`);
         return;
       }
       // Fallback local (offline / sem backend)
@@ -705,6 +711,10 @@ export default function App() {
           <CompanyDashboard onValidateCertificate={(code) => handleNavigate('validate-certificate', code)} />
         )}
 
+        {currentScreen === 'instructor-dashboard' && currentUser && currentUser.role === 'instructor' && (
+          <InstructorDashboard />
+        )}
+
         {currentScreen === 'admin-dashboard' && currentUser && currentUser.role === 'admin' && (
           <AdminDashboard
             users={users}
@@ -769,6 +779,12 @@ export default function App() {
                   className="flex-1 py-1.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
                 >
                   Empresa
+                </button>
+                <button
+                  onClick={() => handleEvaluatorShortcut('instructor')}
+                  className="flex-1 py-1.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
+                >
+                  Instrutor
                 </button>
               </div>
             </div>

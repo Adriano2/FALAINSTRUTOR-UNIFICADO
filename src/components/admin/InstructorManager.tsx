@@ -92,6 +92,25 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
   const [linkingKey, setLinkingKey] = React.useState<string | null>(null);
   const [linkCourseIds, setLinkCourseIds] = React.useState<string[]>([]);
 
+  // Criar acesso (login) do instrutor ao painel próprio.
+  const [loginKey, setLoginKey] = React.useState<string | null>(null);
+  const [loginForm, setLoginForm] = React.useState({ email: '', cpf: '', password: '' });
+
+  const handleCreateLogin = async (head: ApiInstructor) => {
+    if (!loginForm.email || !loginForm.cpf || loginForm.password.length < 6) {
+      alert('Informe e-mail, CPF e senha (mínimo 6 caracteres) do instrutor.');
+      return;
+    }
+    try {
+      await adminApi.createInstructorLogin({ name: head.name, email: loginForm.email, cpf: loginForm.cpf, password: loginForm.password });
+      alert(`Acesso criado para ${head.name}! Ele já pode entrar com esse e-mail e senha e ver as provas e vendas dos seus cursos.`);
+      setLoginKey(null);
+      setLoginForm({ email: '', cpf: '', password: '' });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Não foi possível criar o acesso.');
+    }
+  };
+
   const handleLinkCourses = async (head: ApiInstructor) => {
     if (linkCourseIds.length === 0) { alert('Selecione ao menos um curso para vincular.'); return; }
     try {
@@ -236,7 +255,23 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
                   >
                     <Plus className="w-3 h-3" /> Vincular cursos
                   </button>
+                  <button
+                    onClick={() => { setLoginKey(loginKey === head.id ? null : head.id); setLoginForm({ email: '', cpf: '', password: '' }); }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-emerald-600 border border-emerald-200 dark:border-emerald-900 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  >
+                    <GraduationCap className="w-3 h-3" /> Criar acesso ao painel
+                  </button>
                 </div>
+
+                {/* Criar acesso (login) do instrutor */}
+                {loginKey === head.id && (
+                  <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input type="email" value={loginForm.email} onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })} placeholder="E-mail (login)" className={inputCls} />
+                    <input type="text" value={loginForm.cpf} onChange={(e) => setLoginForm({ ...loginForm, cpf: e.target.value })} placeholder="CPF" className={inputCls} />
+                    <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} placeholder="Senha (mín. 6)" className={inputCls} />
+                    <button onClick={() => handleCreateLogin(head)} className="sm:col-span-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] uppercase rounded">Criar acesso do instrutor</button>
+                  </div>
+                )}
 
                 {/* Seletor de cursos adicionais (apenas os ainda não vinculados) */}
                 {linkingKey === head.id && (() => {

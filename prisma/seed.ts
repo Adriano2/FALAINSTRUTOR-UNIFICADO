@@ -192,6 +192,23 @@ async function main() {
     data: { companyId: 'comp-demo' },
   });
 
+  // 3d) Acesso de demonstração do instrutor (nome igual ao do instrutor padrão,
+  // para o painel localizar os cursos associados).
+  const instructorHash = await bcrypt.hash('instrutor123', 10);
+  await prisma.user.upsert({
+    where: { email: 'instrutor@gmail.com' },
+    update: { role: 'INSTRUCTOR', name: 'Adriano Aparecido Ribas Ricardo' },
+    create: {
+      id: 'usr-instrutor',
+      name: 'Adriano Aparecido Ribas Ricardo',
+      cpf: '062.349.933-77',
+      email: 'instrutor@gmail.com',
+      passwordHash: instructorHash,
+      role: 'INSTRUCTOR',
+      isActive: true,
+    },
+  });
+
   // 4) Configurações globais (layout + pagamento)
   const layout = INITIAL_LAYOUT_CONFIG as unknown as Prisma.InputJsonValue;
   const payment = INITIAL_PAYMENT_CONFIG as unknown as Prisma.InputJsonValue;

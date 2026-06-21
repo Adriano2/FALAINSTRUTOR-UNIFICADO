@@ -25,6 +25,7 @@ import { authRouter } from './auth';
 import { apiRouter } from './routes';
 import { adminRouter } from './admin';
 import { companyRouter } from './company';
+import { instructorRouter } from './instructor';
 import { paymentsRouter, paymentsConfigured } from './payments';
 import { emailConfigured } from './email';
 import { prisma } from './db';
@@ -63,6 +64,7 @@ app.get('/api/health', async (_req: Request, res: Response) => {
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/company', companyRouter);
+app.use('/api/instructor', instructorRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api', apiRouter);
 

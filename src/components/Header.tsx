@@ -36,11 +36,13 @@ export default function Header({
   const handleProfileClick = (actionName: string) => {
     setProfileDropdownOpen(false);
     if (actionName === 'profile') {
-      onNavigate(currentUser?.role === 'company' ? 'company-dashboard' : 'student-dashboard');
+      onNavigate(currentUser?.role === 'company' ? 'company-dashboard' : currentUser?.role === 'instructor' ? 'instructor-dashboard' : 'student-dashboard');
     } else if (actionName === 'admin') {
       onNavigate('admin-dashboard');
     } else if (actionName === 'company') {
       onNavigate('company-dashboard');
+    } else if (actionName === 'instructor') {
+      onNavigate('instructor-dashboard');
     } else if (actionName === 'logout') {
       onLogout();
     }
@@ -181,6 +183,16 @@ export default function Header({
                       >
                         <Settings className="w-4 h-4 text-blue-500" />
                         Painel da Empresa
+                      </button>
+                    )}
+
+                    {currentUser.role === 'instructor' && (
+                      <button
+                        onClick={() => handleProfileClick('instructor')}
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
+                      >
+                        <Settings className="w-4 h-4 text-blue-500" />
+                        Painel do Instrutor
                       </button>
                     )}
 

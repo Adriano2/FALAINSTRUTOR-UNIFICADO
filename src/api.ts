@@ -26,7 +26,7 @@ interface ApiUser {
   dob: string | null;
   cpf: string;
   email: string;
-  role: 'ADMIN' | 'STUDENT' | 'COMPANY';
+  role: 'ADMIN' | 'STUDENT' | 'COMPANY' | 'INSTRUCTOR';
   isActive: boolean;
   avatar: string | null;
   registeredAt: string;
@@ -40,7 +40,7 @@ export function mapApiUser(u: ApiUser): User {
     dob: u.dob ?? '',
     cpf: u.cpf,
     email: u.email,
-    role: u.role === 'ADMIN' ? 'admin' : u.role === 'COMPANY' ? 'company' : 'student',
+    role: u.role === 'ADMIN' ? 'admin' : u.role === 'COMPANY' ? 'company' : u.role === 'INSTRUCTOR' ? 'instructor' : 'student',
     isActive: u.isActive,
     avatar: u.avatar ?? undefined,
     registeredAt: (u.registeredAt || '').split('T')[0],
@@ -151,6 +151,14 @@ export interface CompanyDashboardData {
   }[];
   obligatory: { code: string; name: string; completed: number }[];
   stats: { declaredEmployees: number; registeredEmployees: number; certificates: number; compliant: number; compliancePct: number };
+}
+
+// Painel do Instrutor (role 'instructor').
+export interface InstructorDashboardData {
+  instructor: { name: string };
+  courses: { id: string; code: string; name: string; examQuestions: { question: string; options: string[]; correctIndex: number }[]; sales: number; enrollments: number; examsCount: number; approved: number }[];
+  exams: { id: string; studentName: string; studentCpf: string; courseId: string; courseCode: string; courseName: string; score: number; passed: boolean; answers: Record<number, number>; date: string }[];
+  stats: { courses: number; totalSales: number; totalEnrollments: number; totalExams: number };
 }
 
 // Nota Fiscal de Serviço (NFS-e) — base de gerenciamento.
@@ -419,6 +427,9 @@ export const adminApi = {
   deleteInstructor(id: string) {
     return apiFetch(`/admin/instructors/${id}`, { method: 'DELETE' });
   },
+  createInstructorLogin(input: { name: string; email: string; password: string; cpf: string }) {
+    return apiFetch(`/admin/instructors/login`, { method: 'POST', body: JSON.stringify(input) });
+  },
   listInvoices() {
     return apiFetch<{ invoices: ApiInvoice[] }>(`/admin/invoices`);
   },
@@ -471,6 +482,13 @@ export const contentApi = {
 export const companyApi = {
   getDashboard() {
     return apiFetch<CompanyDashboardData>('/company/me');
+  },
+};
+
+// Painel do instrutor (role 'instructor').
+export const instructorApi = {
+  getDashboard() {
+    return apiFetch<InstructorDashboardData>('/instructor/me');
   },
 };
 

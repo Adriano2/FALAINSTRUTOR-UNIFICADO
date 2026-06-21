@@ -264,6 +264,22 @@ adminRouter.post('/instructors', async (req, res) => {
   res.status(201).json({ instructors });
 });
 
+// Cria o acesso (login) do instrutor (role INSTRUCTOR). O nome deve coincidir
+// com o cadastrado em Instructor para o vínculo dos cursos no painel.
+adminRouter.post('/instructors/login', async (req, res) => {
+  const parsed = z
+    .object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6), cpf: z.string().min(3) })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do instrutor inválidos (senha mínima de 6 caracteres).' });
+  const exists = await prisma.user.findFirst({ where: { OR: [{ email: parsed.data.email.toLowerCase() }, { cpf: parsed.data.cpf }] }, select: { id: true } });
+  if (exists) return res.status(409).json({ error: 'E-mail ou CPF já cadastrado.' });
+  const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+  const u = await prisma.user.create({
+    data: { name: parsed.data.name, email: parsed.data.email.toLowerCase(), cpf: parsed.data.cpf, passwordHash, role: 'INSTRUCTOR' },
+  });
+  res.status(201).json({ instructor: { id: u.id, name: u.name, email: u.email } });
+});
+
 // Remove a associação de um instrutor a um treinamento.
 adminRouter.delete('/instructors/:id', async (req, res) => {
   await prisma.instructor.delete({ where: { id: req.params.id } }).catch(() => {});
