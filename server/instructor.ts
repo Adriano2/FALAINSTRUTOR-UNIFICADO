@@ -13,6 +13,7 @@
  */
 
 import { Router, type Response } from 'express';
+import { z } from 'zod';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
 
@@ -21,6 +22,29 @@ export const instructorRouter = Router();
 instructorRouter.use(authenticate);
 
 const norm = (s: string) => s.trim().toLowerCase();
+
+// Cursos (ids) do instrutor autenticado — usado para limitar o escopo das ações.
+async function instructorCourseIds(userName: string): Promise<Set<string>> {
+  const links = await prisma.instructor.findMany({ select: { name: true, courseId: true } });
+  return new Set(links.filter((l) => norm(l.name) === norm(userName)).map((l) => l.courseId));
+}
+
+// Libera/valida (ou revoga) uma prova — apenas dos cursos do próprio instrutor.
+instructorRouter.patch('/exams/:id/validate', async (req: AuthedRequest, res: Response) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
+  const parsed = z.object({ validated: z.boolean() }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos.' });
+  const sub = await prisma.examSubmission.findUnique({ where: { id: req.params.id } });
+  if (!sub) return res.status(404).json({ error: 'Prova não encontrada.' });
+  const mine = await instructorCourseIds(user.name);
+  if (!mine.has(sub.courseId)) return res.status(403).json({ error: 'Esta prova não pertence aos seus cursos.' });
+  await prisma.examSubmission.update({
+    where: { id: sub.id },
+    data: { validatedByInstructor: parsed.data.validated, validatedAt: parsed.data.validated ? new Date() : null },
+  });
+  res.json({ ok: true });
+});
 
 instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
@@ -73,6 +97,7 @@ instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
     courseName: s.course.name,
     score: s.score,
     passed: s.passed,
+    validated: s.validatedByInstructor,
     answers: s.answers as Record<number, number>,
     date: s.date,
   }));

@@ -166,5 +166,6 @@ export interface StudentExamSubmission {
   score: number; // e.g. 100 for 100%
   answers: Record<number, number>; // index of question -> index of selected option
   passed: boolean;
+  validatedByInstructor?: boolean; // prova liberada/validada pelo instrutor
   date: string;
 }

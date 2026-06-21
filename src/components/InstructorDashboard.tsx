@@ -21,6 +21,20 @@ export default function InstructorDashboard() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
   const [reviewing, setReviewing] = React.useState<ExamItem | null>(null);
+  const [validatedMap, setValidatedMap] = React.useState<Record<string, boolean>>({});
+
+  const isValidated = (ex: ExamItem) => validatedMap[ex.id] ?? ex.validated;
+
+  const toggleValidate = async (ex: ExamItem) => {
+    const next = !isValidated(ex);
+    setValidatedMap((m) => ({ ...m, [ex.id]: next }));
+    try {
+      await instructorApi.validateExam(ex.id, next);
+    } catch {
+      setValidatedMap((m) => ({ ...m, [ex.id]: !next })); // reverte em erro
+      alert('Não foi possível atualizar a liberação da prova.');
+    }
+  };
 
   React.useEffect(() => {
     instructorApi
@@ -107,12 +121,14 @@ export default function InstructorDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px]">
-              <tr><th className="p-2.5">Aluno</th><th className="p-2.5">Treinamento</th><th className="p-2.5 text-center">Nota</th><th className="p-2.5 text-center">Situação</th><th className="p-2.5 text-right">Data</th><th className="p-2.5 text-right">Ação</th></tr>
+              <tr><th className="p-2.5">Aluno</th><th className="p-2.5">Treinamento</th><th className="p-2.5 text-center">Nota</th><th className="p-2.5 text-center">Situação</th><th className="p-2.5 text-center">Liberação</th><th className="p-2.5 text-right">Ações</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {data.exams.length === 0 ? (
                 <tr><td colSpan={6} className="p-6 text-center text-slate-400">Nenhuma prova realizada ainda.</td></tr>
-              ) : data.exams.map((ex) => (
+              ) : data.exams.map((ex) => {
+                const validated = isValidated(ex);
+                return (
                 <tr key={ex.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
                   <td className="p-2.5 font-bold text-slate-900 dark:text-slate-150">{ex.studentName}</td>
                   <td className="p-2.5 text-slate-600 dark:text-slate-300">{ex.courseCode}</td>
@@ -120,12 +136,23 @@ export default function InstructorDashboard() {
                   <td className="p-2.5 text-center">
                     {ex.passed ? <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded font-bold">Aprovado</span> : <span className="px-2 py-0.5 bg-red-500/10 text-red-600 rounded font-bold">Reprovado</span>}
                   </td>
-                  <td className="p-2.5 text-right text-slate-400 font-mono">{(ex.date || '').split('T')[0]}</td>
-                  <td className="p-2.5 text-right">
-                    <button onClick={() => setReviewing(ex)} className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold">Revisar</button>
+                  <td className="p-2.5 text-center">
+                    {validated
+                      ? <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded font-bold">Liberada</span>
+                      : <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded font-bold">Pendente</span>}
+                  </td>
+                  <td className="p-2.5 text-right whitespace-nowrap">
+                    <button onClick={() => setReviewing(ex)} className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold mr-1.5">Revisar</button>
+                    <button
+                      onClick={() => toggleValidate(ex)}
+                      className={`px-2.5 py-1 rounded text-[11px] font-bold ${validated ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
+                    >
+                      {validated ? 'Revogar' : 'Liberar'}
+                    </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

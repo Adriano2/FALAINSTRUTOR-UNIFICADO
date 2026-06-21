@@ -194,6 +194,8 @@ model ExamSubmission {
   score    Int
   answers  Json
   passed   Boolean
+  validatedByInstructor Boolean  @default(false) // prova liberada/validada pelo instrutor
+  validatedAt           DateTime?
   date     DateTime @default(now())
 }
 

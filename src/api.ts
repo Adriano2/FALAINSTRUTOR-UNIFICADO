@@ -157,7 +157,7 @@ export interface CompanyDashboardData {
 export interface InstructorDashboardData {
   instructor: { name: string };
   courses: { id: string; code: string; name: string; examQuestions: { question: string; options: string[]; correctIndex: number }[]; sales: number; enrollments: number; examsCount: number; approved: number; revenue: number }[];
-  exams: { id: string; studentName: string; studentCpf: string; courseId: string; courseCode: string; courseName: string; score: number; passed: boolean; answers: Record<number, number>; date: string }[];
+  exams: { id: string; studentName: string; studentCpf: string; courseId: string; courseCode: string; courseName: string; score: number; passed: boolean; validated: boolean; answers: Record<number, number>; date: string }[];
   stats: { courses: number; totalSales: number; totalEnrollments: number; totalExams: number; totalRevenue: number; commissionPercent: number; commissionValue: number };
 }
 
@@ -359,7 +359,7 @@ export const adminApi = {
       exams: x.exams.map((ex) => ({
         id: ex.id, userId: ex.userId, userName: ex.user?.name ?? '', courseId: ex.courseId,
         courseCode: ex.course?.code ?? '', courseName: ex.course?.name ?? '', score: ex.score,
-        answers: ex.answers ?? {}, passed: ex.passed, date: fmtBr(ex.date),
+        answers: ex.answers ?? {}, passed: ex.passed, validatedByInstructor: Boolean(ex.validatedByInstructor), date: fmtBr(ex.date),
       })),
       comments: c.comments.map((cm) => ({
         id: cm.id, userId: cm.userId, userName: cm.user?.name ?? '', courseId: cm.courseId,
@@ -489,6 +489,9 @@ export const companyApi = {
 export const instructorApi = {
   getDashboard() {
     return apiFetch<InstructorDashboardData>('/instructor/me');
+  },
+  validateExam(id: string, validated: boolean) {
+    return apiFetch(`/instructor/exams/${id}/validate`, { method: 'PATCH', body: JSON.stringify({ validated }) });
   },
 };
 

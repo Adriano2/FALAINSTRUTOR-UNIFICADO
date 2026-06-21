@@ -234,6 +234,7 @@ export default function AdminDashboard({
 
   // Exam Details state drawer
   const [auditingExam, setAuditingExam] = React.useState<StudentExamSubmission | null>(null);
+  const [examsOnlyValidated, setExamsOnlyValidated] = React.useState(false);
 
   // Export actions
   const handleExportEnrollments = () => {
@@ -1473,9 +1474,16 @@ export default function AdminDashboard({
           {/* TAB 10: USER EXAMS SUBMISSIONS */}
           {activeTab === 'exams' && (
             <div className="space-y-4">
-              <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
-                Auditoria de Provas Regulamentadas
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
+                  Auditoria de Provas Regulamentadas
+                </h2>
+                <label className="flex items-center gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                  <input type="checkbox" checked={examsOnlyValidated} onChange={(e) => setExamsOnlyValidated(e.target.checked)} className="accent-emerald-600" />
+                  Somente liberadas pelo instrutor
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-black">{studentExams.filter((e) => e.validatedByInstructor).length}</span>
+                </label>
+              </div>
 
               <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-205 dark:border-slate-800 overflow-x-auto shadow-sm">
                 <table className="w-full text-xs text-left">
@@ -1485,13 +1493,14 @@ export default function AdminDashboard({
                       <th className="p-3">Norma</th>
                       <th className="p-3 text-center">Score Obtido</th>
                       <th className="p-3 text-center">Habilitação</th>
+                      <th className="p-3 text-center">Liberação Instrutor</th>
                       <th className="p-3 text-right">Data Exame</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {studentExams.map(ex => (
-                      <tr 
-                        key={ex.id} 
+                    {studentExams.filter((ex) => !examsOnlyValidated || ex.validatedByInstructor).map(ex => (
+                      <tr
+                        key={ex.id}
                         className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40 cursor-pointer"
                         title="Clique para inspecionar respostas"
                         onClick={() => setAuditingExam(ex)}
@@ -1504,6 +1513,13 @@ export default function AdminDashboard({
                             <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 font-extrabold rounded">Habilitado</span>
                           ) : (
                             <span className="px-2 py-0.5 bg-red-500/10 text-red-500 font-semibold rounded">Reprovado</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {ex.validatedByInstructor ? (
+                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 font-extrabold rounded">✓ Liberada</span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 font-semibold rounded">Pendente</span>
                           )}
                         </td>
                         <td className="p-3 text-right text-slate-400 font-bold font-mono">{ex.date}</td>
