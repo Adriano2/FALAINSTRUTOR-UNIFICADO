@@ -219,7 +219,27 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
 
           <section>
             <SecHeader n="14" title="Equipe técnica responsável" />
-            <p className="italic text-slate-500">Responsável técnico: a definir.</p>
+            <p className="mb-3">
+              O responsável técnico geral pelos treinamentos é <strong>Adriano Aparecido Ribas Ricardo</strong> —
+              Técnico de Segurança do Trabalho, MTE nº 0124684/SP. Cada treinamento é conduzido e homologado pelo
+              respectivo responsável técnico indicado a seguir:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              {courses.map((c) => {
+                const ins = c.instructors[0];
+                const name = ins?.name || 'Adriano Aparecido Ribas Ricardo';
+                const reg = [
+                  ins?.mte ? `MTE ${ins.mte}` : (!ins ? 'MTE 0124684/SP' : ''),
+                  ins?.crea ? `CREA ${ins.crea}` : '',
+                  ins?.crq ? `CRQ ${ins.crq}` : '',
+                ].filter(Boolean).join(' • ');
+                return (
+                  <li key={c.id}>
+                    {c.code} — {c.name}: <strong>{name}</strong>{reg ? ` (${reg})` : ''}
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
           <section>
