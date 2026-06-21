@@ -80,16 +80,17 @@ export default function InstructorDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px]">
-              <tr><th className="p-2.5">Treinamento</th><th className="p-2.5 text-center">Vendas</th><th className="p-2.5 text-right">Faturamento</th><th className="p-2.5 text-center">Matrículas</th><th className="p-2.5 text-center">Provas</th><th className="p-2.5 text-center">Aprovados</th></tr>
+              <tr><th className="p-2.5">Treinamento</th><th className="p-2.5 text-center">Vendas</th><th className="p-2.5 text-right">Faturamento</th><th className="p-2.5 text-right">Comissão ({data.stats.commissionPercent}%)</th><th className="p-2.5 text-center">Matrículas</th><th className="p-2.5 text-center">Provas</th><th className="p-2.5 text-center">Aprovados</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {data.courses.length === 0 ? (
-                <tr><td colSpan={6} className="p-6 text-center text-slate-400">Você ainda não está associado a nenhum curso.</td></tr>
+                <tr><td colSpan={7} className="p-6 text-center text-slate-400">Você ainda não está associado a nenhum curso.</td></tr>
               ) : data.courses.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
                   <td className="p-2.5"><span className="font-bold text-amber-500">{c.code}</span> <span className="text-slate-600 dark:text-slate-300">{c.name}</span></td>
                   <td className="p-2.5 text-center font-bold text-emerald-600">{c.sales}</td>
                   <td className="p-2.5 text-right font-black text-slate-900 dark:text-white">{brl(c.revenue)}</td>
+                  <td className="p-2.5 text-right font-bold text-amber-600">{brl(c.revenue * (data.stats.commissionPercent / 100))}</td>
                   <td className="p-2.5 text-center font-bold">{c.enrollments}</td>
                   <td className="p-2.5 text-center">{c.examsCount}</td>
                   <td className="p-2.5 text-center text-emerald-600 font-bold">{c.approved}</td>
