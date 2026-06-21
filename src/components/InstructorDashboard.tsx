@@ -37,6 +37,7 @@ export default function InstructorDashboard() {
     const c = data.courses.find((x) => x.id === courseId);
     return c && c.examQuestions.length > 0 ? c.examQuestions : getExamQuestions(courseId);
   };
+  const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 font-sans">
@@ -50,7 +51,7 @@ export default function InstructorDashboard() {
       </div>
 
       {/* Indicadores */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
           <div className="p-3 bg-blue-500/10 text-blue-500 rounded-full"><BookOpenCheck className="w-5 h-5" /></div>
           <div><span className="text-[10px] text-slate-450 uppercase font-black block">Cursos</span><strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.courses}</strong></div>
@@ -58,6 +59,10 @@ export default function InstructorDashboard() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
           <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-full"><DollarSign className="w-5 h-5" /></div>
           <div><span className="text-[10px] text-slate-450 uppercase font-black block">Vendas</span><strong className="text-lg font-extrabold text-slate-900 dark:text-white">{data.stats.totalSales}</strong></div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
+          <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-full"><DollarSign className="w-5 h-5" /></div>
+          <div><span className="text-[10px] text-slate-450 uppercase font-black block">Faturamento</span><strong className="text-sm font-extrabold text-slate-900 dark:text-white">{brl(data.stats.totalRevenue)}</strong></div>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg flex items-center gap-3">
           <div className="p-3 bg-amber-500/10 text-amber-500 rounded-full"><Users className="w-5 h-5" /></div>
@@ -75,15 +80,16 @@ export default function InstructorDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px]">
-              <tr><th className="p-2.5">Treinamento</th><th className="p-2.5 text-center">Vendas</th><th className="p-2.5 text-center">Matrículas</th><th className="p-2.5 text-center">Provas</th><th className="p-2.5 text-center">Aprovados</th></tr>
+              <tr><th className="p-2.5">Treinamento</th><th className="p-2.5 text-center">Vendas</th><th className="p-2.5 text-right">Faturamento</th><th className="p-2.5 text-center">Matrículas</th><th className="p-2.5 text-center">Provas</th><th className="p-2.5 text-center">Aprovados</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {data.courses.length === 0 ? (
-                <tr><td colSpan={5} className="p-6 text-center text-slate-400">Você ainda não está associado a nenhum curso.</td></tr>
+                <tr><td colSpan={6} className="p-6 text-center text-slate-400">Você ainda não está associado a nenhum curso.</td></tr>
               ) : data.courses.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
                   <td className="p-2.5"><span className="font-bold text-amber-500">{c.code}</span> <span className="text-slate-600 dark:text-slate-300">{c.name}</span></td>
                   <td className="p-2.5 text-center font-bold text-emerald-600">{c.sales}</td>
+                  <td className="p-2.5 text-right font-black text-slate-900 dark:text-white">{brl(c.revenue)}</td>
                   <td className="p-2.5 text-center font-bold">{c.enrollments}</td>
                   <td className="p-2.5 text-center">{c.examsCount}</td>
                   <td className="p-2.5 text-center text-emerald-600 font-bold">{c.approved}</td>

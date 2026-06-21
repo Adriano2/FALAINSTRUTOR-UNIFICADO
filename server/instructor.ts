@@ -30,10 +30,10 @@ instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
 
   // Cursos do instrutor (associação por nome cadastrado em Instructor).
   const links = await prisma.instructor.findMany({
-    include: { course: { select: { id: true, code: true, name: true, examQuestions: true } } },
+    include: { course: { select: { id: true, code: true, name: true, price: true, examQuestions: true } } },
   });
   const mine = links.filter((l) => norm(l.name) === norm(user.name));
-  const courseMap = new Map<string, { id: string; code: string; name: string; examQuestions: unknown }>();
+  const courseMap = new Map<string, { id: string; code: string; name: string; price: number; examQuestions: unknown }>();
   for (const l of mine) courseMap.set(l.course.id, l.course);
   const courseIds = [...courseMap.keys()];
 
@@ -50,6 +50,7 @@ instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
         id: c.id, code: c.code, name: c.name,
         examQuestions: Array.isArray(c.examQuestions) ? c.examQuestions : [],
         sales, enrollments, examsCount, approved,
+        revenue: Number((((c.price ?? 0) * sales)).toFixed(2)), // faturamento (preço × vendas)
       };
     }),
   );
@@ -85,6 +86,7 @@ instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
       totalSales: courses.reduce((a, c) => a + c.sales, 0),
       totalEnrollments: courses.reduce((a, c) => a + c.enrollments, 0),
       totalExams: exams.length,
+      totalRevenue: Number(courses.reduce((a, c) => a + c.revenue, 0).toFixed(2)),
     },
   });
 });
