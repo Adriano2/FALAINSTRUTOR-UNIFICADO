@@ -39,9 +39,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install dependencies
         run: npm ci
 
@@ -54,7 +51,11 @@ jobs:
         run: npx cap sync android
 
       - name: Build APK (debug, instalável)
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
         run: |
+          echo "Usando Android SDK em: ${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
           cd android
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
