@@ -117,7 +117,10 @@ export default function InstructorDashboard() {
 
       {/* Provas para validar */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
-        <h3 className="text-xs font-black uppercase text-slate-500 px-4 py-3 border-b border-slate-100 dark:border-slate-800">Provas dos alunos — revisar / validar</h3>
+        <h3 className="text-xs font-black uppercase text-slate-500 px-4 py-3 border-b border-slate-100 dark:border-slate-800">Provas dos alunos — revisar / liberar</h3>
+        <p className="px-4 py-2 text-[11px] text-slate-500 dark:text-slate-400 bg-amber-50 dark:bg-amber-500/5 border-b border-amber-100 dark:border-amber-500/20">
+          Ao <strong>liberar</strong> uma prova aprovada, o certificado do aluno é homologado e fica disponível para emissão e validação pública. <strong>Revogar</strong> torna o certificado pendente novamente.
+        </p>
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px]">

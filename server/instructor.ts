@@ -16,6 +16,7 @@ import { Router, type Response } from 'express';
 import { z } from 'zod';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
+import { sendCertificateEmail } from './email';
 
 export const instructorRouter = Router();
 
@@ -30,6 +31,9 @@ async function instructorCourseIds(userName: string): Promise<Set<string>> {
 }
 
 // Libera/valida (ou revoga) uma prova — apenas dos cursos do próprio instrutor.
+// Ao liberar uma prova APROVADA, o certificado da matrícula é homologado
+// (released=true) e o e-mail de certificado é enviado ao aluno. Ao revogar, o
+// certificado volta a ficar pendente (released=false) e deixa de ser válido.
 instructorRouter.patch('/exams/:id/validate', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
   if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
@@ -39,11 +43,42 @@ instructorRouter.patch('/exams/:id/validate', async (req: AuthedRequest, res: Re
   if (!sub) return res.status(404).json({ error: 'Prova não encontrada.' });
   const mine = await instructorCourseIds(user.name);
   if (!mine.has(sub.courseId)) return res.status(403).json({ error: 'Esta prova não pertence aos seus cursos.' });
+
+  const validated = parsed.data.validated;
   await prisma.examSubmission.update({
     where: { id: sub.id },
-    data: { validatedByInstructor: parsed.data.validated, validatedAt: parsed.data.validated ? new Date() : null },
+    data: { validatedByInstructor: validated, validatedAt: validated ? new Date() : null },
   });
-  res.json({ ok: true });
+
+  // Gate do certificado: homologa (ou revoga) a emissão na matrícula do aluno.
+  const enr = await prisma.enrollment.findUnique({
+    where: { userId_courseId: { userId: sub.userId, courseId: sub.courseId } },
+    include: { user: true, course: true },
+  });
+  if (enr) {
+    if (validated && enr.passed) {
+      // Garante um código de certificado (caso ainda não exista).
+      let certificateCode = enr.certificateCode;
+      if (!certificateCode) {
+        const firstName = (enr.user.name.split(' ')[0] || 'ALUNO').toUpperCase();
+        const code = enr.course.code.replace(/\s+/g, '');
+        certificateCode = `CERT-${code}-${firstName}-${Math.floor(Math.random() * 899 + 100)}`;
+      }
+      await prisma.enrollment.update({
+        where: { id: enr.id },
+        data: { released: true, releasedAt: new Date(), certificateCode },
+      });
+      // E-mail de certificado liberado (fire-and-forget).
+      void sendCertificateEmail({ name: enr.user.name, email: enr.user.email }, enr.course.name, certificateCode);
+    } else if (!validated) {
+      await prisma.enrollment.update({
+        where: { id: enr.id },
+        data: { released: false, releasedAt: null },
+      });
+    }
+  }
+
+  res.json({ ok: true, released: validated && Boolean(enr?.passed) });
 });
 
 instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {

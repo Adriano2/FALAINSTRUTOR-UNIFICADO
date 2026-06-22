@@ -61,6 +61,7 @@ export interface Enrollment {
   startDate: string;
   examScore: number | null; // null if not taken yet
   passed: boolean;
+  released?: boolean; // certificado liberado (homologado) pelo instrutor
   certificateCode: string | null;
   enrolledAt: string;
 }

@@ -16,7 +16,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, authorize, type AuthedRequest } from './auth';
 import { getSignerInfo, signPayload, isIcpConfigured } from './icp';
-import { sendCertificateEmail } from './email';
 
 export const apiRouter = Router();
 
@@ -122,13 +121,21 @@ apiRouter.patch('/enrollments/:id/progress', authenticate, async (req: AuthedReq
   res.json({ enrollment });
 });
 
-// Submete o exame final: grava nota, aprovação, certificado e o registro.
+// Aproveitamento mínimo exigido para aprovação (portaria).
+const PASS_THRESHOLD = 75;
+
+// Submete o exame final. O aluno envia apenas as respostas; quando a prova do
+// curso está cadastrada no banco, o SERVIDOR corrige (autoritativo) e ignora
+// qualquer nota enviada pelo cliente. O certificado é gerado, porém só se torna
+// VÁLIDO após a liberação do instrutor (campo released).
 apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest, res: Response) => {
   const parsed = z
     .object({
-      score: z.number().int().min(0).max(100),
-      passed: z.boolean(),
-      answers: z.record(z.string(), z.number()).optional(),
+      // Aceitos por compatibilidade, mas só usados como fallback quando o curso
+      // não tem a prova cadastrada no banco (sem gabarito para corrigir).
+      score: z.number().int().min(0).max(100).optional(),
+      passed: z.boolean().optional(),
+      answers: z.record(z.string(), z.number()).default({}),
     })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Dados do exame inválidos.' });
@@ -141,9 +148,32 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
     return res.status(404).json({ error: 'Matrícula não encontrada.' });
   }
 
-  const { score, passed, answers } = parsed.data;
+  const { answers } = parsed.data;
 
-  // Gera o código do certificado no servidor (autoritativo).
+  // Gabarito da prova cadastrado no painel (autoritativo).
+  const questions = Array.isArray(enr.course.examQuestions)
+    ? (enr.course.examQuestions as Array<{ correctIndex: number }>)
+    : [];
+
+  let score: number;
+  let passed: boolean;
+  if (questions.length > 0) {
+    // Correção no servidor: compara as respostas com o gabarito.
+    let correct = 0;
+    questions.forEach((q, i) => {
+      const chosen = answers[String(i)];
+      if (typeof chosen === 'number' && chosen === q.correctIndex) correct += 1;
+    });
+    score = Math.round((correct / questions.length) * 100);
+    passed = score >= PASS_THRESHOLD;
+  } else {
+    // Curso sem prova cadastrada no banco: usa a nota do cliente (degradado).
+    score = parsed.data.score ?? 0;
+    passed = parsed.data.passed ?? false;
+  }
+
+  // Gera o código do certificado no servidor (autoritativo). O certificado fica
+  // PENDENTE de liberação do instrutor (released=false) até ser homologado.
   let certificateCode = enr.certificateCode;
   if (passed && !certificateCode) {
     const firstName = (enr.user.name.split(' ')[0] || 'ALUNO').toUpperCase();
@@ -158,6 +188,9 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
       passed,
       progress: 100,
       certificateCode: passed ? certificateCode : null,
+      // Nova submissão zera a liberação anterior: precisa ser homologada de novo.
+      released: false,
+      releasedAt: null,
     },
     include: enrollInclude,
   });
@@ -168,16 +201,13 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
       courseId: enr.courseId,
       score,
       passed,
-      answers: (answers ?? {}) as Prisma.InputJsonValue,
+      answers: answers as Prisma.InputJsonValue,
     },
   });
 
-  // E-mail de certificado emitido (fire-and-forget) quando aprovado.
-  if (passed && certificateCode) {
-    void sendCertificateEmail({ name: enr.user.name, email: enr.user.email }, enr.course.name, certificateCode);
-  }
-
-  res.json({ enrollment });
+  // O e-mail de certificado NÃO é enviado aqui: ele sai quando o instrutor
+  // liberar a prova (ver server/instructor.ts).
+  res.json({ enrollment, pendingRelease: passed });
 });
 
 // --- Conteúdo editável do site (público para leitura) ---
@@ -189,12 +219,22 @@ apiRouter.get('/content/:key', async (req, res) => {
 // --- Validação pública de certificado ---
 
 apiRouter.get('/certificates/:code', async (req, res) => {
+  const code = req.params.code.trim().toUpperCase();
   const enrollment = await prisma.enrollment.findFirst({
-    where: { certificateCode: req.params.code.trim().toUpperCase(), passed: true },
+    where: { certificateCode: code, passed: true },
     include: { user: true, course: { include: { instructors: true } } },
   });
   if (!enrollment) {
     return res.status(404).json({ valid: false, error: 'Certificado não encontrado.' });
+  }
+  // O certificado só é válido publicamente após a liberação (homologação) do
+  // instrutor responsável pela prova.
+  if (!enrollment.released) {
+    return res.status(200).json({
+      valid: false,
+      pending: true,
+      error: 'Certificado aguardando liberação do instrutor.',
+    });
   }
   const instructor = enrollment.course.instructors[0];
 

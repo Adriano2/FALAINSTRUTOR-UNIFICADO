@@ -376,10 +376,13 @@ export default function StudentDashboard({
         certificateCode: passed ? localCode : null
       });
 
-      if (passed) {
-        alert(`Parabéns! Você foi aprovado com aproveitamento de ${scorePercentage}%! Seu certificado do MTE foi emitido com sucesso e já está disponível para consulta.`);
+      // A nota e a aprovação são confirmadas pelo servidor (correção autoritativa).
+      const finalScore = updated?.examScore ?? scorePercentage;
+      const finalPassed = updated?.passed ?? passed;
+      if (finalPassed) {
+        alert(`Parabéns! Você foi aprovado com aproveitamento de ${finalScore}%! Sua prova foi enviada para homologação. O certificado ficará disponível assim que o instrutor responsável liberar a prova.`);
       } else {
-        alert(`Aproveitamento de ${scorePercentage}%. O mínimo exigido pela portaria é 75%. Estude os módulos novamente e realize uma nova tentativa.`);
+        alert(`Aproveitamento de ${finalScore}%. O mínimo exigido pela portaria é 75%. Estude os módulos novamente e realize uma nova tentativa.`);
       }
     }
 
@@ -675,13 +678,17 @@ export default function StudentDashboard({
                             {activeEnrollment.passed && (
                               <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-[11px] font-bold flex flex-col gap-3">
                                 <div className="flex items-center gap-2 font-display uppercase tracking-widest"><CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Concluído</div>
-                                {activeEnrollment.certificateCode && (
-                                  <button 
+                                {activeEnrollment.released && activeEnrollment.certificateCode ? (
+                                  <button
                                     onClick={() => setViewingCertificate(activeEnrollment)}
                                     className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-[10px] uppercase shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                                   >
                                     <Printer className="w-4 h-4" /> Emitir Certificado
                                   </button>
+                                ) : (
+                                  <div className="w-full py-2 px-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded text-[10px] font-bold uppercase tracking-wide text-center">
+                                    Aguardando liberação do instrutor
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -918,14 +925,18 @@ export default function StudentDashboard({
                               Acessar Aulas <ChevronRight className="w-3.5 h-3.5" />
                             </button>
 
-                            {enr.passed && enr.certificateCode && (
-                              <button 
+                            {enr.passed && enr.released && enr.certificateCode ? (
+                              <button
                                 onClick={() => setViewingCertificate(enr)}
                                 className="px-3 py-2 bg-emerald-650 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl select-none cursor-pointer flex items-center gap-1"
                               >
                                 Certificado ✓
                               </button>
-                            )}
+                            ) : enr.passed ? (
+                              <span className="px-3 py-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[11px] rounded-xl select-none flex items-center gap-1 border border-amber-200 dark:border-amber-500/30">
+                                Aguardando liberação
+                              </span>
+                            ) : null}
                           </div>
 
                         </div>

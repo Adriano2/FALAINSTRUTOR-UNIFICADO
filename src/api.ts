@@ -257,6 +257,7 @@ interface ApiEnrollment {
   startDate: string;
   examScore: number | null;
   passed: boolean;
+  released: boolean;
   certificateCode: string | null;
   enrolledAt: string;
   course: ApiCourse;
@@ -277,6 +278,7 @@ export function mapApiEnrollment(e: ApiEnrollment, user: User): Enrollment {
     startDate: (e.startDate || '').split('T')[0],
     examScore: e.examScore,
     passed: e.passed,
+    released: Boolean(e.released),
     certificateCode: e.certificateCode,
     enrolledAt: (e.enrolledAt || '').split('T')[0],
   };
@@ -350,7 +352,7 @@ export const adminApi = {
         id: en.id, userId: en.userId, userName: en.user?.name ?? '', userEmail: en.user?.email ?? '',
         courseId: en.courseId, courseName: en.course?.name ?? '', courseCode: en.course?.code ?? '',
         progress: en.progress, startDate: (en.startDate || '').split('T')[0], examScore: en.examScore,
-        passed: en.passed, certificateCode: en.certificateCode, enrolledAt: (en.enrolledAt || '').split('T')[0],
+        passed: en.passed, released: Boolean(en.released), certificateCode: en.certificateCode, enrolledAt: (en.enrolledAt || '').split('T')[0],
       })),
       transactions: t.transactions.map((tx) => ({
         id: tx.id, userId: tx.userId, userName: tx.user?.name ?? '', courseName: tx.courseName,

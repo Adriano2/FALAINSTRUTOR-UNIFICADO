@@ -150,16 +150,19 @@ async function main() {
         isActive: true,
       },
     });
-    // Matrícula concluída e aprovada na NR 35, com certificado emitido.
+    // Matrícula concluída e aprovada na NR 35, com certificado já liberado
+    // (homologado) pelo instrutor — pronto para validação pública.
     await prisma.enrollment.upsert({
       where: { userId_courseId: { userId: s.id, courseId: 'course-nr35' } },
-      update: { progress: 100, passed: true, examScore: 100, certificateCode: s.certificateCode },
+      update: { progress: 100, passed: true, examScore: 100, released: true, releasedAt: new Date(), certificateCode: s.certificateCode },
       create: {
         userId: s.id,
         courseId: 'course-nr35',
         progress: 100,
         passed: true,
         examScore: 100,
+        released: true,
+        releasedAt: new Date(),
         certificateCode: s.certificateCode,
       },
     });

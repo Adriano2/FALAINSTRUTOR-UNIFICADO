@@ -134,6 +134,8 @@ model Enrollment {
   startDate       DateTime @default(now())
   examScore       Int?
   passed          Boolean  @default(false)
+  released        Boolean  @default(false) // certificado liberado pelo instrutor (gate da emissão)
+  releasedAt      DateTime?
   certificateCode String?  @unique
   enrolledAt      DateTime @default(now())
 

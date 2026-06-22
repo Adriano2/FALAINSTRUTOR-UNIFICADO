@@ -1,0 +1,2 @@
+ALTER TABLE "Enrollment" ADD COLUMN "released" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Enrollment" ADD COLUMN "releasedAt" TIMESTAMP(3);
