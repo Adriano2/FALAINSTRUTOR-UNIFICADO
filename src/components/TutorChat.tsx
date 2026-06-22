@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Sparkles, Send, Bot, User as UserIcon, Loader2 } from 'lucide-react';
+import { apiUrl } from '../config';
 
 interface TutorChatProps {
   courseName: string;
@@ -44,7 +45,7 @@ export default function TutorChat({ courseName, modules }: TutorChatProps) {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/tutor', {
+      const res = await fetch(apiUrl('/tutor'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

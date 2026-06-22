@@ -12,6 +12,7 @@ import {
   User, Course, Enrollment, SalesTransaction, Coupon, Comment,
   ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig,
 } from './types';
+import { apiUrl } from './config';
 
 const TOKEN_KEY = 'fil_token';
 
@@ -55,7 +56,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`/api${path}`, { ...options, headers });
+  const res = await fetch(apiUrl(path), { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error((data && data.error) || 'Não foi possível concluir a operação.');
