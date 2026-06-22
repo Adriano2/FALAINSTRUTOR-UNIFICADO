@@ -18,6 +18,7 @@ import {
   SEED_COUPONS,
   INITIAL_LAYOUT_CONFIG,
   INITIAL_PAYMENT_CONFIG,
+  getExamQuestions,
 } from '../src/data';
 
 const prisma = new PrismaClient();
@@ -88,6 +89,21 @@ async function main() {
           })),
         },
       },
+    });
+  }
+
+  // 2b) Provas no banco (correção autoritativa no servidor).
+  // Preenche examQuestions APENAS quando o curso ainda não tem prova cadastrada,
+  // para NÃO sobrescrever provas editadas no painel admin. Usa a prova específica
+  // do curso quando existe, ou a prova genérica de SST como base.
+  const coursesNeedingExam = await prisma.course.findMany({ select: { id: true, examQuestions: true } });
+  for (const c of coursesNeedingExam) {
+    const current = Array.isArray(c.examQuestions) ? c.examQuestions : [];
+    if (current.length > 0) continue; // preserva prova já cadastrada
+    const questions = getExamQuestions(c.id);
+    await prisma.course.update({
+      where: { id: c.id },
+      data: { examQuestions: questions as unknown as Prisma.InputJsonValue },
     });
   }
 
