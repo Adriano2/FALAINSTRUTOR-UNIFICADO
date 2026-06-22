@@ -14,13 +14,14 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
 import InvoiceManager from './admin/InvoiceManager';
 import ExamEditor from './admin/ExamEditor';
 import CompanyManager from './admin/CompanyManager';
+import HealthMappingManager from './admin/HealthMappingManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -451,6 +452,7 @@ export default function AdminDashboard({
                   { id: 'news', label: 'Gestão de notícias', icon: Newspaper },
                   { id: 'products', label: 'Gestão de produtos', icon: Package },
                   { id: 'coupons', label: 'Gestão de cupons', icon: Tag },
+                  { id: 'health', label: 'Mapeamento da Saúde', icon: HeartPulse },
                   { id: 'exam-editor', label: 'Editor de provas', icon: BookOpenCheck },
                   { id: 'exams', label: 'Auditoria de provas', icon: ClipboardList },
                 ],
@@ -835,6 +837,11 @@ export default function AdminDashboard({
           {/* TAB: GESTÃO DE EMPRESAS */}
           {activeTab === 'companies' && (
             <CompanyManager users={users} />
+          )}
+
+          {/* TAB: MAPEAMENTO DA SAÚDE */}
+          {activeTab === 'health' && (
+            <HealthMappingManager />
           )}
 
           {/* TAB 3: MATRICULAS (ENROLLMENTS) */}
