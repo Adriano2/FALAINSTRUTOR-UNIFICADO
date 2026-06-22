@@ -15,6 +15,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, authorize, type AuthedRequest } from './auth';
 import { lookupCnpj } from './nr04';
+import { extractPfx } from './icp';
+import { encryptSecret } from './crypto';
 
 export const adminRouter = Router();
 
@@ -238,13 +240,86 @@ const instructorSchema = z.object({
   icpEnabled: z.boolean().default(false),
 });
 
+// Seleção segura do instrutor (NUNCA inclui o .pfx nem a senha cifrados).
+const instructorSelect = {
+  id: true, name: true, formation: true, mte: true, crea: true, crq: true,
+  signatureUrl: true, icpEnabled: true,
+  digitalCertHolder: true, digitalCertIssuer: true, digitalCertSerial: true, digitalCertValidUntil: true,
+  digitalCertPfx: true, // usado só para derivar o flag; removido no mapeamento
+  course: { select: { id: true, code: true, name: true } },
+} as const;
+
+type InstructorRow = Prisma.InstructorGetPayload<{ select: typeof instructorSelect }>;
+
+// Mapeia para o formato público: troca o .pfx cifrado por um booleano.
+function mapInstructor(i: InstructorRow) {
+  const { digitalCertPfx, ...rest } = i;
+  return { ...rest, hasDigitalCert: Boolean(digitalCertPfx) };
+}
+
+async function listInstructorsSafe() {
+  const rows = await prisma.instructor.findMany({ select: instructorSelect, orderBy: { name: 'asc' } });
+  return rows.map(mapInstructor);
+}
+
 // Lista todos os instrutores cadastrados, com o curso ao qual estão associados.
 adminRouter.get('/instructors', async (_req, res) => {
-  const instructors = await prisma.instructor.findMany({
-    include: { course: { select: { id: true, code: true, name: true } } },
-    orderBy: { name: 'asc' },
-  });
-  res.json({ instructors });
+  res.json({ instructors: await listInstructorsSafe() });
+});
+
+// Configura o CERTIFICADO DIGITAL de um instrutor (por nome — vale para todas as
+// associações dele). Aceita identidade manual (assinatura eletrônica) e/ou o
+// upload do .pfx A1 (assinatura ICP-Brasil). O .pfx e a senha são VALIDADOS,
+// cifrados em repouso e nunca retornados pela API.
+adminRouter.patch('/instructors/certificate', async (req, res) => {
+  const parsed = z
+    .object({
+      name: z.string().min(2),
+      icpEnabled: z.boolean().optional(),
+      holder: z.string().optional(),
+      issuer: z.string().optional(),
+      serial: z.string().optional(),
+      validUntil: z.string().optional(),
+      pfxBase64: z.string().optional(), // conteúdo do .pfx em base64 (opcional)
+      password: z.string().optional(),  // senha do .pfx (opcional)
+      clearPfx: z.boolean().optional(), // remove o .pfx (volta a eletrônica)
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do certificado inválidos.' });
+  const d = parsed.data;
+
+  const data: Prisma.InstructorUpdateManyMutationInput = {};
+  if (d.icpEnabled !== undefined) data.icpEnabled = d.icpEnabled;
+  if (d.holder !== undefined) data.digitalCertHolder = d.holder || null;
+  if (d.issuer !== undefined) data.digitalCertIssuer = d.issuer || null;
+  if (d.serial !== undefined) data.digitalCertSerial = d.serial || null;
+  if (d.validUntil !== undefined) data.digitalCertValidUntil = d.validUntil || null;
+
+  if (d.clearPfx) {
+    data.digitalCertPfx = null;
+    data.digitalCertPassword = null;
+  } else if (d.pfxBase64 && d.password) {
+    // Valida o .pfx + senha extraindo a identidade real do certificado.
+    let buffer: Buffer;
+    try { buffer = Buffer.from(d.pfxBase64, 'base64'); } catch { return res.status(400).json({ error: 'Arquivo .pfx inválido.' }); }
+    const extracted = extractPfx(buffer, d.password);
+    if (!extracted) return res.status(400).json({ error: 'Não foi possível abrir o .pfx. Verifique o arquivo e a senha.' });
+    // Cifra em repouso (AES-256-GCM).
+    data.digitalCertPfx = encryptSecret(d.pfxBase64);
+    data.digitalCertPassword = encryptSecret(d.password);
+    // Preenche a identidade a partir do próprio certificado (autoritativo).
+    data.digitalCertHolder = extracted.info.holder;
+    data.digitalCertIssuer = extracted.info.issuer;
+    data.digitalCertSerial = extracted.info.serial;
+    data.digitalCertValidUntil = extracted.info.validUntil;
+    data.icpEnabled = true;
+  } else if ((d.pfxBase64 && !d.password) || (!d.pfxBase64 && d.password)) {
+    return res.status(400).json({ error: 'Para a assinatura ICP-Brasil envie o arquivo .pfx e a senha juntos.' });
+  }
+
+  const result = await prisma.instructor.updateMany({ where: { name: d.name }, data });
+  if (result.count === 0) return res.status(404).json({ error: 'Instrutor não encontrado.' });
+  res.json({ instructors: await listInstructorsSafe() });
 });
 
 // Cadastra um instrutor e o associa a um ou mais treinamentos de uma só vez.
@@ -257,11 +332,7 @@ adminRouter.post('/instructors', async (req, res) => {
   await prisma.instructor.createMany({
     data: courseIds.map((courseId) => ({ ...data, courseId })) as Prisma.InstructorUncheckedCreateInput[],
   });
-  const instructors = await prisma.instructor.findMany({
-    include: { course: { select: { id: true, code: true, name: true } } },
-    orderBy: { name: 'asc' },
-  });
-  res.status(201).json({ instructors });
+  res.status(201).json({ instructors: await listInstructorsSafe() });
 });
 
 // Cria o acesso (login) do instrutor (role INSTRUCTOR). O nome deve coincidir

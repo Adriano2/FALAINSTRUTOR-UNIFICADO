@@ -119,7 +119,19 @@ model Instructor {
   crea         String? // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
   crq          String? // Registro CRQ (Conselho Regional de Química), opcional
   signatureUrl String? // imagem da assinatura (scan), opcional
-  icpEnabled   Boolean @default(false) // assinatura digital ICP-Brasil habilitada
+  icpEnabled   Boolean @default(false) // assinatura digital habilitada para este instrutor
+
+  // Certificado digital do instrutor (assinatura eletrônica / ICP-Brasil).
+  // Identidade exibida no bloco de assinatura do certificado emitido:
+  digitalCertHolder     String? // titular do certificado (ex.: "ADRIANO A. R. RICARDO:12345678900")
+  digitalCertIssuer     String? // Autoridade Certificadora emissora
+  digitalCertSerial     String? // número de série do certificado
+  digitalCertValidUntil String? // validade (dd/mm/aaaa)
+  // Material de assinatura ICP-Brasil (A1). CIFRADO em repouso (AES-256-GCM) e
+  // NUNCA retornado pela API — somente gravação. Vazio = assinatura eletrônica.
+  digitalCertPfx       String? // conteúdo do .pfx (base64) cifrado
+  digitalCertPassword  String? // senha do .pfx cifrada
+
   course       Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   courseId     String
 }

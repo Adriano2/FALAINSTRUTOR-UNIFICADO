@@ -104,6 +104,11 @@ export interface ApiInstructor {
   crq: string | null;
   signatureUrl: string | null;
   icpEnabled: boolean;
+  digitalCertHolder?: string | null;
+  digitalCertIssuer?: string | null;
+  digitalCertSerial?: string | null;
+  digitalCertValidUntil?: string | null;
+  hasDigitalCert?: boolean; // true quando há um .pfx ICP-Brasil cadastrado
   course: { id: string; code: string; name: string } | null;
 }
 
@@ -432,6 +437,14 @@ export const adminApi = {
   },
   createInstructorLogin(input: { name: string; email: string; password: string; cpf: string }) {
     return apiFetch(`/admin/instructors/login`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  // Configura o certificado digital do instrutor (assinatura eletrônica / ICP-Brasil).
+  // pfxBase64 + password só são enviados ao habilitar a assinatura ICP com o A1.
+  setInstructorCertificate(input: {
+    name: string; icpEnabled?: boolean; holder?: string; issuer?: string; serial?: string; validUntil?: string;
+    pfxBase64?: string; password?: string; clearPfx?: boolean;
+  }) {
+    return apiFetch<{ instructors: ApiInstructor[] }>(`/admin/instructors/certificate`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   listInvoices() {
     return apiFetch<{ invoices: ApiInvoice[] }>(`/admin/invoices`);

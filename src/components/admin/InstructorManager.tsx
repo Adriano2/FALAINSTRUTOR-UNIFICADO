@@ -9,9 +9,19 @@
  */
 
 import React from 'react';
-import { Plus, Trash2, Loader2, GraduationCap, BadgeCheck, Check } from 'lucide-react';
+import { Plus, Trash2, Loader2, GraduationCap, BadgeCheck, Check, ShieldCheck, KeyRound, Upload } from 'lucide-react';
 import { adminApi, ApiInstructor } from '../../api';
 import { Course } from '../../types';
+
+// Lê um arquivo (.pfx) e devolve o conteúdo em base64 (sem o prefixo data:).
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.readAsDataURL(file);
+  });
+}
 
 interface InstructorManagerProps {
   courses: Course[];
@@ -95,6 +105,80 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
   // Criar acesso (login) do instrutor ao painel próprio.
   const [loginKey, setLoginKey] = React.useState<string | null>(null);
   const [loginForm, setLoginForm] = React.useState({ email: '', cpf: '', password: '' });
+
+  // Certificado digital do instrutor (assinatura eletrônica / ICP-Brasil).
+  const [certKey, setCertKey] = React.useState<string | null>(null);
+  const [certSaving, setCertSaving] = React.useState(false);
+  const [certPfxB64, setCertPfxB64] = React.useState<string>('');
+  const [certPfxName, setCertPfxName] = React.useState<string>('');
+  const [certForm, setCertForm] = React.useState({ holder: '', issuer: '', serial: '', validUntil: '', password: '' });
+
+  const openCert = (head: ApiInstructor) => {
+    if (certKey === head.id) { setCertKey(null); return; }
+    setCertKey(head.id);
+    setCertPfxB64(''); setCertPfxName('');
+    setCertForm({
+      holder: head.digitalCertHolder ?? '',
+      issuer: head.digitalCertIssuer ?? '',
+      serial: head.digitalCertSerial ?? '',
+      validUntil: head.digitalCertValidUntil ?? '',
+      password: '',
+    });
+  };
+
+  const handlePfxPick = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      setCertPfxB64(await fileToBase64(file));
+      setCertPfxName(file.name);
+    } catch {
+      alert('Não foi possível ler o arquivo .pfx.');
+    }
+  };
+
+  const handleSaveCert = async (head: ApiInstructor, mode: 'eletronica' | 'icp') => {
+    setCertSaving(true);
+    try {
+      const payload: Parameters<typeof adminApi.setInstructorCertificate>[0] = {
+        name: head.name,
+        icpEnabled: true,
+        holder: certForm.holder.trim() || undefined,
+        issuer: certForm.issuer.trim() || undefined,
+        serial: certForm.serial.trim() || undefined,
+        validUntil: certForm.validUntil.trim() || undefined,
+      };
+      if (mode === 'icp') {
+        if (!certPfxB64 || certForm.password.length < 1) {
+          alert('Selecione o arquivo .pfx e informe a senha para a assinatura ICP-Brasil.');
+          setCertSaving(false);
+          return;
+        }
+        payload.pfxBase64 = certPfxB64;
+        payload.password = certForm.password;
+      }
+      const res = await adminApi.setInstructorCertificate(payload);
+      setInstructors(Array.isArray(res.instructors) ? res.instructors : []);
+      setCertKey(null);
+      onChanged?.();
+      alert(mode === 'icp'
+        ? `Certificado ICP-Brasil de ${head.name} validado e cadastrado com segurança.`
+        : `Assinatura eletrônica de ${head.name} configurada.`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Não foi possível salvar o certificado.');
+    } finally {
+      setCertSaving(false);
+    }
+  };
+
+  const handleClearCert = async (head: ApiInstructor) => {
+    if (!confirm('Remover o certificado .pfx ICP-Brasil deste instrutor? Ele voltará à assinatura eletrônica.')) return;
+    try {
+      const res = await adminApi.setInstructorCertificate({ name: head.name, clearPfx: true });
+      setInstructors(Array.isArray(res.instructors) ? res.instructors : []);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Não foi possível remover o certificado.');
+    }
+  };
 
   const handleCreateLogin = async (head: ApiInstructor) => {
     if (!loginForm.email || !loginForm.cpf || loginForm.password.length < 6) {
@@ -261,7 +345,80 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
                   >
                     <GraduationCap className="w-3 h-3" /> Criar acesso ao painel
                   </button>
+                  <button
+                    onClick={() => openCert(head)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-indigo-600 border border-indigo-200 dark:border-indigo-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                  >
+                    <KeyRound className="w-3 h-3" /> Certificado digital
+                  </button>
+                  {/* Status da assinatura do instrutor */}
+                  {head.hasDigitalCert ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300">
+                      <ShieldCheck className="w-3 h-3" /> ICP-Brasil
+                    </span>
+                  ) : head.icpEnabled ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300">
+                      <BadgeCheck className="w-3 h-3" /> Eletrônica
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800">
+                      Sem assinatura
+                    </span>
+                  )}
                 </div>
+
+                {/* Certificado digital do instrutor */}
+                {certKey === head.id && (
+                  <div className="pt-3 mt-1 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center gap-2 text-indigo-600">
+                      <KeyRound className="w-4 h-4" />
+                      <span className="text-[11px] font-black uppercase tracking-wide">Certificado digital — {head.name}</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input value={certForm.holder} onChange={(e) => setCertForm({ ...certForm, holder: e.target.value })} placeholder="Titular (ex.: NOME:CPF)" className={inputCls} />
+                      <input value={certForm.issuer} onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })} placeholder="Emissor / AC (opcional)" className={inputCls} />
+                      <input value={certForm.serial} onChange={(e) => setCertForm({ ...certForm, serial: e.target.value })} placeholder="Nº de série (opcional)" className={inputCls} />
+                      <input value={certForm.validUntil} onChange={(e) => setCertForm({ ...certForm, validUntil: e.target.value })} placeholder="Validade dd/mm/aaaa (opcional)" className={inputCls} />
+                    </div>
+
+                    {/* Modalidade 1 — Assinatura eletrônica (sem arquivo) */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button" disabled={certSaving}
+                        onClick={() => handleSaveCert(head, 'eletronica')}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold text-[11px] uppercase rounded"
+                      >
+                        {certSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeCheck className="w-3.5 h-3.5" />} Salvar assinatura eletrônica
+                      </button>
+                      {head.hasDigitalCert && (
+                        <button type="button" onClick={() => handleClearCert(head)} className="inline-flex items-center gap-1.5 px-3 py-2 text-red-600 border border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold text-[11px] uppercase rounded">
+                          <Trash2 className="w-3.5 h-3.5" /> Remover .pfx
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Modalidade 2 — Assinatura digital ICP-Brasil (A1 .pfx) */}
+                    <div className="rounded-lg border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-900/10 p-3 space-y-2">
+                      <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> Assinatura digital ICP-Brasil (certificado A1)</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">O arquivo .pfx e a senha são validados, <strong>cifrados em repouso</strong> e nunca retornados pela API. Não são versionados no projeto.</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label className="inline-flex items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300 cursor-pointer px-3 py-2 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <Upload className="w-3.5 h-3.5" /> {certPfxName || 'Selecionar arquivo .pfx'}
+                          <input type="file" accept=".pfx,.p12" className="hidden" onChange={(e) => handlePfxPick(e.target.files?.[0])} />
+                        </label>
+                        <input type="password" value={certForm.password} onChange={(e) => setCertForm({ ...certForm, password: e.target.value })} placeholder="Senha do certificado .pfx" className={inputCls} />
+                      </div>
+                      <button
+                        type="button" disabled={certSaving || !certPfxB64}
+                        onClick={() => handleSaveCert(head, 'icp')}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-[11px] uppercase rounded"
+                      >
+                        {certSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />} Validar e ativar ICP-Brasil
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Criar acesso (login) do instrutor */}
                 {loginKey === head.id && (

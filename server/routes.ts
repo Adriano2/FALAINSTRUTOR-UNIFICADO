@@ -15,7 +15,8 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, authorize, type AuthedRequest } from './auth';
-import { getSignerInfo, signPayload, isIcpConfigured } from './icp';
+import { getSignerInfo, signPayload, isIcpConfigured, extractPfx, signWithKey } from './icp';
+import { decryptSecret, electronicSign } from './crypto';
 
 export const apiRouter = Router();
 
@@ -238,13 +239,8 @@ apiRouter.get('/certificates/:code', async (req, res) => {
   }
   const instructor = enrollment.course.instructors[0];
 
-  // Identidade do certificado digital ICP-Brasil. Quando o .pfx está
-  // configurado (variáveis de ambiente), usamos a identidade REAL do
-  // certificado e assinamos criptograficamente os dados. Caso contrário,
-  // recorremos à identidade informada no painel administrativo.
   const cfg = await prisma.appConfig.findUnique({ where: { id: 'singleton' } });
   const payment = (cfg?.payment ?? {}) as Record<string, unknown>;
-  const signer = getSignerInfo();
 
   const canonical = [
     enrollment.certificateCode,
@@ -253,18 +249,64 @@ apiRouter.get('/certificates/:code', async (req, res) => {
     enrollment.course.code,
     enrollment.startDate,
   ].join('|');
-  const sig = signPayload(canonical);
 
-  const digitalSignature = {
-    holder: signer?.holder || (payment.digitalCertificateHolder as string) || instructor?.name || 'Instrutor Qualificado',
-    certificateName: (payment.digitalCertificateName as string) || null,
-    issuer: signer?.issuer || (payment.digitalCertificateIssuer as string) || 'ICP-Brasil',
-    serial: signer?.serial || (payment.digitalCertificateSerial as string) || null,
-    validUntil: signer?.validUntil || (payment.digitalCertificateValidUntil as string) || null,
-    icpVerified: isIcpConfigured(),
-    algorithm: sig?.algorithm || null,
-    signature: sig?.signature || null,
-  };
+  // Bloco de assinatura — prioriza o certificado digital DO INSTRUTOR responsável:
+  //   1) .pfx ICP-Brasil do instrutor → assinatura criptográfica RSA com a sua chave;
+  //   2) identidade do instrutor (sem .pfx) → assinatura ELETRÔNICA (HMAC, MP 2.200-2);
+  //   3) fallback: certificado global (env) ou identidade do painel.
+  let digitalSignature: Record<string, unknown> | null = null;
+
+  if (instructor?.digitalCertPfx && instructor.digitalCertPassword) {
+    const pfxB64 = decryptSecret(instructor.digitalCertPfx);
+    const pwd = decryptSecret(instructor.digitalCertPassword);
+    const extracted = pfxB64 && pwd ? extractPfx(Buffer.from(pfxB64, 'base64'), pwd) : null;
+    if (extracted) {
+      const sig = signWithKey(extracted.key, canonical);
+      digitalSignature = {
+        type: 'ICP-Brasil',
+        holder: instructor.digitalCertHolder || extracted.info.holder,
+        certificateName: null,
+        issuer: instructor.digitalCertIssuer || extracted.info.issuer,
+        serial: instructor.digitalCertSerial || extracted.info.serial,
+        validUntil: instructor.digitalCertValidUntil || extracted.info.validUntil,
+        icpVerified: true,
+        algorithm: sig.algorithm,
+        signature: sig.signature,
+      };
+    }
+  }
+
+  // Assinatura eletrônica do instrutor (identidade cadastrada, sem .pfx).
+  if (!digitalSignature && instructor?.icpEnabled) {
+    digitalSignature = {
+      type: 'Eletrônica',
+      holder: instructor.digitalCertHolder || instructor.name,
+      certificateName: null,
+      issuer: instructor.digitalCertIssuer || 'Assinatura eletrônica (MP 2.200-2/2001)',
+      serial: instructor.digitalCertSerial || null,
+      validUntil: instructor.digitalCertValidUntil || null,
+      icpVerified: false,
+      algorithm: 'HMAC-SHA256',
+      signature: electronicSign(canonical),
+    };
+  }
+
+  // Fallback: certificado global (variáveis de ambiente) ou identidade do painel.
+  if (!digitalSignature) {
+    const signer = getSignerInfo();
+    const sig = signPayload(canonical);
+    digitalSignature = {
+      type: isIcpConfigured() ? 'ICP-Brasil' : 'Eletrônica',
+      holder: signer?.holder || (payment.digitalCertificateHolder as string) || instructor?.name || 'Instrutor Qualificado',
+      certificateName: (payment.digitalCertificateName as string) || null,
+      issuer: signer?.issuer || (payment.digitalCertificateIssuer as string) || 'ICP-Brasil',
+      serial: signer?.serial || (payment.digitalCertificateSerial as string) || null,
+      validUntil: signer?.validUntil || (payment.digitalCertificateValidUntil as string) || null,
+      icpVerified: isIcpConfigured(),
+      algorithm: sig?.algorithm || (isIcpConfigured() ? null : 'HMAC-SHA256'),
+      signature: sig?.signature || (isIcpConfigured() ? null : electronicSign(canonical)),
+    };
+  }
 
   res.json({
     valid: true,
