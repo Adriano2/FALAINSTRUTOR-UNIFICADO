@@ -1,0 +1,20 @@
+{
+  "name": "FalaInstrutor — Treinamento e Homologação SST",
+  "short_name": "FalaInstrutor",
+  "description": "Plataforma de treinamento SST: cursos, matrículas, certificados, painéis do aluno, empresa, instrutor e administrador.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
