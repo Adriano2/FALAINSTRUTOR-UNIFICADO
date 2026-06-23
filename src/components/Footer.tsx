@@ -98,6 +98,14 @@ export default function Footer({ layoutConfig, paymentConfig, onNavigate }: Foot
                 </button>
               </li>
               <li>
+                <button
+                  onClick={() => onNavigate('divulgacao')}
+                  className="hover:text-slate-900 text-left transition-colors text-slate-505 font-medium"
+                >
+                  Quero me capacitar
+                </button>
+              </li>
+              <li>
                 <button 
                   onClick={() => alert("Baixando ART (Anotação de Responsabilidade Técnica) Geral de Treinamentos homologada no CREA-SP...")} 
                   className="hover:text-slate-900 text-left transition-colors text-slate-505 font-medium"

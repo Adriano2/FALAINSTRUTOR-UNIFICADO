@@ -95,6 +95,36 @@ export async function sendWelcomeEmail(user: { name: string; email: string }): P
   await sendEmail(user.email, subject, wrapHtml('Conta criada com sucesso', body));
 }
 
+// Notifica a equipe comercial sobre um novo lead captado (landing / agente IA).
+// Destinatário: LEADS_NOTIFY_EMAIL (ou ADMIN_EMAIL, ou o EMAIL_FROM).
+export async function sendLeadNotification(lead: {
+  type: string; name: string; email?: string | null; phone?: string | null;
+  company?: string | null; cnpj?: string | null; employeeCount?: number | null;
+  interest?: string | null; message?: string | null; source: string;
+}): Promise<void> {
+  const to = process.env.LEADS_NOTIFY_EMAIL || process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || '';
+  if (!to) return;
+  const tipo = lead.type === 'COMPANY' ? 'Empresa' : 'Profissional';
+  const origem = lead.source === 'ai-agent' ? 'Agente de IA' : 'Formulário da landing';
+  const row = (label: string, value?: string | number | null) =>
+    value ? `<tr><td style="padding:4px 10px 4px 0;color:#64748b">${label}</td><td style="padding:4px 0;font-weight:bold">${value}</td></tr>` : '';
+  const body =
+    `Um novo lead foi captado pela <strong>${origem}</strong>.<br><br>` +
+    `<table style="font-size:14px;border-collapse:collapse">` +
+    row('Tipo', tipo) +
+    row('Nome', lead.name) +
+    row('E-mail', lead.email ?? undefined) +
+    row('Telefone', lead.phone ?? undefined) +
+    row('Empresa', lead.company ?? undefined) +
+    row('CNPJ', lead.cnpj ?? undefined) +
+    row('Funcionários', lead.employeeCount ?? undefined) +
+    row('Interesse', lead.interest ?? undefined) +
+    row('Mensagem', lead.message ?? undefined) +
+    `</table>` +
+    (PUBLIC_URL ? `<br><a href="${PUBLIC_URL}" style="color:#1e9b46;font-weight:bold">Abrir o painel (Captação de leads)</a>` : '');
+  await sendEmail(to, `Novo lead (${tipo}) — ${lead.name}`, wrapHtml('Novo lead captado 🎯', body));
+}
+
 export async function sendCertificateEmail(
   user: { name: string; email: string },
   courseName: string,

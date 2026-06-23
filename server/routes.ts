@@ -17,6 +17,7 @@ import { prisma } from './db';
 import { authenticate, authorize, type AuthedRequest } from './auth';
 import { getSignerInfo, signPayload, isIcpConfigured, extractPfx, signWithKey } from './icp';
 import { decryptSecret, electronicSign } from './crypto';
+import { sendLeadNotification } from './email';
 
 export const apiRouter = Router();
 
@@ -363,6 +364,12 @@ export async function createLeadFromInput(input: unknown) {
       message: d.message?.trim() || null,
       source: d.source?.trim() || 'landing',
     },
+  });
+  // Notifica a equipe comercial (fire-and-forget; nunca bloqueia a captação).
+  void sendLeadNotification({
+    type: lead.type, name: lead.name, email: lead.email, phone: lead.phone,
+    company: lead.company, cnpj: lead.cnpj, employeeCount: lead.employeeCount,
+    interest: lead.interest, message: lead.message, source: lead.source,
   });
   return { lead };
 }
