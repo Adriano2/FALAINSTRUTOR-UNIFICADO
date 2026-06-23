@@ -18,6 +18,7 @@ import { authenticate, authorize, type AuthedRequest } from './auth';
 import { getSignerInfo, signPayload, isIcpConfigured, extractPfx, signWithKey } from './icp';
 import { decryptSecret, electronicSign } from './crypto';
 import { sendLeadNotification } from './email';
+import { sendLeadWhatsApp } from './whatsapp';
 
 export const apiRouter = Router();
 
@@ -370,6 +371,10 @@ export async function createLeadFromInput(input: unknown) {
     type: lead.type, name: lead.name, email: lead.email, phone: lead.phone,
     company: lead.company, cnpj: lead.cnpj, employeeCount: lead.employeeCount,
     interest: lead.interest, message: lead.message, source: lead.source,
+  });
+  void sendLeadWhatsApp({
+    type: lead.type, name: lead.name, email: lead.email, phone: lead.phone,
+    company: lead.company, employeeCount: lead.employeeCount, interest: lead.interest, source: lead.source,
   });
   return { lead };
 }

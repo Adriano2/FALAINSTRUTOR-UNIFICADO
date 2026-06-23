@@ -28,6 +28,7 @@ import { companyRouter } from './company';
 import { instructorRouter } from './instructor';
 import { paymentsRouter, paymentsConfigured } from './payments';
 import { emailConfigured } from './email';
+import { whatsappConfigured } from './whatsapp';
 import { prisma } from './db';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -57,7 +58,7 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   } catch {
     dbOk = false;
   }
-  res.json({ ok: true, db: dbOk, aiConfigured: Boolean(ai), model: GEMINI_MODEL, paymentsConfigured, emailConfigured: emailConfigured() });
+  res.json({ ok: true, db: dbOk, aiConfigured: Boolean(ai), model: GEMINI_MODEL, paymentsConfigured, emailConfigured: emailConfigured(), whatsappConfigured: whatsappConfigured() });
 });
 
 // Authentication + resource routes.
