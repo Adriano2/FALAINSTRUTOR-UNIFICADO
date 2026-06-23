@@ -73,7 +73,18 @@ export default function DivulgacaoLanding({ courses, onNavigate }: DivulgacaoLan
     <div className="w-full bg-slate-950 text-white font-sans">
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950/40" />
+        {/* Vídeo de fundo (autoplay, mudo, em loop) */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/landing-hero.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+        />
+        {/* Overlay escuro semitransparente para legibilidade do texto */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-950/80 to-emerald-950/70" />
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24 grid lg:grid-cols-2 gap-10 items-center">
           <div className="space-y-6">
