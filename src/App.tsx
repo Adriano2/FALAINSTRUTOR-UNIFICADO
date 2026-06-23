@@ -16,6 +16,7 @@ const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const CompanyDashboard = React.lazy(() => import('./components/CompanyDashboard'));
 const InstructorDashboard = React.lazy(() => import('./components/InstructorDashboard'));
 const ProjetoPedagogico = React.lazy(() => import('./components/ProjetoPedagogico'));
+const DivulgacaoLanding = React.lazy(() => import('./components/DivulgacaoLanding'));
 
 import { 
   INITIAL_LAYOUT_CONFIG, 
@@ -39,6 +40,9 @@ export default function App() {
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
 
   const [currentScreen, setCurrentScreen] = React.useState<string>(() => {
+    // Landing de divulgação compartilhável: /?lp ou /?lp=1
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('lp')) return 'divulgacao';
     return localStorage.getItem('fil_screen') || 'home';
   });
 
@@ -638,11 +642,20 @@ export default function App() {
     }
   };
 
+  // Landing de divulgação (standalone, sem o header/rodapé do app).
+  if (currentScreen === 'divulgacao') {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400 text-sm">Carregando…</div>}>
+        <DivulgacaoLanding courses={courses} onNavigate={handleNavigate} />
+      </React.Suspense>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-250 transition-colors duration-200">
-      
+
       {/* Dynamic Header Component */}
-      <Header 
+      <Header
         currentUser={currentUser}
         cartCount={cart.length}
         layoutConfig={layoutConfig}

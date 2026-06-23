@@ -519,3 +519,25 @@ adminRouter.put('/config', async (req, res) => {
   });
   res.json({ layout: cfg.layout, payment: cfg.payment });
 });
+
+// --- Captação de leads (landing de divulgação + agente de IA) ---
+
+adminRouter.get('/leads', async (_req, res) => {
+  const leads = await prisma.lead.findMany({ orderBy: { createdAt: 'desc' }, take: 500 });
+  res.json({ leads });
+});
+
+adminRouter.patch('/leads/:id', async (req, res) => {
+  const parsed = z
+    .object({ status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'CONVERTED', 'DISCARDED']) })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Status inválido.' });
+  const lead = await prisma.lead.update({ where: { id: req.params.id }, data: { status: parsed.data.status } }).catch(() => null);
+  if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
+  res.json({ lead });
+});
+
+adminRouter.delete('/leads/:id', async (req, res) => {
+  await prisma.lead.delete({ where: { id: req.params.id } }).catch(() => {});
+  res.json({ ok: true });
+});

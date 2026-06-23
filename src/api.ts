@@ -535,6 +535,67 @@ export const paymentsApi = {
   },
 };
 
+// --- Captação de leads (landing de divulgação + agente de IA) ---
+export interface ApiLead {
+  id: string;
+  type: 'PERSON' | 'COMPANY';
+  name: string;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  cnpj: string | null;
+  employeeCount: number | null;
+  interest: string | null;
+  message: string | null;
+  source: string;
+  status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'DISCARDED';
+  createdAt: string;
+}
+
+export interface LeadInput {
+  type: 'PERSON' | 'COMPANY';
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  cnpj?: string;
+  employeeCount?: number;
+  interest?: string;
+  message?: string;
+  source?: string;
+}
+
+export const leadsApi = {
+  // Cria um lead a partir do formulário público da landing.
+  create(input: LeadInput) {
+    return apiFetch<{ ok: boolean; leadId: string }>('/leads', { method: 'POST', body: JSON.stringify(input) });
+  },
+  // Conversa com o agente de IA de vendas (capta o lead automaticamente).
+  async chat(history: { role: 'user' | 'model'; text: string }[], courses: string[]): Promise<{ reply: string; leadCaptured: boolean }> {
+    const res = await fetch(apiUrl('/sales-agent'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ history, courses }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data && data.error) || 'Não foi possível falar com o agente.');
+    return { reply: data.reply ?? '', leadCaptured: Boolean(data.leadCaptured) };
+  },
+};
+
+// Métodos admin de leads.
+export const adminLeadsApi = {
+  list() {
+    return apiFetch<{ leads: ApiLead[] }>('/admin/leads');
+  },
+  updateStatus(id: string, status: ApiLead['status']) {
+    return apiFetch<{ lead: ApiLead }>(`/admin/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  },
+  remove(id: string) {
+    return apiFetch(`/admin/leads/${id}`, { method: 'DELETE' });
+  },
+};
+
 export const authApi = {
   async login(email: string, password: string): Promise<User> {
     const data = await apiFetch<{ token: string; user: ApiUser }>('/auth/login', {

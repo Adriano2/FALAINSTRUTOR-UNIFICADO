@@ -47,6 +47,40 @@ enum OrderStatus {
   FAILED
 }
 
+// Captação de clientes (landing page de divulgação + agente de IA).
+enum LeadType {
+  PERSON
+  COMPANY
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  DISCARDED
+}
+
+// Lead captado na landing de divulgação (formulário ou agente de IA de vendas).
+model Lead {
+  id            String     @id @default(cuid())
+  type          LeadType   @default(PERSON)
+  name          String
+  email         String?
+  phone         String?
+  company       String? // razão social (leads de empresa)
+  cnpj          String?
+  employeeCount Int? // nº de funcionários (empresa)
+  interest      String? // curso/treinamento de interesse
+  message       String? // mensagem livre ou resumo da conversa com o agente
+  source        String     @default("landing") // landing | ai-agent
+  status        LeadStatus @default(NEW)
+  createdAt     DateTime   @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String

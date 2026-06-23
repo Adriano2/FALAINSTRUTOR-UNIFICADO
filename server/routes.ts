@@ -328,3 +328,47 @@ apiRouter.get('/certificates/:code', async (req, res) => {
     },
   });
 });
+
+// --- Captação de leads (landing de divulgação + agente de IA) ---
+
+const leadSchema = z.object({
+  type: z.enum(['PERSON', 'COMPANY']).default('PERSON'),
+  name: z.string().min(2, 'Informe o nome.'),
+  email: z.string().email('E-mail inválido.').optional().or(z.literal('')),
+  phone: z.string().max(40).optional(),
+  company: z.string().max(160).optional(),
+  cnpj: z.string().max(20).optional(),
+  employeeCount: z.number().int().nonnegative().optional(),
+  interest: z.string().max(200).optional(),
+  message: z.string().max(2000).optional(),
+  source: z.string().max(40).optional(),
+});
+
+// Cria um lead (público). Exige ao menos um contato (e-mail ou telefone).
+export async function createLeadFromInput(input: unknown) {
+  const parsed = leadSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' as string };
+  const d = parsed.data;
+  if (!d.email && !d.phone) return { error: 'Informe um e-mail ou telefone para contato.' };
+  const lead = await prisma.lead.create({
+    data: {
+      type: d.type,
+      name: d.name.trim(),
+      email: d.email ? d.email.toLowerCase().trim() : null,
+      phone: d.phone?.trim() || null,
+      company: d.company?.trim() || null,
+      cnpj: d.cnpj?.replace(/\D/g, '') || null,
+      employeeCount: d.employeeCount ?? null,
+      interest: d.interest?.trim() || null,
+      message: d.message?.trim() || null,
+      source: d.source?.trim() || 'landing',
+    },
+  });
+  return { lead };
+}
+
+apiRouter.post('/leads', async (req, res) => {
+  const result = await createLeadFromInput(req.body);
+  if ('error' in result) return res.status(400).json({ error: result.error });
+  res.status(201).json({ ok: true, leadId: result.lead.id });
+});
