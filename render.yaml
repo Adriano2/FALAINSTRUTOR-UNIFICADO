@@ -15,7 +15,7 @@ services:
     buildCommand: npm install && npx prisma generate && npm run build
     # Aplica migrações + seed (idempotente) e sobe o servidor. Feito no start
     # para funcionar também no plano gratuito (onde preDeployCommand não roda).
-    startCommand: npx prisma migrate deploy && npx prisma db seed && npm start
+    startCommand: npx prisma migrate deploy && (npx prisma db seed || echo "seed falhou — seguindo sem bloquear o boot") && npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
