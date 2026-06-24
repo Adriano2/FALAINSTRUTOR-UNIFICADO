@@ -247,7 +247,27 @@ async function main() {
     { id: 'p1', name: 'CREA-SP', logoUrl: '', url: 'https://www.creasp.org.br' },
     { id: 'p2', name: 'Ministério do Trabalho e Emprego', logoUrl: '', url: 'https://www.gov.br/trabalho-e-emprego' },
   ];
-  for (const [key, data] of [['news', news], ['partners', partners]] as const) {
+  // Responsável técnico dos treinamentos (configurável no painel → Arquivos).
+  const techResponsible = [
+    {
+      name: 'Magnus Leandro de Souza',
+      title: 'Engenheiro de Segurança do Trabalho',
+      register: 'CREA-SP 5070766148',
+      document: 'CPF 221.761.998-55',
+      fileUrl: '/arquivos/CREA-MAGNUS-LEANDRO-DE-SOUZA.pdf',
+    },
+  ];
+  // Documentos da aba Arquivos.
+  const adminFiles = [
+    {
+      id: 'doc-crea-magnus',
+      name: 'CREA — Magnus Leandro de Souza',
+      category: 'Responsável Técnico',
+      url: '/arquivos/CREA-MAGNUS-LEANDRO-DE-SOUZA.pdf',
+      date: '2026-06-24',
+    },
+  ];
+  for (const [key, data] of [['news', news], ['partners', partners], ['tech_responsible', techResponsible], ['admin_files', adminFiles]] as const) {
     await prisma.siteContent.upsert({
       where: { key },
       update: {},

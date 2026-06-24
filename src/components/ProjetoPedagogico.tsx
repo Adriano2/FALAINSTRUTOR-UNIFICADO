@@ -7,11 +7,23 @@ import React from 'react';
 import { ArrowLeft, Printer, FileText } from 'lucide-react';
 import { Course } from '../types';
 import { ShieldEmblem } from './BrandLogo';
+import { contentApi } from '../api';
 
 interface ProjetoPedagogicoProps {
   courses: Course[];
   onNavigateHome: () => void;
 }
+
+interface TechResp { name: string; title?: string; register?: string; document?: string; fileUrl?: string }
+
+// Responsável técnico padrão (configurável no painel admin → Arquivos).
+const DEFAULT_TECH: TechResp = {
+  name: 'Magnus Leandro de Souza',
+  title: 'Engenheiro de Segurança do Trabalho',
+  register: 'CREA-SP 5070766148',
+  document: 'CPF 221.761.998-55',
+  fileUrl: '/arquivos/CREA-MAGNUS-LEANDRO-DE-SOUZA.pdf',
+};
 
 const NAVY = '#0f2147';
 
@@ -25,6 +37,14 @@ function SecHeader({ n, title }: { n: string; title: string }) {
 }
 
 export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPedagogicoProps) {
+  // Responsável técnico configurável no painel admin (Arquivos).
+  const [tech, setTech] = React.useState<TechResp>(DEFAULT_TECH);
+  React.useEffect(() => {
+    contentApi.get('tech_responsible').then((d) => {
+      if (Array.isArray(d) && d[0]?.name) setTech({ ...DEFAULT_TECH, ...d[0] });
+    }).catch(() => {});
+  }, []);
+
   const sumario = [
     'Justificativa', 'Informações dos cursos', 'Objetivo Geral', 'Perfil profissional',
     'Público-alvo', 'Escolaridade mínima requerida', 'Documentos para matrícula',
@@ -220,8 +240,12 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
           <section>
             <SecHeader n="14" title="Equipe técnica responsável" />
             <p className="mb-3">
-              O responsável técnico geral pelos treinamentos é <strong>Adriano Aparecido Ribas Ricardo</strong> —
-              Técnico de Segurança do Trabalho, MTE nº 0124684/SP. Cada treinamento é conduzido e homologado pelo
+              O responsável técnico geral pelos treinamentos é <strong>{tech.name}</strong>
+              {tech.title ? ` — ${tech.title}` : ''}{tech.register ? `, ${tech.register}` : ''}
+              {tech.document ? ` (${tech.document})` : ''}.{' '}
+              {tech.fileUrl ? (
+                <a href={tech.fileUrl} target="_blank" rel="noreferrer" className="text-blue-700 underline font-semibold">Ver registro profissional</a>
+              ) : null} Cada treinamento é conduzido e homologado pelo
               respectivo responsável técnico indicado a seguir:
             </p>
             <ul className="list-disc pl-5 space-y-1">

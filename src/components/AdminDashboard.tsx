@@ -14,7 +14,7 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
@@ -23,6 +23,7 @@ import ExamEditor from './admin/ExamEditor';
 import CompanyManager from './admin/CompanyManager';
 import HealthMappingManager from './admin/HealthMappingManager';
 import LeadManager from './admin/LeadManager';
+import FileManager from './admin/FileManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -449,6 +450,7 @@ export default function AdminDashboard({
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
                   { id: 'companies', label: 'Gestão de empresas', icon: Building2 },
                   { id: 'leads', label: 'Captação de leads', icon: Megaphone },
+                  { id: 'files', label: 'Arquivos', icon: FolderArchive },
                   { id: 'users', label: 'Gestão de usuários', icon: Users },
                   { id: 'pages', label: 'Gestão de páginas', icon: Layout },
                   { id: 'news', label: 'Gestão de notícias', icon: Newspaper },
@@ -844,6 +846,10 @@ export default function AdminDashboard({
           {/* TAB: MAPEAMENTO DA SAÚDE */}
           {activeTab === 'leads' && (
             <LeadManager />
+          )}
+
+          {activeTab === 'files' && (
+            <FileManager />
           )}
 
           {activeTab === 'health' && (
