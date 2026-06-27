@@ -470,6 +470,145 @@ export const CONTEUDO_PROGRAMATICO: Record<string, string[]> = {
   ],
 };
 
+// --- Treinamento em slides (deck por NR) ------------------------------------
+// Conteúdo didático em slides, exibido no player do aluno (aba "Apresentação de
+// Slides"). Estático no bundle (não depende do banco). Cada deck segue o mesmo
+// template: título + tópicos. Use SLIDES_BY_CODE[course.code].
+export interface TrainingSlide {
+  title: string;
+  bullets: string[];
+}
+
+export const SLIDES_BY_CODE: Record<string, TrainingSlide[]> = {
+  "NR 06": [
+    {
+      title: "NR 06 — Equipamento de Proteção Individual (EPI)",
+      bullets: [
+        "Treinamento sobre seleção, uso, guarda e conservação de EPI.",
+        "Base legal: Norma Regulamentadora nº 06 (Portaria MTb).",
+        "Objetivo: proteger a saúde e a integridade física do trabalhador.",
+        "Carga horária e avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Módulo 01 — O que é EPI",
+      bullets: [
+        "EPI: todo dispositivo ou produto de uso individual destinado à proteção contra riscos que ameacem a segurança e a saúde no trabalho.",
+        "Diferença para o EPC (Proteção Coletiva), que protege todos ao mesmo tempo.",
+        "O EPI é a última barreira de proteção, quando o risco não pode ser eliminado.",
+        "Pode ser de fabricação nacional ou importado.",
+      ],
+    },
+    {
+      title: "Hierarquia das Medidas de Controle",
+      bullets: [
+        "1º) Eliminar ou reduzir o risco na fonte.",
+        "2º) Medidas de proteção coletiva (EPC).",
+        "3º) Medidas administrativas / organização do trabalho.",
+        "4º) EPI — adotado quando as anteriores forem inviáveis ou insuficientes, ou em caráter complementar/emergencial.",
+      ],
+    },
+    {
+      title: "Certificado de Aprovação (CA)",
+      bullets: [
+        "Todo EPI só pode ser vendido ou utilizado com o CA emitido pelo órgão competente.",
+        "O CA comprova que o equipamento foi ensaiado e é eficaz contra o risco.",
+        "Verifique o número e a validade do CA impressos no equipamento.",
+        "EPI sem CA, vencido ou danificado NÃO oferece proteção legal nem real.",
+      ],
+    },
+    {
+      title: "Responsabilidades do Empregador",
+      bullets: [
+        "Fornecer o EPI adequado ao risco, gratuitamente e em perfeito estado.",
+        "Orientar e treinar o trabalhador sobre o uso correto, guarda e conservação.",
+        "Exigir o uso e fiscalizar.",
+        "Substituir imediatamente quando danificado ou extraviado e higienizar/manter.",
+        "Registrar o fornecimento (ficha de controle).",
+      ],
+    },
+    {
+      title: "Responsabilidades do Trabalhador",
+      bullets: [
+        "Usar o EPI apenas para a finalidade a que se destina.",
+        "Responsabilizar-se pela guarda e conservação.",
+        "Comunicar qualquer alteração que o torne impróprio para uso.",
+        "Cumprir as orientações do empregador sobre o uso adequado.",
+      ],
+    },
+    {
+      title: "Responsabilidades do Fabricante / Importador",
+      bullets: [
+        "Garantir a qualidade e manter o Certificado de Aprovação (CA) válido.",
+        "Comercializar somente EPI com CA.",
+        "Fornecer instruções de uso, manutenção e restrições.",
+        "Responsabilizar-se pela eficácia do equipamento contra o risco indicado.",
+      ],
+    },
+    {
+      title: "Tipos de EPI por Região do Corpo",
+      bullets: [
+        "Cabeça: capacete de segurança.",
+        "Olhos e face: óculos de proteção, protetor facial.",
+        "Auditiva: protetor tipo plugue (inserção) ou tipo concha (abafador).",
+        "Respiratória: respiradores e máscaras (PFF, semifacial, facial).",
+        "Tronco e membros: vestimentas, aventais, luvas, mangotes, calçados, perneiras.",
+        "Proteção contra quedas: cinturão de segurança tipo paraquedista e talabarte.",
+      ],
+    },
+    {
+      title: "Critérios de Seleção do EPI",
+      bullets: [
+        "Partir da análise de risco da atividade (PGR).",
+        "Escolher o EPI adequado ao agente e ao nível do risco.",
+        "Considerar conforto, ajuste e compatibilidade entre EPIs.",
+        "Conferir CA válido para o risco específico.",
+      ],
+    },
+    {
+      title: "Uso Correto e Inspeção",
+      bullets: [
+        "Inspecionar o EPI antes de cada uso (trincas, rasgos, desgaste, validade).",
+        "Ajustar corretamente ao corpo para garantir a vedação/proteção.",
+        "Respeitar a vida útil indicada pelo fabricante.",
+        "Não improvisar nem adaptar equipamentos.",
+      ],
+    },
+    {
+      title: "Higienização, Guarda e Conservação",
+      bullets: [
+        "Limpar conforme as instruções do fabricante.",
+        "Guardar em local limpo, seco e protegido do sol e de contaminantes.",
+        "Não compartilhar EPI de uso pessoal (ex.: protetor auditivo, respirador).",
+        "Substituir sempre que perder a função de proteção.",
+      ],
+    },
+    {
+      title: "Ficha de Controle de Entrega de EPI",
+      bullets: [
+        "Documento que registra cada EPI entregue ao trabalhador.",
+        "Deve conter: nome, EPI, nº do CA, data de entrega e assinatura.",
+        "Comprova o cumprimento da obrigação legal do empregador.",
+        "Atualizada a cada nova entrega, troca ou devolução.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "O EPI protege quando há seleção correta, uso disciplinado e conservação.",
+        "Responsabilidade compartilhada: empregador fornece e fiscaliza, trabalhador usa e conserva.",
+        "Em caso de dúvida, procure o SESMT ou o responsável de segurança.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+};
+
+// Vídeo de referência por NR (fallback quando o curso não tem vídeo no banco).
+export const REFERENCE_VIDEO_BY_CODE: Record<string, string> = {
+  "NR 06": "https://www.youtube.com/watch?v=qT5RwyBF2u0",
+};
+
 export const SEED_COUPONS: Coupon[] = [
   {
     id: "cup-1",

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
-import { getExamQuestions, CONTEUDO_PROGRAMATICO } from '../data';
+import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE } from '../data';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
 // jsPDF, html2canvas-pro e qrcode são carregados sob demanda (import dinâmico)
 // para não pesar o bundle inicial — só baixam quando o aluno gera/visualiza o
@@ -100,6 +100,7 @@ export default function StudentDashboard({
   // Classroom Player View Mode
   const [activeEnrollment, setActiveEnrollment] = React.useState<Enrollment | null>(null);
   const [selectedModuleIdx, setSelectedModuleIdx] = React.useState(0);
+  const [slideIdx, setSlideIdx] = React.useState(0); // slide atual no deck de treinamento
   const [videoProgressRate, setVideoProgressRate] = React.useState<Record<string, number>>({}); // maps enrollmentId -> last completed module index
   
   // Immersive & Lesson Configs
@@ -282,6 +283,7 @@ export default function StudentDashboard({
   const handleOpenClassroom = (enrollment: Enrollment) => {
     setActiveEnrollment(enrollment);
     setSelectedModuleIdx(0);
+    setSlideIdx(0);
     setIsTakingExam(false);
     setExamAnswers({});
   };
@@ -516,8 +518,8 @@ export default function StudentDashboard({
                         
                         {/* Player Content area based on lessonType */}
                         {lessonType === 'video' ? (
-                          (course.moduleVideos?.[selectedModuleIdx] || course.videoUrl) ? (
-                            <CourseVideo url={(course.moduleVideos?.[selectedModuleIdx] || course.videoUrl)!} />
+                          (course.moduleVideos?.[selectedModuleIdx] || course.videoUrl || REFERENCE_VIDEO_BY_CODE[course.code]) ? (
+                            <CourseVideo url={(course.moduleVideos?.[selectedModuleIdx] || course.videoUrl || REFERENCE_VIDEO_BY_CODE[course.code])!} />
                           ) : (
                           <div className="flex-1 flex flex-col items-center justify-center text-center text-white space-y-4">
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-black to-black z-0 pointer-events-none" />
@@ -538,22 +540,70 @@ export default function StudentDashboard({
                           </div>
                           )
                         ) : (
-                          <div className="flex-1 flex items-center justify-center bg-slate-100 text-slate-800 w-full overflow-hidden relative">
-                              {/* Fake PDF slide generator viewer */}
-                              <div className="w-[90%] sm:w-[85%] h-[85%] bg-white shadow-2xl shadow-black/50 border border-slate-300 flex flex-col mt-4 sm:mt-0 relative max-h-[85%]">
-                                 <div className="h-8 shrink-0 bg-slate-800 flex items-center px-4 justify-between text-white border-b border-slate-700 select-none">
-                                    <span className="text-[10px] font-bold">Slide {selectedModuleIdx + 1} de {course.modules.length}</span>
-                                    <div className="flex gap-2">
-                                      <div className="w-4 h-4 bg-slate-600 rounded-full shrink-0 flex items-center justify-center text-[8px]">−</div>
-                                      <div className="w-4 h-4 bg-slate-600 rounded-full shrink-0 flex items-center justify-center text-[8px]">+</div>
+                          (() => {
+                            const deck = SLIDES_BY_CODE[course.code];
+                            // Deck real do treinamento (se houver); senão, mantém o aviso genérico.
+                            if (deck && deck.length > 0) {
+                              const idx = Math.min(slideIdx, deck.length - 1);
+                              const slide = deck[idx];
+                              return (
+                                <div className="flex-1 flex items-center justify-center bg-slate-100 text-slate-800 w-full overflow-hidden relative">
+                                  <div className="w-[90%] sm:w-[85%] h-[85%] bg-white shadow-2xl shadow-black/50 border border-slate-300 flex flex-col mt-4 sm:mt-0 relative max-h-[85%]">
+                                    <div className="h-8 shrink-0 bg-slate-800 flex items-center px-4 justify-between text-white border-b border-slate-700 select-none">
+                                      <span className="text-[10px] font-bold">Slide {idx + 1} de {deck.length}</span>
+                                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{course.code}</span>
                                     </div>
-                                 </div>
-                                 <div className="flex-1 p-4 sm:p-8 flex flex-col items-center justify-center text-center overflow-auto min-h-0 w-full">
+                                    <div className="flex-1 p-4 sm:p-8 flex flex-col items-center justify-center text-center overflow-auto min-h-0 w-full">
+                                      <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 mb-4 font-display uppercase leading-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500 break-words w-full px-2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{slide.title}</h1>
+                                      <ul className="text-left max-w-prose space-y-2 w-full px-2">
+                                        {slide.bullets.map((b, bi) => (
+                                          <li key={bi} className="flex items-start gap-2 text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span>{b}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    {/* Navegação entre slides */}
+                                    <div className="h-10 shrink-0 bg-slate-100 border-t border-slate-300 flex items-center justify-between px-3 select-none">
+                                      <button
+                                        onClick={() => setSlideIdx((i) => Math.max(0, i - 1))}
+                                        disabled={idx === 0}
+                                        className="px-3 py-1 rounded bg-slate-800 text-white text-[10px] font-bold uppercase disabled:opacity-40 cursor-pointer disabled:cursor-default"
+                                      >
+                                        ← Anterior
+                                      </button>
+                                      <div className="flex gap-1">
+                                        {deck.map((_, di) => (
+                                          <button key={di} onClick={() => setSlideIdx(di)} className={`w-2 h-2 rounded-full ${di === idx ? 'bg-emerald-600' : 'bg-slate-400'}`} aria-label={`Ir para o slide ${di + 1}`} />
+                                        ))}
+                                      </div>
+                                      <button
+                                        onClick={() => setSlideIdx((i) => Math.min(deck.length - 1, i + 1))}
+                                        disabled={idx === deck.length - 1}
+                                        className="px-3 py-1 rounded bg-emerald-600 text-white text-[10px] font-bold uppercase disabled:opacity-40 cursor-pointer disabled:cursor-default"
+                                      >
+                                        Próximo →
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="flex-1 flex items-center justify-center bg-slate-100 text-slate-800 w-full overflow-hidden relative">
+                                <div className="w-[90%] sm:w-[85%] h-[85%] bg-white shadow-2xl shadow-black/50 border border-slate-300 flex flex-col mt-4 sm:mt-0 relative max-h-[85%]">
+                                  <div className="h-8 shrink-0 bg-slate-800 flex items-center px-4 justify-between text-white border-b border-slate-700 select-none">
+                                    <span className="text-[10px] font-bold">Slide {selectedModuleIdx + 1} de {course.modules.length}</span>
+                                  </div>
+                                  <div className="flex-1 p-4 sm:p-8 flex flex-col items-center justify-center text-center overflow-auto min-h-0 w-full">
                                     <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 mb-4 font-display uppercase leading-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500 break-words w-full px-2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{course.modules[selectedModuleIdx]}</h1>
                                     <p className="max-w-prose text-xs sm:text-sm text-slate-600 font-medium px-2">Conteúdo programático em slides homologados. Estude as diretrizes normativas da aula passo a passo.</p>
-                                 </div>
+                                  </div>
+                                </div>
                               </div>
-                          </div>
+                            );
+                          })()
                         )}
 
                         {/* Player control status */}
