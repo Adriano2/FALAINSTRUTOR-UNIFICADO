@@ -1,0 +1,59 @@
+# Backup automático do projeto para o Google Drive.
+#
+# A cada push na main (ou execução manual), gera um .zip com todo o projeto
+# versionado e envia para a pasta "FALAINSTRUTOR-UNIFICADO" do Drive,
+# sobrescrevendo a versão anterior (sempre a mais recente).
+#
+# Configuração única (uma vez só), em Settings > Secrets and variables > Actions:
+#   - RCLONE_CONFIG_GDRIVE  (obrigatório): conteúdo do seu arquivo rclone.conf
+#       com um remote chamado "gdrive" apontando para o seu Google Drive.
+#       Gere com:  rclone config   (tipo: drive)  →  depois copie o conteúdo de
+#       ~/.config/rclone/rclone.conf
+#   - GDRIVE_FOLDER_ID (opcional): id da pasta de destino. Se não definir, usa a
+#       pasta já criada (FALAINSTRUTOR-UNIFICADO).
+#
+# Enquanto o secret não existir, o job apenas avisa e é pulado (não falha).
+
+name: Backup para o Google Drive
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar configuração
+        id: cfg
+        run: |
+          if [ -n "${{ secrets.RCLONE_CONFIG_GDRIVE }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Backup do Drive não configurado (secret RCLONE_CONFIG_GDRIVE ausente). Pulando — isto NÃO é um erro."
+          fi
+
+      - name: Gerar .zip do projeto
+        if: steps.cfg.outputs.ready == 'true'
+        run: git archive --format=zip -o FALAINSTRUTOR-UNIFICADO.zip HEAD
+
+      - name: Instalar rclone
+        if: steps.cfg.outputs.ready == 'true'
+        run: curl -fsSL https://rclone.org/install.sh | sudo bash
+
+      - name: Configurar rclone
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          mkdir -p ~/.config/rclone
+          printf '%s' "${{ secrets.RCLONE_CONFIG_GDRIVE }}" > ~/.config/rclone/rclone.conf
+
+      - name: Enviar para o Google Drive
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          rclone copy FALAINSTRUTOR-UNIFICADO.zip "gdrive:" \
+            --drive-root-folder-id "${{ secrets.GDRIVE_FOLDER_ID || '1tv9Kr7jYISiRgXxg7oJQDhTXF5R4ShQR' }}" \
+            --log-level INFO
