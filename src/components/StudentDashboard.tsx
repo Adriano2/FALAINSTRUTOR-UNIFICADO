@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
-import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE } from '../data';
+import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE, RESPONSAVEL_TECNICO } from '../data';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
 // jsPDF, html2canvas-pro e qrcode são carregados sob demanda (import dinâmico)
 // para não pesar o bundle inicial — só baixam quando o aluno gera/visualiza o
@@ -1185,13 +1185,13 @@ export default function StudentDashboard({
                         </div>
                       </div>
 
-                      {/* Assinaturas: aluno (esquerda) e instrutor responsável (direita) */}
-                      <div className="flex items-end justify-between w-full max-w-2xl mx-auto mt-4 mb-[5%] gap-6">
-                        <div className="w-44 flex flex-col items-center">
+                      {/* Assinaturas: aluno + instrutor + responsável técnico (Magnus) */}
+                      <div className="flex items-end justify-between w-full max-w-3xl mx-auto mt-4 mb-[5%] gap-4">
+                        <div className="w-36 flex flex-col items-center">
                           <div className="w-full h-px bg-slate-900 mb-1.5" />
                           <span className="text-[11px] text-slate-700 font-bold uppercase tracking-wider">Assinatura do Aluno</span>
                         </div>
-                        <div className="w-72 flex flex-col items-center">
+                        <div className="w-60 flex flex-col items-center">
                           {firstInstructor.signatureUrl ? (
                             <img src={firstInstructor.signatureUrl} alt="Assinatura do instrutor" className="h-9 object-contain mb-0.5" referrerPolicy="no-referrer" />
                           ) : (
@@ -1213,6 +1213,33 @@ export default function StudentDashboard({
                               <div className="text-[7px] leading-snug text-[#1f2a44] text-left min-w-0">
                                 <span className="font-extrabold uppercase tracking-wide block">Assinado digitalmente • ICP-Brasil</span>
                                 <span className="block truncate">{paymentConfig?.digitalCertificateHolder || firstInstructor.name}</span>
+                                <span className="font-mono block truncate">{viewingCertificate.certificateCode}</span>
+                                <span className="block">MP 2.200-2/2001</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* Responsável técnico — assina (digitalmente) todos os certificados */}
+                        <div className="w-60 flex flex-col items-center">
+                          {RESPONSAVEL_TECNICO.signatureUrl ? (
+                            <img src={RESPONSAVEL_TECNICO.signatureUrl} alt="Assinatura do responsável técnico" className="h-9 object-contain mb-0.5" referrerPolicy="no-referrer" />
+                          ) : (
+                            <span className="text-[20px] text-slate-800 leading-tight mb-0.5 text-center" style={{ fontFamily: '"Great Vibes", cursive' }}>
+                              {RESPONSAVEL_TECNICO.name}
+                            </span>
+                          )}
+                          <div className="w-full h-px bg-slate-900 mb-1.5" />
+                          <div className="text-[10px] leading-tight font-bold text-slate-900 uppercase tracking-wide text-center">
+                            Responsável Técnico: {RESPONSAVEL_TECNICO.name}<br />
+                            {RESPONSAVEL_TECNICO.formation}
+                            {RESPONSAVEL_TECNICO.register ? <><br />{RESPONSAVEL_TECNICO.register}</> : null}
+                          </div>
+                          {RESPONSAVEL_TECNICO.icpEnabled && viewingCertificate.certificateCode && (
+                            <div className="mt-1.5 w-full flex items-center gap-1.5 border border-[#1f2a44]/40 rounded px-2 py-1 bg-[#1f2a44]/[0.04]">
+                              <ShieldCheck className="w-4 h-4 text-[#1f2a44] shrink-0" />
+                              <div className="text-[7px] leading-snug text-[#1f2a44] text-left min-w-0">
+                                <span className="font-extrabold uppercase tracking-wide block">Assinado digitalmente • ICP-Brasil</span>
+                                <span className="block truncate">{RESPONSAVEL_TECNICO.name}</span>
                                 <span className="font-mono block truncate">{viewingCertificate.certificateCode}</span>
                                 <span className="block">MP 2.200-2/2001</span>
                               </div>

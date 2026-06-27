@@ -609,6 +609,17 @@ export const REFERENCE_VIDEO_BY_CODE: Record<string, string> = {
   "NR 06": "https://www.youtube.com/watch?v=qT5RwyBF2u0",
 };
 
+// Responsável técnico que assina (digitalmente, ICP-Brasil) TODOS os certificados,
+// além do instrutor de cada treinamento.
+export const RESPONSAVEL_TECNICO = {
+  name: "Magnus Leandro de Souza",
+  formation: "Engenheiro de Segurança do Trabalho",
+  register: "CREA-SP 5070766148",
+  document: "CPF 221.761.998-55",
+  signatureUrl: "", // imagem da assinatura (opcional; se vazio, usa o nome em fonte manuscrita)
+  icpEnabled: true,
+};
+
 export const SEED_COUPONS: Coupon[] = [
   {
     id: "cup-1",
