@@ -9,7 +9,7 @@ export const INITIAL_LAYOUT_CONFIG: LayoutConfig = {
   companyName: "FalaInstrutor",
   hostname: "https://falainstrutor.com.br",
   instagramUrl: "https://instagram.com/falainstrutor.treinamentos",
-  youtubeUrl: "https://youtube.com/falainstrutor",
+  youtubeUrl: "https://www.youtube.com/@fala.Instrutor",
   linkedinUrl: "",
   phone: "+55 (11) 99625-5102",
   primaryColor: "#0f172a", // slate-900
@@ -598,6 +598,972 @@ export const SLIDES_BY_CODE: Record<string, TrainingSlide[]> = {
         "O EPI protege quando há seleção correta, uso disciplinado e conservação.",
         "Responsabilidade compartilhada: empregador fornece e fiscaliza, trabalhador usa e conserva.",
         "Em caso de dúvida, procure o SESMT ou o responsável de segurança.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 01": [
+    {
+      title: "NR 01 — Disposições Gerais e Gerenciamento de Riscos",
+      bullets: [
+        "Treinamento admissional/integração obrigatório a todos os trabalhadores.",
+        "Base legal: Norma Regulamentadora nº 01.",
+        "Estabelece as diretrizes gerais de SST e o Gerenciamento de Riscos Ocupacionais (GRO).",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Campo de Aplicação",
+      bullets: [
+        "Aplica-se a todas as organizações e órgãos públicos e privados que admitam trabalhadores.",
+        "Define os requisitos gerais comuns às demais NRs.",
+        "Introduz o GRO e o Programa de Gerenciamento de Riscos (PGR).",
+      ],
+    },
+    {
+      title: "Direitos e Deveres",
+      bullets: [
+        "Empregador: cumprir as NRs, informar os riscos, fornecer EPI, capacitar e fiscalizar.",
+        "Trabalhador: cumprir as orientações, usar o EPI, colaborar e comunicar riscos.",
+        "Ordens de Serviço sobre segurança e saúde no trabalho.",
+      ],
+    },
+    {
+      title: "GRO e PGR",
+      bullets: [
+        "GRO: processo contínuo de gerenciamento dos riscos ocupacionais.",
+        "PGR: documento com inventário de riscos e plano de ação.",
+        "Etapas: identificar perigos, avaliar riscos e definir controles.",
+      ],
+    },
+    {
+      title: "Hierarquia das Medidas de Controle",
+      bullets: [
+        "Eliminação e substituição do risco.",
+        "Medidas de proteção coletiva (EPC) e de engenharia.",
+        "Medidas administrativas e de organização do trabalho.",
+        "EPI como última barreira.",
+      ],
+    },
+    {
+      title: "Capacitação e Integração",
+      bullets: [
+        "Treinamentos inicial, periódico e eventual.",
+        "Integração ao ambiente de trabalho e aos riscos da função.",
+        "Registro e documentação de SST.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Segurança é responsabilidade de todos, começando pela integração.",
+        "Conheça os riscos da sua função e as medidas de controle.",
+        "Em caso de dúvida, procure o SESMT ou a liderança.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 05": [
+    {
+      title: "NR 05 — CIPA",
+      bullets: [
+        "Capacitação dos membros da Comissão Interna de Prevenção de Acidentes e de Assédio.",
+        "Base legal: Norma Regulamentadora nº 05.",
+        "Objetivo: prevenir acidentes e doenças e promover ambiente saudável.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "O que é a CIPA",
+      bullets: [
+        "Comissão paritária (representantes do empregador e dos empregados).",
+        "Atua na prevenção de acidentes e doenças do trabalho.",
+        "Passou a incluir também a prevenção ao assédio (Lei 14.457/2022).",
+      ],
+    },
+    {
+      title: "Organização e Eleição",
+      bullets: [
+        "Dimensionamento conforme o quadro de funcionários e o grau de risco.",
+        "Composição: titulares e suplentes indicados e eleitos.",
+        "Mandato, processo eleitoral e estabilidade dos eleitos.",
+      ],
+    },
+    {
+      title: "Atribuições da CIPA",
+      bullets: [
+        "Identificar riscos e elaborar o mapa de riscos.",
+        "Propor e acompanhar medidas preventivas.",
+        "Promover a SIPAT e acompanhar a investigação de acidentes.",
+      ],
+    },
+    {
+      title: "Mapa de Riscos",
+      bullets: [
+        "Representação gráfica dos riscos por setor.",
+        "Riscos: físicos, químicos, biológicos, ergonômicos e de acidentes.",
+        "Cores e círculos proporcionais à intensidade do risco.",
+      ],
+    },
+    {
+      title: "Acidentes e Prevenção ao Assédio",
+      bullets: [
+        "Investigação e análise de causas; emissão da CAT.",
+        "Canal de denúncia e medidas contra o assédio moral e sexual.",
+        "Noções de combate a incêndio e primeiros socorros.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "A CIPA é a ponte entre trabalhadores e empresa na prevenção.",
+        "Mapa de riscos atualizado e ações concretas salvam vidas.",
+        "Participe, observe e comunique.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 10": [
+    {
+      title: "NR 10 — Segurança em Eletricidade",
+      bullets: [
+        "Capacitação em segurança em instalações e serviços em eletricidade.",
+        "Base legal: Norma Regulamentadora nº 10.",
+        "Objetivo: controlar os riscos elétricos e garantir trabalho seguro.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Riscos Elétricos",
+      bullets: [
+        "Choque elétrico (contato direto e indireto).",
+        "Arco elétrico e queimaduras.",
+        "Campos eletromagnéticos; incêndio e explosão de origem elétrica.",
+      ],
+    },
+    {
+      title: "Análise de Risco e Controle",
+      bullets: [
+        "Identificar perigos antes de iniciar o serviço.",
+        "Medidas coletivas (EPC) prioritárias sobre as individuais (EPI).",
+        "Isolação, barreiras, sinalização e bloqueio.",
+      ],
+    },
+    {
+      title: "Desenergização (sequência)",
+      bullets: [
+        "1) Seccionamento; 2) impedimento de reenergização (bloqueio).",
+        "3) Constatação da ausência de tensão.",
+        "4) Aterramento temporário; 5) sinalização e delimitação da área.",
+      ],
+    },
+    {
+      title: "Aterramento e Equipotencialização",
+      bullets: [
+        "Aterramento temporário protege contra reenergização acidental.",
+        "Equipotencialização reduz diferenças de potencial.",
+        "Conferir continuidade e fixação dos pontos.",
+      ],
+    },
+    {
+      title: "SEP e Documentação",
+      bullets: [
+        "Sistema Elétrico de Potência (SEP) e trabalhos em proximidade.",
+        "Prontuário das instalações elétricas e procedimentos.",
+        "Autorização e habilitação dos profissionais.",
+      ],
+    },
+    {
+      title: "Acidentes e Primeiros Socorros",
+      bullets: [
+        "Conduta diante de choque elétrico: desligar a fonte com segurança.",
+        "Noções de RCP e atendimento até o socorro especializado.",
+        "Combate a incêndio em instalações elétricas (extintores classe C).",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Energia não se vê — respeite os procedimentos sempre.",
+        "Só trabalhe energizado quando inevitável e com medidas adicionais.",
+        "Desenergizou? Teste a ausência de tensão antes de tocar.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 11": [
+    {
+      title: "NR 11 — Movimentação de Materiais",
+      bullets: [
+        "Capacitação em transporte, movimentação, armazenagem e manuseio de materiais.",
+        "Base legal: Norma Regulamentadora nº 11.",
+        "Objetivo: operar equipamentos com segurança e prevenir acidentes.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Equipamentos e Componentes",
+      bullets: [
+        "Empilhadeiras, transpaleteiras, pontes rolantes, talhas e guindastes.",
+        "Componentes: garfos, mastro, cabos, ganchos e freios.",
+        "Cada equipamento exige operador capacitado e autorizado.",
+      ],
+    },
+    {
+      title: "Estabilidade e Capacidade de Carga",
+      bullets: [
+        "Centro de gravidade e triângulo de estabilidade.",
+        "Respeitar a placa de capacidade (diagrama de carga).",
+        "Carga centralizada, baixa e bem apoiada.",
+      ],
+    },
+    {
+      title: "Inspeção e Checklist",
+      bullets: [
+        "Checklist diário antes de operar (freios, pneus, vazamentos, alarmes).",
+        "Manutenção preventiva e registro.",
+        "Equipamento com defeito deve ser retirado de operação.",
+      ],
+    },
+    {
+      title: "Operação e Empilhamento Seguros",
+      bullets: [
+        "Regras de circulação interna, velocidade e prioridade ao pedestre.",
+        "Sinalização sonora e visual; visibilidade da via.",
+        "Empilhamento estável, sem exceder altura/limite do piso.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "A maioria dos acidentes vem de excesso de carga e pressa.",
+        "Inspecione, sinalize e respeite os pedestres.",
+        "Em dúvida sobre a carga, pare e consulte.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 12": [
+    {
+      title: "NR 12 — Segurança em Máquinas e Equipamentos",
+      bullets: [
+        "Capacitação em segurança no trabalho em máquinas e equipamentos.",
+        "Base legal: Norma Regulamentadora nº 12.",
+        "Objetivo: prevenir acidentes por meio de proteções e procedimentos.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Princípios Gerais",
+      bullets: [
+        "Medidas de proteção para garantir saúde e integridade dos operadores.",
+        "Arranjo físico, instalações e áreas de circulação seguras.",
+        "Análise de risco da máquina como ponto de partida.",
+      ],
+    },
+    {
+      title: "Dispositivos de Acionamento e Parada",
+      bullets: [
+        "Partida e acionamento seguros, sem risco de acionamento acidental.",
+        "Parada de emergência acessível e eficaz.",
+        "Comandos bimanuais quando aplicável.",
+      ],
+    },
+    {
+      title: "Proteções Fixas e Móveis",
+      bullets: [
+        "Proteções fixas para zonas de perigo permanentes.",
+        "Proteções móveis com intertravamento (param a máquina ao abrir).",
+        "Nunca anular ou burlar as proteções.",
+      ],
+    },
+    {
+      title: "Manutenção e Bloqueio (LOTO)",
+      bullets: [
+        "Procedimentos de trabalho seguro e manutenção.",
+        "Bloqueio e etiquetagem de energias (Lockout/Tagout) antes de intervir.",
+        "Somente profissionais capacitados e autorizados.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Proteção de máquina existe para preservar você — não a remova.",
+        "Antes de manutenção, bloqueie todas as fontes de energia.",
+        "Comunique qualquer proteção danificada.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 13": [
+    {
+      title: "NR 13 — Caldeiras e Vasos de Pressão",
+      bullets: [
+        "Capacitação para operação segura de caldeiras, vasos de pressão e tubulações.",
+        "Base legal: Norma Regulamentadora nº 13.",
+        "Objetivo: prevenir explosões e falhas catastróficas.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Conceitos e Classificação",
+      bullets: [
+        "Caldeiras: equipamentos que geram vapor sob pressão.",
+        "Vasos de pressão e tubulações de interligação.",
+        "Categorias conforme pressão e risco.",
+      ],
+    },
+    {
+      title: "Dispositivos de Segurança",
+      bullets: [
+        "Válvula de segurança (alívio de pressão).",
+        "Instrumentos de controle e indicação (pressão, nível, temperatura).",
+        "Sistemas de bloqueio e intertravamento.",
+      ],
+    },
+    {
+      title: "Operação e Supervisão",
+      bullets: [
+        "Operador treinado e habilitado conforme a NR-13.",
+        "Procedimentos de partida, operação e parada.",
+        "Acompanhamento dos parâmetros e registros.",
+      ],
+    },
+    {
+      title: "Inspeções e Prontuário",
+      bullets: [
+        "Inspeção de segurança inicial, periódica e extraordinária.",
+        "Prontuário e documentação obrigatória atualizados.",
+        "Profissional Habilitado (PH) responsável.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Pressão exige respeito: siga os procedimentos à risca.",
+        "Dispositivos de segurança nunca devem ser anulados.",
+        "Comunique anomalias imediatamente.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 17": [
+    {
+      title: "NR 17 — Ergonomia",
+      bullets: [
+        "Capacitação em ergonomia aplicada ao trabalho.",
+        "Base legal: Norma Regulamentadora nº 17.",
+        "Objetivo: adaptar as condições de trabalho às características do trabalhador.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Fundamentos da Ergonomia",
+      bullets: [
+        "Adaptar o trabalho ao ser humano, não o contrário.",
+        "Conforto, segurança e desempenho eficiente.",
+        "Aspectos físicos, cognitivos e organizacionais.",
+      ],
+    },
+    {
+      title: "Análise Ergonômica do Trabalho (AET)",
+      bullets: [
+        "Avaliação das condições reais de trabalho.",
+        "Identifica fatores de risco ergonômico.",
+        "Gera recomendações de melhoria.",
+      ],
+    },
+    {
+      title: "Levantamento e Transporte de Cargas",
+      bullets: [
+        "Postura correta: usar as pernas, manter a coluna ereta.",
+        "Evitar torções e cargas excessivas.",
+        "Uso de meios mecânicos quando possível.",
+      ],
+    },
+    {
+      title: "Posto de Trabalho e Ambiente",
+      bullets: [
+        "Mobiliário ajustável: cadeira, mesa e altura do monitor.",
+        "Iluminação, ruído e temperatura adequados.",
+        "Organização do trabalho e pausas; anexos de teleatendimento.",
+      ],
+    },
+    {
+      title: "Prevenção de LER/DORT",
+      bullets: [
+        "Reconhecer sinais de distúrbios osteomusculares.",
+        "Alternância de tarefas e ginástica laboral.",
+        "Comunicar desconfortos precocemente.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Pequenos ajustes evitam grandes lesões.",
+        "Postura, pausas e mobiliário corretos fazem diferença.",
+        "Sua saúde a longo prazo agradece.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 18": [
+    {
+      title: "NR 18 — Segurança na Construção Civil",
+      bullets: [
+        "Capacitação em condições e meio ambiente de trabalho na construção.",
+        "Base legal: Norma Regulamentadora nº 18.",
+        "Objetivo: prevenir acidentes no canteiro de obras.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "PGR na Construção",
+      bullets: [
+        "Programa de Gerenciamento de Riscos específico da obra.",
+        "Planejamento das medidas de proteção por etapa.",
+        "Acompanhamento e atualização contínuos.",
+      ],
+    },
+    {
+      title: "Áreas de Vivência e Sinalização",
+      bullets: [
+        "Instalações sanitárias, vestiário, refeitório e água potável.",
+        "Sinalização de segurança em todo o canteiro.",
+        "Organização e limpeza reduzem acidentes.",
+      ],
+    },
+    {
+      title: "Proteções Coletivas",
+      bullets: [
+        "Guarda-corpo e rodapé em aberturas e periferia.",
+        "Plataformas de proteção e redes de segurança.",
+        "Proteção de vãos e poços.",
+      ],
+    },
+    {
+      title: "Andaimes, Escadas e Rampas",
+      bullets: [
+        "Andaimes montados por trabalhador capacitado e com travamento.",
+        "Escadas e rampas seguras, com corrimão.",
+        "Inspeção antes do uso.",
+      ],
+    },
+    {
+      title: "Escavações, Demolições e Elétrica",
+      bullets: [
+        "Escavações com escoramento e sinalização.",
+        "Demolições planejadas e isoladas.",
+        "Instalações elétricas temporárias protegidas.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "No canteiro, proteção coletiva vem antes do EPI.",
+        "Inspecione andaimes e aberturas todos os dias.",
+        "Sinalize e isole áreas de risco.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 20": [
+    {
+      title: "NR 20 — Inflamáveis e Combustíveis",
+      bullets: [
+        "Capacitação em segurança com inflamáveis e combustíveis.",
+        "Base legal: Norma Regulamentadora nº 20.",
+        "Objetivo: prevenir incêndios, explosões e vazamentos.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Classificação das Instalações",
+      bullets: [
+        "Instalações classes I, II e III conforme atividade e quantidade.",
+        "Define o nível de capacitação exigido (básico, intermediário, avançado).",
+        "Trabalhadores próprios e terceirizados.",
+      ],
+    },
+    {
+      title: "Propriedades e Riscos",
+      bullets: [
+        "Ponto de fulgor, inflamabilidade e vapores.",
+        "Atmosferas explosivas e fontes de ignição.",
+        "Riscos à saúde por exposição.",
+      ],
+    },
+    {
+      title: "Análise de Riscos e Permissão de Trabalho",
+      bullets: [
+        "Análise de riscos das atividades.",
+        "Permissão de Trabalho (PT) para serviços críticos.",
+        "Procedimentos operacionais e de manutenção.",
+      ],
+    },
+    {
+      title: "Prevenção e Emergência",
+      bullets: [
+        "Controle de vazamentos, derrames e fontes de ignição.",
+        "Plano de resposta a emergências e simulados.",
+        "Combate a incêndio e rotas de fuga.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Elimine fontes de ignição onde há vapores inflamáveis.",
+        "Permissão de trabalho não é burocracia — é proteção.",
+        "Conheça o plano de emergência da sua área.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 23": [
+    {
+      title: "NR 23 — Proteção Contra Incêndios",
+      bullets: [
+        "Capacitação em prevenção e combate a incêndios.",
+        "Base legal: Norma Regulamentadora nº 23.",
+        "Objetivo: proteger pessoas e patrimônio e permitir a evacuação segura.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Teoria do Fogo",
+      bullets: [
+        "Triângulo do fogo: combustível, comburente e calor.",
+        "Tetraedro do fogo: inclui a reação em cadeia.",
+        "Remover um dos elementos extingue o fogo.",
+      ],
+    },
+    {
+      title: "Classes de Incêndio",
+      bullets: [
+        "A: sólidos comuns (madeira, papel).",
+        "B: líquidos inflamáveis; C: equipamentos energizados.",
+        "D: metais; K: óleos e gorduras de cozinha.",
+      ],
+    },
+    {
+      title: "Agentes e Equipamentos",
+      bullets: [
+        "Água, pó químico, CO2 e espuma — conforme a classe.",
+        "Extintores e hidrantes: uso e localização.",
+        "Detecção e alarme de incêndio.",
+      ],
+    },
+    {
+      title: "Abandono e Brigada",
+      bullets: [
+        "Saídas de emergência e sinalização desobstruídas.",
+        "Plano de abandono de área e ponto de encontro.",
+        "Brigada de incêndio e primeiros socorros.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Conheça a localização dos extintores e das saídas.",
+        "Use o agente extintor certo para cada classe.",
+        "Em emergência: alarme, abandono e ponto de encontro.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 31": [
+    {
+      title: "NR 31 — Segurança no Trabalho Rural",
+      bullets: [
+        "Capacitação em SST na agricultura, pecuária, silvicultura e afins.",
+        "Base legal: Norma Regulamentadora nº 31.",
+        "Objetivo: prevenir acidentes e doenças no meio rural.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Gestão de SST no Campo",
+      bullets: [
+        "Identificação e controle dos riscos da atividade rural.",
+        "Organização do trabalho e responsabilidades.",
+        "Informação e capacitação dos trabalhadores.",
+      ],
+    },
+    {
+      title: "Agrotóxicos e Produtos Químicos",
+      bullets: [
+        "Uso seguro: leitura do rótulo e da bula.",
+        "EPI específico para aplicação e intervalo de reentrada.",
+        "Armazenamento, tríplice lavagem e descarte de embalagens.",
+      ],
+    },
+    {
+      title: "Máquinas e Implementos Agrícolas",
+      bullets: [
+        "Tratores e implementos com proteções e estrutura de proteção (EPCC).",
+        "Operação por trabalhador capacitado.",
+        "Manutenção e inspeção periódicas.",
+      ],
+    },
+    {
+      title: "Riscos Biológicos e Ergonomia",
+      bullets: [
+        "Contato com animais, plantas e agentes biológicos.",
+        "Ergonomia no levantamento de cargas e posturas.",
+        "Trabalho em silvicultura e exploração florestal.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Agrotóxico exige EPI e respeito ao intervalo de reentrada.",
+        "Trator sem proteção é risco de tombamento.",
+        "Cuide da hidratação e da exposição ao sol.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 33": [
+    {
+      title: "NR 33 — Espaços Confinados",
+      bullets: [
+        "Capacitação para trabalho seguro em espaços confinados.",
+        "Base legal: Norma Regulamentadora nº 33.",
+        "Objetivo: prevenir mortes por atmosferas perigosas e soterramento.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "O que é Espaço Confinado",
+      bullets: [
+        "Área não projetada para ocupação contínua.",
+        "Meios limitados de entrada e saída.",
+        "Ventilação insuficiente para remover contaminantes.",
+      ],
+    },
+    {
+      title: "Riscos Atmosféricos",
+      bullets: [
+        "Deficiência ou enriquecimento de oxigênio.",
+        "Gases inflamáveis (risco de explosão).",
+        "Gases tóxicos (H2S, CO) e poeiras.",
+      ],
+    },
+    {
+      title: "Monitoramento e PET",
+      bullets: [
+        "Medição atmosférica antes e durante a entrada.",
+        "Permissão de Entrada e Trabalho (PET) preenchida e assinada.",
+        "Ventilação forçada e isolamento de energias.",
+      ],
+    },
+    {
+      title: "Funções e Equipamentos",
+      bullets: [
+        "Supervisor de entrada, vigia e trabalhador autorizado.",
+        "Detector de gases, ventilador e cinturão com trava-quedas.",
+        "Comunicação permanente entre vigia e trabalhador.",
+      ],
+    },
+    {
+      title: "Resgate e Emergência",
+      bullets: [
+        "Plano de resgate definido ANTES da entrada.",
+        "Resgate sem entrada sempre que possível.",
+        "Nunca entrar para socorrer sem equipamento e autorização.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "A maioria das mortes é de quem entra para 'salvar' sem preparo.",
+        "Sem PET e sem medição, não se entra.",
+        "Vigia nunca abandona o posto.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 35": [
+    {
+      title: "NR 35 — Trabalho em Altura",
+      bullets: [
+        "Capacitação para trabalho em altura (acima de 2 m com risco de queda).",
+        "Base legal: Norma Regulamentadora nº 35.",
+        "Objetivo: prevenir quedas e proteger o trabalhador.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Quando se Aplica",
+      bullets: [
+        "Toda atividade acima de 2 metros do nível inferior com risco de queda.",
+        "Planejamento, organização e execução por trabalhador capacitado e autorizado.",
+        "Aptidão para a função (exame médico).",
+      ],
+    },
+    {
+      title: "Análise de Risco e Permissão de Trabalho",
+      bullets: [
+        "Análise de Risco (AR) da atividade.",
+        "Permissão de Trabalho (PT) para atividades não rotineiras.",
+        "Condições impeditivas (clima, saúde) suspendem o trabalho.",
+      ],
+    },
+    {
+      title: "Proteção Coletiva x Individual",
+      bullets: [
+        "Prioridade às medidas de proteção coletiva (guarda-corpo, plataformas).",
+        "EPI antiqueda quando a coletiva for inviável ou complementar.",
+        "Isolamento e sinalização da área.",
+      ],
+    },
+    {
+      title: "EPI e Sistemas de Ancoragem",
+      bullets: [
+        "Cinturão tipo paraquedista, talabarte e trava-quedas.",
+        "Inspeção do EPI antes de cada uso.",
+        "Ancoragem confiável, linha de vida e atenção ao fator de queda.",
+      ],
+    },
+    {
+      title: "Acidentes, Resgate e Primeiros Socorros",
+      bullets: [
+        "Acidentes típicos: queda de pessoas e de materiais.",
+        "Plano de resgate e atenção à síndrome da suspensão inerte.",
+        "Primeiros socorros até o socorro especializado.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Acima de 2 m, sempre conectado a ponto de ancoragem confiável.",
+        "Inspecione o cinturão e o trava-quedas antes de subir.",
+        "Tenha o plano de resgate definido antes de iniciar.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "NR 38": [
+    {
+      title: "NR 38 — Limpeza Urbana e Resíduos",
+      bullets: [
+        "Capacitação em SST na limpeza urbana e manejo de resíduos sólidos.",
+        "Base legal: Norma Regulamentadora nº 38.",
+        "Objetivo: proteger os trabalhadores da coleta e varrição.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Disposições e Responsabilidades",
+      bullets: [
+        "Aplica-se às atividades de limpeza urbana e manejo de resíduos.",
+        "Responsabilidades do empregador e dos trabalhadores.",
+        "Organização e planejamento das atividades.",
+      ],
+    },
+    {
+      title: "Riscos da Atividade",
+      bullets: [
+        "Biológicos: contato com resíduos contaminados e perfurocortantes.",
+        "Químicos e físicos.",
+        "Trânsito: principal causa de acidentes graves na coleta.",
+      ],
+    },
+    {
+      title: "Coleta, Varrição e Operação",
+      bullets: [
+        "Técnicas seguras de coleta e varrição.",
+        "Operação segura de veículos e equipamentos coletores.",
+        "Uso de EPC e EPI adequados (luvas, calçado, alta visibilidade).",
+      ],
+    },
+    {
+      title: "Saúde e Emergências",
+      bullets: [
+        "Vacinação e cuidados com a saúde do trabalhador.",
+        "Higienização após a jornada.",
+        "Procedimentos em situações de emergência e primeiros socorros.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Vista sempre roupa de alta visibilidade — o trânsito é o maior risco.",
+        "Cuidado com perfurocortantes nos resíduos.",
+        "Mantenha a vacinação em dia.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "GHS": [
+    {
+      title: "GHS — Classificação e Rotulagem de Químicos",
+      bullets: [
+        "Capacitação em GHS, FISPQ, NBR 14725 e NR-26.",
+        "Objetivo: comunicar perigos químicos de forma padronizada.",
+        "Aplica-se a quem produz, manuseia ou armazena produtos químicos.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "O que é o GHS",
+      bullets: [
+        "Sistema Globalmente Harmonizado de Classificação e Rotulagem.",
+        "Padroniza critérios de perigo físico, à saúde e ao meio ambiente.",
+        "Facilita o entendimento dos riscos em qualquer país.",
+      ],
+    },
+    {
+      title: "NBR 14725",
+      bullets: [
+        "Norma brasileira que adota o GHS.",
+        "Define classificação, rotulagem e a FISPQ.",
+        "Base para a comunicação de perigos no Brasil.",
+      ],
+    },
+    {
+      title: "Elementos do Rótulo",
+      bullets: [
+        "Pictogramas de perigo (losangos vermelhos).",
+        "Palavra de advertência: 'Perigo' ou 'Atenção'.",
+        "Frases de perigo (H) e de precaução (P).",
+      ],
+    },
+    {
+      title: "FISPQ / SDS e NR-26",
+      bullets: [
+        "FISPQ com 16 seções padronizadas.",
+        "Consulta antes de manusear o produto.",
+        "NR-26: sinalização, cores de segurança e identificação de tubulações.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Leia o rótulo e a FISPQ antes de usar qualquer produto químico.",
+        "Pictograma é alerta — saiba o que cada um significa.",
+        "Rotulagem e armazenamento corretos previnem acidentes.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "IQ": [
+    {
+      title: "Incompatibilidade Química",
+      bullets: [
+        "Capacitação sobre segregação e armazenamento seguro de produtos químicos.",
+        "Objetivo: evitar reações perigosas por mistura/contato indevido.",
+        "Aplica-se a almoxarifados, laboratórios e indústrias.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Conceitos e Classes de Perigo",
+      bullets: [
+        "Química aplicada à segurança no armazenamento.",
+        "Classes de produtos perigosos (base GHS).",
+        "Rotulagem preventiva e pictogramas.",
+      ],
+    },
+    {
+      title: "Grupos de Incompatibilidade",
+      bullets: [
+        "Ácidos x bases; oxidantes x inflamáveis.",
+        "Reativos à água; cianetos x ácidos.",
+        "Consultar a FISPQ para confirmar compatibilidades.",
+      ],
+    },
+    {
+      title: "Segregação e Armazenamento",
+      bullets: [
+        "Tabela de segregação por compatibilidade.",
+        "Distâncias, barreiras e bacias de contenção.",
+        "Identificação clara dos recipientes.",
+      ],
+    },
+    {
+      title: "Reações Perigosas e Emergência",
+      bullets: [
+        "Oxidação, corrosão, produtos pirofóricos e reativos à água.",
+        "Ventilação e controle de derramamentos.",
+        "Resposta a emergências químicas e primeiros socorros.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Nunca armazene incompatíveis juntos — consulte a tabela.",
+        "A FISPQ é sua maior aliada antes de estocar.",
+        "Contenção e ventilação evitam tragédias.",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
+
+  "PQC": [
+    {
+      title: "Produtos Químicos Controlados",
+      bullets: [
+        "Capacitação no controle legal de produtos químicos (PF, Exército e PC-SP).",
+        "Objetivo: cumprir as exigências de registro, controle e fiscalização.",
+        "Aplica-se a empresas que usam/comercializam produtos controlados.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Órgãos Fiscalizadores",
+      bullets: [
+        "Polícia Federal: produtos químicos que podem virar drogas (Lei 10.357/2001).",
+        "Exército Brasileiro (DFPC): produtos controlados (R-105).",
+        "Polícia Civil de SP: controle estadual.",
+      ],
+    },
+    {
+      title: "Licenças e Registros",
+      bullets: [
+        "Licença de Funcionamento, Certificado de Registro e Título de Registro.",
+        "Validade e renovação dos documentos.",
+        "Cada órgão tem sua exigência específica.",
+      ],
+    },
+    {
+      title: "Controle de Movimentação",
+      bullets: [
+        "Mapa de movimentação e controle de estoque.",
+        "Prazos de envio das informações aos órgãos.",
+        "Escrituração fiel das entradas e saídas.",
+      ],
+    },
+    {
+      title: "Transporte, Armazenamento e Penalidades",
+      bullets: [
+        "Transporte e armazenamento seguros dos produtos controlados.",
+        "Fiscalização periódica dos órgãos.",
+        "Infrações, multas e responsabilidade legal.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Produto controlado exige registro nos órgãos competentes.",
+        "Mantenha o mapa de movimentação e os prazos em dia.",
+        "Irregularidade gera multa e responsabilização.",
         "Realize agora a avaliação final para homologação do certificado.",
       ],
     },
