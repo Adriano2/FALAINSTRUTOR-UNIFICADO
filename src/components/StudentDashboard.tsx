@@ -56,14 +56,31 @@ function CourseVideo({ url }: { url: string }) {
   else if (vimeo) embed = `https://player.vimeo.com/video/${vimeo[1]}`;
 
   if (embed) {
+    // Para o YouTube: usa o domínio "nocookie", remove vídeos relacionados e a
+    // marca, e cobre a faixa superior (título/links) com uma camada transparente
+    // para impedir que o clique no título redirecione o aluno para o YouTube.
+    const src = yt
+      ? `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&fs=1`
+      : embed;
     return (
-      <iframe
-        src={embed}
-        title="Vídeo aula"
-        className="absolute inset-0 w-full h-full"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
+      <div className="absolute inset-0">
+        <iframe
+          src={src}
+          title="Vídeo aula"
+          className="absolute inset-0 w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+        {yt && (
+          <div
+            className="absolute top-0 left-0 right-0 h-14 z-20"
+            style={{ cursor: 'default' }}
+            aria-hidden="true"
+            onClick={(e) => e.preventDefault()}
+            title="Vídeo da plataforma Fala Instrutor"
+          />
+        )}
+      </div>
     );
   }
   if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
@@ -497,6 +514,15 @@ export default function StudentDashboard({
                           <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                             Responda com atenção a todos os exercícios. O Ministério do Trabalho exige aproveitamento de no mínimo <strong className="text-emerald-400">75%</strong> para a regularidade nacional do certificado.
                           </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800/60 text-slate-200 font-bold border border-white/10">
+                              <FileText className="w-3.5 h-3.5 text-emerald-400" /> {questions.length} questões
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800/60 text-slate-200 font-bold border border-white/10">
+                              <Clock className="w-3.5 h-3.5 text-emerald-400" /> Tempo estimado: ≈ {Math.floor((questions.length * 70) / 60)} min{(questions.length * 70) % 60 ? ` ${(questions.length * 70) % 60} s` : ''}
+                            </span>
+                            <span className="text-slate-400">(1 min 10 s por questão)</span>
+                          </div>
                         </div>
 
                         <div className="space-y-4">

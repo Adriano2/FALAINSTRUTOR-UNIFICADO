@@ -1829,6 +1829,108 @@ export const SEED_CONTACTS: ContactMessage[] = [
  * Question banks for the course exams
  */
 export const RECORD_EXAMS: Record<string, ExamQuestion[]> = {
+  "course-nr06": [
+    {
+      question: "Segundo a NR-06, o que é Equipamento de Proteção Individual (EPI)?",
+      options: [
+        "A) Todo equipamento usado coletivamente por uma equipe de trabalho",
+        "B) Todo dispositivo ou produto de uso individual utilizado pelo trabalhador, destinado à proteção contra riscos à segurança e à saúde no trabalho",
+        "C) Apenas o uniforme padrão da empresa",
+        "D) Qualquer ferramenta utilizada na atividade",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Qual a diferença entre EPI e EPC (Equipamento de Proteção Coletiva)?",
+      options: [
+        "A) Não há diferença, são sinônimos",
+        "B) O EPI protege o ambiente e o EPC protege a máquina",
+        "C) O EPI é de uso individual do trabalhador e o EPC protege um grupo de pessoas durante a atividade",
+        "D) O EPC é de uso individual e o EPI é coletivo",
+      ],
+      correctIndex: 2,
+    },
+    {
+      question: "O Conjugado de Proteção Individual é o equipamento composto por vários dispositivos. Qual é um exemplo citado?",
+      options: [
+        "A) Cinturão de segurança tipo paraquedista",
+        "B) Óculos de proteção simples",
+        "C) Protetor auditivo de inserção",
+        "D) Creme protetor para as mãos",
+      ],
+      correctIndex: 0,
+    },
+    {
+      question: "É responsabilidade do EMPREGADOR em relação ao EPI:",
+      options: [
+        "A) Comprar o próprio EPI com recursos do trabalhador",
+        "B) Adquirir o EPI adequado ao risco, fornecer somente o aprovado (com CA), exigir e fiscalizar o uso e substituí-lo quando danificado",
+        "C) Apenas recomendar o uso, sem fornecer",
+        "D) Higienizar o EPI somente uma vez por ano",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "É responsabilidade do TRABALHADOR (empregado) quanto ao EPI:",
+      options: [
+        "A) Emitir o Certificado de Aprovação do equipamento",
+        "B) Fiscalizar o uso pelos colegas",
+        "C) Usar apenas para a finalidade a que se destina, responsabilizar-se pela guarda e conservação e comunicar quando estiver impróprio para uso",
+        "D) Comprar o EPI de outra empresa",
+      ],
+      correctIndex: 2,
+    },
+    {
+      question: "O que é o Certificado de Aprovação (CA) do EPI?",
+      options: [
+        "A) Um documento interno da empresa sem valor legal",
+        "B) A nota fiscal de compra do equipamento",
+        "C) O registro emitido pelo órgão nacional competente que comprova que o EPI é aprovado e indica validade, tipo e a proteção que oferece",
+        "D) Um certificado emitido pelo próprio trabalhador",
+      ],
+      correctIndex: 2,
+    },
+    {
+      question: "Quem é responsável por recomendar o uso do EPI adequado ao risco na empresa?",
+      options: [
+        "A) O setor financeiro da empresa",
+        "B) O SESMT ou, na sua ausência, a CIPA; e onde não houver CIPA, o designado com orientação de profissional habilitado",
+        "C) Exclusivamente o fornecedor do EPI",
+        "D) Apenas o próprio trabalhador",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Sobre a proteção auditiva, é correto afirmar:",
+      options: [
+        "A) Qualquer protetor serve, independentemente do ruído",
+        "B) Existem modelos de inserção, circum-auricular (concha) e semi-auricular, e a seleção depende do tipo e da intensidade do ruído",
+        "C) O protetor auditivo protege as vias respiratórias",
+        "D) Não precisa ser bem dimensionado",
+      ],
+      correctIndex: 1,
+    },
+    {
+      question: "Em atmosferas Imediatamente Perigosas à Vida e à Saúde (IPVS) ou com oxigênio abaixo de 18%, qual proteção respiratória é indicada?",
+      options: [
+        "A) Respirador purificador de ar com filtro para poeiras",
+        "B) Apenas máscara de tecido",
+        "C) Respirador de adução de ar (linha de ar comprimido ou autônomo) / respirador de fuga",
+        "D) Nenhuma proteção é necessária",
+      ],
+      correctIndex: 2,
+    },
+    {
+      question: "Para proteção contra quedas com diferença de nível, quais EPIs são utilizados?",
+      options: [
+        "A) Apenas o capacete de segurança",
+        "B) Dispositivo trava-quedas em conjunto com o cinturão de segurança tipo paraquedista",
+        "C) Somente luvas e óculos",
+        "D) Protetor facial e creme protetor",
+      ],
+      correctIndex: 1,
+    },
+  ],
   "course-nr05": [
     {
       question: "Qual é a principal finalidade da CIPA segundo a NR 05?",

@@ -107,6 +107,15 @@ async function main() {
     });
   }
 
+  // 2b-1) Prova da NR 06: atualiza para a versão canônica (alinhada ao vídeo do
+  // treinamento). Sobrescreve a prova anterior deste curso especificamente.
+  await prisma.course
+    .update({
+      where: { id: 'course-nr06' },
+      data: { examQuestions: getExamQuestions('course-nr06') as unknown as Prisma.InputJsonValue },
+    })
+    .catch(() => {});
+
   // 3) Cupons
   for (const cp of SEED_COUPONS) {
     const type: CouponType = cp.type === 'fixed' ? 'FIXED' : 'PERCENTAGE';
