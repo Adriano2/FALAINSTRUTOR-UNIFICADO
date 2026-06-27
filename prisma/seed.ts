@@ -184,6 +184,18 @@ async function main() {
     });
   }
 
+  // Jéssica da Silva Ribeiro (usr-2) associada ao treinamento NR 06.
+  await prisma.enrollment.upsert({
+    where: { userId_courseId: { userId: 'usr-2', courseId: 'course-nr06' } },
+    update: {}, // não sobrescreve progresso/aprovação se já existir
+    create: {
+      userId: 'usr-2',
+      courseId: 'course-nr06',
+      progress: 0,
+      passed: false,
+    },
+  });
+
   // 3c) Empresa de demonstração + gestor + funcionários vinculados
   await prisma.company.upsert({
     where: { id: 'comp-demo' },

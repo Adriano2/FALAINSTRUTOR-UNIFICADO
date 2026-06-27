@@ -682,6 +682,21 @@ export const SEED_ENROLLMENTS: Enrollment[] = [
     enrolledAt: "2026-05-21"
   },
   {
+    id: "enr-jessica-nr06",
+    userId: "usr-2",
+    userName: "Jéssica da Silva Ribeiro",
+    userEmail: "jessica@gmail.com",
+    courseId: "course-nr06",
+    courseName: "NR 06 - Equipamentos de Proteção Individual (EPI)",
+    courseCode: "NR 06",
+    progress: 0,
+    startDate: "2026-06-27",
+    examScore: null,
+    passed: false,
+    certificateCode: null,
+    enrolledAt: "2026-06-27"
+  },
+  {
     id: "enr-3",
     userId: "usr-3",
     userName: "Thiago Aparecido Ramos",
