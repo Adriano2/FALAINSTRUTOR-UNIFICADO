@@ -242,10 +242,7 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
             <p className="mb-3">
               O responsável técnico geral pelos treinamentos é <strong>{tech.name}</strong>
               {tech.title ? ` — ${tech.title}` : ''}{tech.register ? `, ${tech.register}` : ''}
-              {tech.document ? ` (${tech.document})` : ''}.{' '}
-              {tech.fileUrl ? (
-                <a href={tech.fileUrl} target="_blank" rel="noreferrer" className="text-blue-700 underline font-semibold">Ver registro profissional</a>
-              ) : null} Cada treinamento é conduzido e homologado pelo
+              {tech.document ? ` (${tech.document})` : ''}. Cada treinamento é conduzido e homologado pelo
               respectivo responsável técnico indicado a seguir:
             </p>
             <ul className="list-disc pl-5 space-y-1">

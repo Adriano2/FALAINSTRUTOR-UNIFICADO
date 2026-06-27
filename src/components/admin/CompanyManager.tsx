@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Plus, Loader2, Building2, ToggleLeft, ToggleRight, UserPlus, Users, Check, Search } from 'lucide-react';
+import { Plus, Loader2, Building2, ToggleLeft, ToggleRight, UserPlus, Users, Check, Search, Download, FileUp, FileSpreadsheet, AlertTriangle } from 'lucide-react';
 import { adminApi, ApiCompany } from '../../api';
 import { lookupCnpjClient } from '../../lib/cnpj';
 import { User } from '../../types';
@@ -18,6 +18,104 @@ import { User } from '../../types';
 interface CompanyManagerProps {
   users: User[];
 }
+
+// --- Importação por planilha (CSV/Excel) ------------------------------------
+
+type CompanyImport = {
+  name: string; cnpj?: string; email?: string; phone?: string;
+  employeeCount: number; cnae?: string; cnaeDescription?: string; riskGrade?: number;
+};
+// Resultado da leitura de uma linha: válida (data) ou com erro (motivo).
+type ParsedRow = { row: number; name: string; data?: CompanyImport; error?: string };
+
+// Normaliza um cabeçalho para casar colunas (ignora acentos/espaços/maiúsculas).
+const norm = (s: unknown) =>
+  String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+
+// Sinônimos aceitos para cada campo no cabeçalho da planilha.
+const FIELD_ALIASES: Record<keyof CompanyImport, string[]> = {
+  name: ['nome', 'razaosocial', 'razao', 'empresa', 'nomerazaosocial', 'nomedaempresa'],
+  cnpj: ['cnpj'],
+  employeeCount: ['funcionarios', 'totalfuncionarios', 'totaldefuncionarios', 'numerofuncionarios', 'qtdfuncionarios', 'funcionario', 'employeecount'],
+  cnae: ['cnae', 'cnaeprincipal'],
+  cnaeDescription: ['cnaedescricao', 'descricaocnae', 'descricaodocnae', 'cnaedescription', 'descricao'],
+  riskGrade: ['graurisco', 'grauderisco', 'risco', 'grau', 'riskgrade', 'graudeRisconr04'.toLowerCase(), 'graunr04', 'graudeRisco04'.toLowerCase()],
+  email: ['email', 'emailcontato', 'mail'],
+  phone: ['telefone', 'phone', 'fone', 'celular', 'contato', 'whatsapp'],
+};
+
+// Detecta o delimitador (Excel BR costuma exportar com ';') e separa em células,
+// respeitando aspas duplas (com vírgulas/; dentro do campo).
+const parseCsv = (text: string): string[][] => {
+  const clean = text.replace(/^﻿/, '');
+  const firstLine = clean.split(/\r?\n/)[0] ?? '';
+  const delim = (firstLine.split(';').length - 1) > (firstLine.split(',').length - 1) ? ';' : ',';
+  const rows: string[][] = [];
+  let cell = '', row: string[] = [], inQuotes = false;
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
+    if (inQuotes) {
+      if (ch === '"') { if (clean[i + 1] === '"') { cell += '"'; i++; } else inQuotes = false; }
+      else cell += ch;
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === delim) { row.push(cell); cell = ''; }
+    else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else if (ch === '\r') { /* ignora */ }
+    else cell += ch;
+  }
+  if (cell.length > 0 || row.length > 0) { row.push(cell); rows.push(row); }
+  return rows;
+};
+
+// Converte linhas (planilha/CSV) em empresas, validando nome e nº de funcionários.
+const rowsToCompanies = (rows: (string | number | null)[][]): ParsedRow[] => {
+  const nonEmpty = rows.filter((r) => r && r.some((c) => String(c ?? '').trim() !== ''));
+  if (nonEmpty.length < 2) return [];
+  const header = nonEmpty[0].map(norm);
+  // Mapeia cada campo para o índice da coluna correspondente no cabeçalho.
+  const colOf = (field: keyof CompanyImport) =>
+    header.findIndex((h) => FIELD_ALIASES[field].includes(h));
+  const idx = {
+    name: colOf('name'), cnpj: colOf('cnpj'), employeeCount: colOf('employeeCount'),
+    cnae: colOf('cnae'), cnaeDescription: colOf('cnaeDescription'),
+    riskGrade: colOf('riskGrade'), email: colOf('email'), phone: colOf('phone'),
+  };
+  const cell = (r: (string | number | null)[], i: number) => (i < 0 ? '' : String(r[i] ?? '').trim());
+  return nonEmpty.slice(1).map((r, n) => {
+    const rowNum = n + 2; // +1 cabeçalho, +1 base-1
+    const name = cell(r, idx.name);
+    if (!name) return { row: rowNum, name: '(sem nome)', error: 'nome/razão social em branco' };
+    const count = parseInt(cell(r, idx.employeeCount).replace(/\D/g, ''), 10);
+    if (!Number.isInteger(count) || count < 1)
+      return { row: rowNum, name, error: 'total de funcionários inválido (mínimo 1)' };
+    const grade = parseInt(cell(r, idx.riskGrade).replace(/\D/g, ''), 10);
+    const data: CompanyImport = {
+      name,
+      cnpj: cell(r, idx.cnpj) || undefined,
+      employeeCount: count,
+      cnae: cell(r, idx.cnae) || undefined,
+      cnaeDescription: cell(r, idx.cnaeDescription) || undefined,
+      riskGrade: grade >= 1 && grade <= 4 ? grade : undefined,
+      email: cell(r, idx.email) || undefined,
+      phone: cell(r, idx.phone) || undefined,
+    };
+    return { row: rowNum, name, data };
+  });
+};
+
+// Modelo CSV (com BOM para o Excel abrir em UTF-8) com exemplos preenchidos.
+const TEMPLATE_CSV =
+  '﻿nome,cnpj,funcionarios,cnae,descricao_cnae,grau_risco,email,telefone\r\n' +
+  'Construtora Exemplo Ltda,12.345.678/0001-90,45,4120-4/00,Construção de edifícios,3,contato@exemplo.com,(11) 4002-8922\r\n' +
+  'Comércio Exemplo ME,98.765.432/0001-10,8,4711-3/02,Comércio varejista,1,vendas@exemplo.com,(11) 91234-5678\r\n';
+
+const downloadCsv = (filename: string, content: string) => {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+};
 
 export default function CompanyManager({ users }: CompanyManagerProps) {
   const [companies, setCompanies] = React.useState<ApiCompany[]>([]);
@@ -41,6 +139,11 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
   const [mgr, setMgr] = React.useState<{ name: string; email: string; cpf: string; password: string }>({ name: '', email: '', cpf: '', password: '' });
   // Seleção de funcionários
   const [selected, setSelected] = React.useState<string[]>([]);
+
+  // Importação por planilha
+  const [importing, setImporting] = React.useState(false);
+  const [importMsg, setImportMsg] = React.useState('');
+  const [importResult, setImportResult] = React.useState<{ created: number; failed: { row: number; name: string; error: string }[] } | null>(null);
 
   const students = users.filter((u) => u.role === 'student');
 
@@ -103,6 +206,53 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
       setCompanies((prev) => [{ ...res.company, _count: { members: 0 } }, ...prev]);
       setName(''); setCnpj(''); setEmail(''); setPhone(''); setEmployeeCount(''); setCnae(''); setCnaeDescription(''); setRiskGrade('');
     } catch (err) { alert(err instanceof Error ? err.message : 'Não foi possível criar a empresa.'); }
+  };
+
+  // Lê a planilha (CSV/Excel), valida e cadastra cada empresa em sequência.
+  const handleImportFile = async (file: File) => {
+    setImportResult(null);
+    setImporting(true);
+    setImportMsg('Lendo a planilha...');
+    try {
+      let rows: (string | number | null)[][];
+      if (/\.(xlsx|xls)$/i.test(file.name)) {
+        const readXlsxFile = (await import('read-excel-file/browser')).default;
+        rows = (await readXlsxFile(file)) as unknown as (string | number | null)[][];
+      } else {
+        rows = parseCsv(await file.text());
+      }
+      const parsed = rowsToCompanies(rows);
+      if (parsed.length === 0) {
+        alert('Nenhuma linha encontrada. Use o modelo: a 1ª linha é o cabeçalho e as colunas "nome" e "funcionarios" são obrigatórias.');
+        return;
+      }
+      const valid = parsed.filter((p) => p.data);
+      const invalid = parsed.filter((p) => !p.data).map((p) => ({ row: p.row, name: p.name, error: p.error! }));
+      if (valid.length === 0) {
+        setImportResult({ created: 0, failed: invalid });
+        return;
+      }
+      if (!confirm(`Importar ${valid.length} empresa(s)?${invalid.length ? ` (${invalid.length} linha(s) serão ignoradas por erro)` : ''}`)) return;
+      const created: ApiCompany[] = [];
+      const failed = [...invalid];
+      for (let i = 0; i < valid.length; i++) {
+        const p = valid[i];
+        setImportMsg(`Cadastrando ${i + 1} de ${valid.length}: ${p.name}...`);
+        try {
+          const res = await adminApi.createCompany(p.data!);
+          created.push({ ...res.company, _count: { members: 0 } });
+        } catch (err) {
+          failed.push({ row: p.row, name: p.name, error: err instanceof Error ? err.message : 'falha ao cadastrar' });
+        }
+      }
+      if (created.length) setCompanies((prev) => [...created, ...prev]);
+      setImportResult({ created: created.length, failed });
+    } catch {
+      alert('Não foi possível ler o arquivo. Use o modelo (CSV ou Excel .xlsx).');
+    } finally {
+      setImporting(false);
+      setImportMsg('');
+    }
   };
 
   const toggleActive = async (c: ApiCompany) => {
@@ -196,6 +346,52 @@ export default function CompanyManager({ users }: CompanyManagerProps) {
 
         <button type="submit" className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer"><Plus className="w-4 h-4" /> Cadastrar Empresa</button>
       </form>
+
+      {/* Importação em massa por planilha (CSV/Excel) */}
+      <div className="bg-blue-50 dark:bg-slate-900 p-4 rounded-lg border border-blue-100 dark:border-slate-800 space-y-3">
+        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+          <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+          <span className="text-xs font-black uppercase tracking-wide">Importar empresas por planilha</span>
+        </div>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          Cadastre várias empresas de uma vez. Baixe o modelo, preencha (colunas <strong>nome</strong> e <strong>funcionarios</strong> são obrigatórias) e envie em CSV ou Excel (.xlsx).
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => downloadCsv('modelo_empresas.csv', TEMPLATE_CSV)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-700 dark:text-slate-200 font-bold text-[11px] rounded cursor-pointer">
+            <Download className="w-3.5 h-3.5" /> Baixar modelo
+          </button>
+          <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold text-[11px] rounded cursor-pointer text-white ${importing ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'}`}>
+            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />} {importing ? 'Importando...' : 'Importar planilha'}
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              disabled={importing}
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportFile(f); e.currentTarget.value = ''; }}
+            />
+          </label>
+          {importMsg && <span className="text-[11px] text-slate-500">{importMsg}</span>}
+        </div>
+
+        {/* Resumo do resultado da importação */}
+        {importResult && (
+          <div className="text-[11px] space-y-1.5 pt-1">
+            {importResult.created > 0 && (
+              <p className="text-emerald-600 font-bold flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> {importResult.created} empresa(s) cadastrada(s) com sucesso.</p>
+            )}
+            {importResult.failed.length > 0 && (
+              <div className="text-amber-600">
+                <p className="font-bold flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> {importResult.failed.length} linha(s) com problema:</p>
+                <ul className="list-disc pl-6 mt-1 space-y-0.5 text-slate-500 dark:text-slate-400 max-h-32 overflow-y-auto">
+                  {importResult.failed.map((f, i) => (
+                    <li key={i}>Linha {f.row} ({f.name}): {f.error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Lista de empresas */}
       <div className="space-y-3">
