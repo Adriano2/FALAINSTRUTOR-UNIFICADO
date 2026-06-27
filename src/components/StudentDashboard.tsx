@@ -6,7 +6,40 @@
 import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
 import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE, RESPONSAVEL_TECNICO } from '../data';
-import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation } from 'lucide-react';
+import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation,
+  HardHat, Flame, Zap, Users, AlertTriangle, ClipboardList, ClipboardCheck, Eye, Droplets, Wrench, Layers, Thermometer, Factory, FlaskConical, Truck, Activity, BookOpen, Leaf, Settings, FileCheck, Flag, Wind, type LucideIcon } from 'lucide-react';
+
+// Escolhe uma ilustração (ícone) para o slide conforme o tema do título.
+// Mantém todos os treinamentos visualmente ricos sem precisar de imagens externas.
+const pickSlideIcon = (title: string): LucideIcon => {
+  const t = title.toLowerCase();
+  const rules: [RegExp, LucideIcon][] = [
+    [/encerr|conclus/, Flag],
+    [/respons.*fabricante|fabricante|importador/, Factory],
+    [/respons/, Users],
+    [/hierarquia|medidas de controle|controle/, Layers],
+    [/certificado de aprova|\bca\b/, FileCheck],
+    [/uso correto|inspe/, Eye],
+    [/higien|guarda|conserva/, Droplets],
+    [/ficha|entrega|document|prontu/, ClipboardList],
+    [/permiss|pet\b/, ClipboardCheck],
+    [/tipos de epi|epi|prote..o individual/, HardHat],
+    [/inc.ndio|fogo|combate/, Flame],
+    [/el.tric|eletricidade|energia|el.trico/, Zap],
+    [/m.quina|equipamento|acionamento|prote..es fixas/, Settings],
+    [/caldeira|vaso de press|press.o/, Thermometer],
+    [/ergonomia|ler|dort|postura/, Activity],
+    [/espa.o confinado|atmosf|monitor|ventila/, Wind],
+    [/qu.mic|ghs|fispq|inflam|rotulagem|incompat/, FlaskConical],
+    [/rural|agro|silvicult|animal/, Leaf],
+    [/tr.nsito|coleta|res.duo|limpeza urbana|movimenta|transporte/, Truck],
+    [/risco|perigo|acidente/, AlertTriangle],
+    [/manuten/, Wrench],
+    [/campo de aplica|disposi|o que .|conceito|^nr |defini/, BookOpen],
+  ];
+  for (const [re, icon] of rules) if (re.test(t)) return icon;
+  return ShieldCheck;
+};
 // jsPDF, html2canvas-pro e qrcode são carregados sob demanda (import dinâmico)
 // para não pesar o bundle inicial — só baixam quando o aluno gera/visualiza o
 // certificado. (html2canvas-pro suporta as cores oklch() do Tailwind v4.)
@@ -554,6 +587,11 @@ export default function StudentDashboard({
                                       <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{course.code}</span>
                                     </div>
                                     <div className="flex-1 p-4 sm:p-8 flex flex-col items-center justify-center text-center overflow-auto min-h-0 w-full">
+                                      {(() => { const Icon = pickSlideIcon(slide.title); return (
+                                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-600/30 mb-3 shrink-0">
+                                          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" strokeWidth={2.2} />
+                                        </div>
+                                      ); })()}
                                       <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 mb-4 font-display uppercase leading-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500 break-words w-full px-2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{slide.title}</h1>
                                       <ul className="text-left max-w-prose space-y-2 w-full px-2">
                                         {slide.bullets.map((b, bi) => (
