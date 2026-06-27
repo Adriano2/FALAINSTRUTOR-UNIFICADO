@@ -12,6 +12,8 @@ services:
     name: falainstrutor
     runtime: node
     plan: free
+    branch: main
+    autoDeploy: true # deploy automático a cada push na branch main
     buildCommand: npm install && npx prisma generate && npm run build
     # Aplica migrações + seed (idempotente) e sobe o servidor. Feito no start
     # para funcionar também no plano gratuito (onde preDeployCommand não roda).
