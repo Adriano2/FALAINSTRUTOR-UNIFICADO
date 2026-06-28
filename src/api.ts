@@ -137,7 +137,8 @@ export interface CnpjInfo {
   riskGrade: number | null;
 }
 
-export interface AccessSchedule { enabled?: boolean; days?: number[]; start?: string; end?: string }
+export interface AccessWindow { days?: number[]; start?: string; end?: string }
+export interface AccessSchedule { enabled?: boolean; windows?: AccessWindow[]; days?: number[]; start?: string; end?: string }
 export interface CompanyDashboardData {
   company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null; employeeCount: number; cnae: string | null; cnaeDescription: string | null; riskGrade: number | null; accessSchedule?: AccessSchedule } | null;
   employees: {
@@ -352,9 +353,10 @@ export interface PedagogicalRow {
   certificateCode: string | null; enrolledAt: string;
 }
 export interface PedagogicalLogin { userName: string; userEmail: string; loginAt: string; userAgent: string | null; }
+export interface PedagogicalAccessWindow { name: string; schedule: AccessSchedule; }
 export const pedagogicalApi = {
-  async load(): Promise<{ rows: PedagogicalRow[]; logins: PedagogicalLogin[] }> {
-    return apiFetch<{ rows: PedagogicalRow[]; logins: PedagogicalLogin[] }>('/admin/pedagogical');
+  async load(): Promise<{ rows: PedagogicalRow[]; logins: PedagogicalLogin[]; accessWindows: PedagogicalAccessWindow[] }> {
+    return apiFetch('/admin/pedagogical');
   },
 };
 

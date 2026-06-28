@@ -11,11 +11,18 @@
 
 import { prisma } from './db';
 
-export interface AccessSchedule {
-  enabled?: boolean;
-  days?: number[]; // 0=Domingo ... 6=Sábado
+export interface AccessWindow {
+  days?: number[]; // 0=Domingo ... 6=Sábado (vazio = todos os dias)
   start?: string; // "HH:MM"
   end?: string; // "HH:MM"
+}
+export interface AccessSchedule {
+  enabled?: boolean;
+  windows?: AccessWindow[]; // múltiplas faixas (manhã/tarde, ou por dia)
+  // Compatibilidade com o formato antigo (faixa única):
+  days?: number[];
+  start?: string;
+  end?: string;
 }
 
 export interface AccessResult {
@@ -24,8 +31,6 @@ export interface AccessResult {
   message?: string;
   schedule?: AccessSchedule;
 }
-
-const WD_LABEL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 // Horário atual em Brasília: dia da semana (0-6) e minutos desde a meia-noite.
 function nowSaoPaulo(): { weekday: number; minutes: number } {
@@ -49,36 +54,51 @@ const toMinutes = (hhmm?: string): number | null => {
   return h * 60 + m;
 };
 
+const SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+// Verifica se uma faixa específica está ativa no momento informado.
+function windowMatches(w: AccessWindow, weekday: number, minutes: number): boolean {
+  const days = Array.isArray(w.days) ? w.days : [];
+  if (days.length > 0 && !days.includes(weekday)) return false;
+  const start = toMinutes(w.start);
+  const end = toMinutes(w.end);
+  if (start == null || end == null) return days.length > 0; // só dias, sem horário
+  // Faixa normal (08:00–18:00) ou que cruza a meia-noite (22:00–06:00).
+  return start <= end ? minutes >= start && minutes <= end : minutes >= start || minutes <= end;
+}
+
+// Texto legível das faixas (para mensagens ao usuário).
+export function describeWindows(windows: AccessWindow[]): string {
+  return windows
+    .map((w) => {
+      const days = Array.isArray(w.days) && w.days.length ? w.days.slice().sort().map((d) => SHORT[d]).join('/') : 'Todos os dias';
+      const time = w.start && w.end ? ` ${w.start}–${w.end}` : '';
+      return `${days}${time}`;
+    })
+    .join('; ');
+}
+
+// Normaliza para a lista de faixas (suporta o formato antigo de faixa única).
+function toWindows(schedule: AccessSchedule): AccessWindow[] {
+  if (Array.isArray(schedule.windows) && schedule.windows.length > 0) return schedule.windows;
+  return [{ days: schedule.days, start: schedule.start, end: schedule.end }];
+}
+
 // Avalia se o acesso é permitido AGORA, conforme a agenda da empresa.
 export function evaluateSchedule(schedule: AccessSchedule | null | undefined): AccessResult {
   if (!schedule || !schedule.enabled) return { allowed: true, restricted: false };
   const { weekday, minutes } = nowSaoPaulo();
+  const windows = toWindows(schedule);
 
-  const days = Array.isArray(schedule.days) ? schedule.days : [];
-  if (days.length > 0 && !days.includes(weekday)) {
-    return {
-      allowed: false,
-      restricted: true,
-      schedule,
-      message: `Acesso liberado apenas em: ${days.map((d) => WD_LABEL[d]).join(', ')}.`,
-    };
+  if (windows.some((w) => windowMatches(w, weekday, minutes))) {
+    return { allowed: true, restricted: true, schedule };
   }
-
-  const start = toMinutes(schedule.start);
-  const end = toMinutes(schedule.end);
-  if (start != null && end != null) {
-    // Faixa normal (08:00–18:00) ou que cruza a meia-noite (22:00–06:00).
-    const ok = start <= end ? minutes >= start && minutes <= end : minutes >= start || minutes <= end;
-    if (!ok) {
-      return {
-        allowed: false,
-        restricted: true,
-        schedule,
-        message: `Acesso permitido das ${schedule.start} às ${schedule.end} (horário de Brasília).`,
-      };
-    }
-  }
-  return { allowed: true, restricted: true, schedule };
+  return {
+    allowed: false,
+    restricted: true,
+    schedule,
+    message: `Acesso permitido em: ${describeWindows(windows)} (horário de Brasília).`,
+  };
 }
 
 // Avalia o acesso para um usuário (aluno) com base na empresa vinculada.

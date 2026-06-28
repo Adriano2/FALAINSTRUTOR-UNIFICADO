@@ -119,7 +119,18 @@ companyRouter.patch('/access-schedule', async (req: AuthedRequest, res: Response
   const parsed = z
     .object({
       enabled: z.boolean(),
-      days: z.array(z.number().int().min(0).max(6)).max(7).default([]),
+      windows: z
+        .array(
+          z.object({
+            days: z.array(z.number().int().min(0).max(6)).max(7).default([]),
+            start: hhmm,
+            end: hhmm,
+          }),
+        )
+        .max(20)
+        .optional(),
+      // Compatibilidade com o formato antigo (faixa única):
+      days: z.array(z.number().int().min(0).max(6)).max(7).optional(),
       start: hhmm.optional(),
       end: hhmm.optional(),
     })

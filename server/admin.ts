@@ -72,7 +72,17 @@ adminRouter.get('/pedagogical', async (_req, res) => {
     userAgent: s.userAgent,
   }));
 
-  res.json({ rows, logins });
+  // Janelas de acesso configuradas por empresa (restrição de horário).
+  const companies = await prisma.company.findMany({
+    where: { isActive: true },
+    select: { name: true, accessSchedule: true },
+    orderBy: { name: 'asc' },
+  });
+  const accessWindows = companies
+    .map((c) => ({ name: c.name, schedule: c.accessSchedule as Record<string, unknown> }))
+    .filter((c) => c.schedule && (c.schedule as { enabled?: boolean }).enabled);
+
+  res.json({ rows, logins, accessWindows });
 });
 
 // --- Usuários ---

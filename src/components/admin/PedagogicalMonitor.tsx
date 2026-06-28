@@ -10,8 +10,21 @@
  */
 
 import React from 'react';
-import { Loader2, RefreshCw, GraduationCap, Clock, Activity, ScrollText, Download, Search } from 'lucide-react';
-import { pedagogicalApi, PedagogicalRow, PedagogicalLogin } from '../../api';
+import { Loader2, RefreshCw, GraduationCap, Clock, Activity, ScrollText, Download, Search, Building2 } from 'lucide-react';
+import { pedagogicalApi, PedagogicalRow, PedagogicalLogin, PedagogicalAccessWindow, AccessSchedule } from '../../api';
+
+const DOW = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+// Texto legível da janela de acesso de uma empresa.
+const describeSchedule = (s: AccessSchedule): string => {
+  const windows = s.windows && s.windows.length ? s.windows : [{ days: s.days, start: s.start, end: s.end }];
+  return windows
+    .map((w) => {
+      const days = w.days && w.days.length ? w.days.slice().sort().map((d) => DOW[d]).join('/') : 'Todos os dias';
+      const time = w.start && w.end ? ` ${w.start}–${w.end}` : '';
+      return `${days}${time}`;
+    })
+    .join('; ');
+};
 
 const fmtDateTime = (iso: string | null): string => {
   if (!iso) return '—';
@@ -32,6 +45,7 @@ const fmtDuration = (sec: number): string => {
 export default function PedagogicalMonitor() {
   const [rows, setRows] = React.useState<PedagogicalRow[]>([]);
   const [logins, setLogins] = React.useState<PedagogicalLogin[]>([]);
+  const [accessWindows, setAccessWindows] = React.useState<PedagogicalAccessWindow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [updatedAt, setUpdatedAt] = React.useState<Date | null>(null);
   const [auto, setAuto] = React.useState(true);
@@ -43,6 +57,7 @@ export default function PedagogicalMonitor() {
       const data = await pedagogicalApi.load();
       setRows(data.rows ?? []);
       setLogins(data.logins ?? []);
+      setAccessWindows(data.accessWindows ?? []);
       setUpdatedAt(new Date());
     } catch { /* mantém os dados anteriores */ }
     finally { setLoading(false); }
@@ -120,6 +135,21 @@ export default function PedagogicalMonitor() {
           </div>
         ))}
       </div>
+
+      {/* Janelas de acesso por empresa (restrição de horário) */}
+      {accessWindows.length > 0 && (
+        <div className="bg-amber-50 dark:bg-slate-900 border border-amber-100 dark:border-slate-800 rounded-lg p-4">
+          <p className="text-[11px] font-black uppercase text-amber-700 dark:text-amber-500 flex items-center gap-1.5 mb-2"><Clock className="w-4 h-4" /> Restrições de horário ativas</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {accessWindows.map((c, i) => (
+              <div key={i} className="text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-2">
+                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-blue-600" /> {c.name}</span>
+                <span className="text-slate-500 dark:text-slate-400">{describeSchedule(c.schedule)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Abas internas */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">

@@ -11,7 +11,8 @@
 
 import React from 'react';
 import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2, Clock, Save } from 'lucide-react';
-import { companyApi, CompanyDashboardData, AccessSchedule } from '../api';
+import { Plus, Trash2 } from 'lucide-react';
+import { companyApi, CompanyDashboardData, AccessSchedule, AccessWindow } from '../api';
 import { CIPA_NR5_BY_GRADE, cipaRequirement } from '../lib/cipa';
 
 interface CompanyDashboardProps {
@@ -23,22 +24,31 @@ const WEEK = [
   { d: 5, l: 'Sex' }, { d: 6, l: 'Sáb' }, { d: 0, l: 'Dom' },
 ];
 
-// Editor de restrição de horário de acesso aos treinamentos (definido pela empresa).
+// Editor de restrição de horário de acesso (múltiplas faixas) — definido pela empresa.
 function AccessScheduleCard({ initial }: { initial?: AccessSchedule }) {
+  const seed: AccessWindow[] =
+    initial?.windows && initial.windows.length > 0
+      ? initial.windows
+      : initial?.start || initial?.days
+        ? [{ days: initial?.days ?? [1, 2, 3, 4, 5], start: initial?.start ?? '08:00', end: initial?.end ?? '18:00' }]
+        : [{ days: [1, 2, 3, 4, 5], start: '08:00', end: '18:00' }];
+
   const [enabled, setEnabled] = React.useState(!!initial?.enabled);
-  const [days, setDays] = React.useState<number[]>(initial?.days ?? [1, 2, 3, 4, 5]);
-  const [start, setStart] = React.useState(initial?.start ?? '08:00');
-  const [end, setEnd] = React.useState(initial?.end ?? '18:00');
+  const [windows, setWindows] = React.useState<AccessWindow[]>(seed);
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState('');
 
-  const toggleDay = (d: number) =>
-    setDays((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]).sort());
+  const update = (i: number, patch: Partial<AccessWindow>) =>
+    setWindows((p) => p.map((w, idx) => (idx === i ? { ...w, ...patch } : w)));
+  const toggleDay = (i: number, d: number) =>
+    update(i, { days: (windows[i].days ?? []).includes(d) ? (windows[i].days ?? []).filter((x) => x !== d) : [...(windows[i].days ?? []), d].sort() });
+  const addWindow = () => setWindows((p) => [...p, { days: [1, 2, 3, 4, 5], start: '13:00', end: '18:00' }]);
+  const removeWindow = (i: number) => setWindows((p) => p.filter((_, idx) => idx !== i));
 
   const save = async () => {
     setSaving(true); setStatus('');
     try {
-      await companyApi.setAccessSchedule({ enabled, days, start, end });
+      await companyApi.setAccessSchedule({ enabled, windows });
       setStatus('✓ Restrição de horário salva.');
     } catch (e) {
       setStatus(e instanceof Error ? e.message : 'Não foi possível salvar.');
@@ -52,7 +62,7 @@ function AccessScheduleCard({ initial }: { initial?: AccessSchedule }) {
           <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600"><Clock className="w-5 h-5" /></div>
           <div>
             <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Restrição de horário de acesso</h2>
-            <p className="text-xs text-slate-400">Defina os dias e a faixa de horário em que sua equipe pode acessar os treinamentos. Fora disso, o acesso é bloqueado (horário de Brasília).</p>
+            <p className="text-xs text-slate-400">Defina uma ou mais faixas (ex.: manhã e tarde, ou horários diferentes por dia). Fora delas, o acesso aos treinamentos é bloqueado (horário de Brasília).</p>
           </div>
         </div>
         <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
@@ -61,26 +71,36 @@ function AccessScheduleCard({ initial }: { initial?: AccessSchedule }) {
         </label>
       </div>
 
-      <div className={enabled ? '' : 'opacity-50 pointer-events-none'}>
-        <p className="text-[10px] font-bold uppercase text-slate-400 mb-1.5">Dias permitidos</p>
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {WEEK.map((w) => (
-            <button key={w.d} type="button" onClick={() => toggleDay(w.d)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${days.includes(w.d) ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
-              {w.l}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Das</label>
-            <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="text-sm p-2 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+      <div className={`space-y-3 ${enabled ? '' : 'opacity-50 pointer-events-none'}`}>
+        {windows.map((w, i) => (
+          <div key={i} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50/50 dark:bg-slate-950/40">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase text-slate-400">Faixa {i + 1}</span>
+              {windows.length > 1 && (
+                <button type="button" onClick={() => removeWindow(i)} className="text-rose-500 hover:text-rose-600 inline-flex items-center gap-1 text-[11px] font-bold"><Trash2 className="w-3.5 h-3.5" /> Remover</button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {WEEK.map((wd) => (
+                <button key={wd.d} type="button" onClick={() => toggleDay(i, wd.d)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${(w.days ?? []).includes(wd.d) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
+                  {wd.l}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Das</label>
+                <input type="time" value={w.start ?? ''} onChange={(e) => update(i, { start: e.target.value })} className="text-sm p-2 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Até</label>
+                <input type="time" value={w.end ?? ''} onChange={(e) => update(i, { end: e.target.value })} className="text-sm p-2 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Até</label>
-            <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="text-sm p-2 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
-          </div>
-        </div>
+        ))}
+        <button type="button" onClick={addWindow} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Plus className="w-3.5 h-3.5" /> Adicionar faixa de horário</button>
       </div>
 
       <div className="flex items-center gap-3 mt-4">
