@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { ArrowLeft, Printer, FileText } from 'lucide-react';
+import { ArrowLeft, Printer, FileText, Loader2 } from 'lucide-react';
 import { Course } from '../types';
 import { ShieldEmblem } from './BrandLogo';
 import { contentApi } from '../api';
@@ -124,11 +124,53 @@ function SecHeader({ n, title }: { n: string; title: string }) {
 export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPedagogicoProps) {
   // Responsável técnico configurável no painel admin (Arquivos).
   const [tech, setTech] = React.useState<TechResp>(DEFAULT_TECH);
+  const docRef = React.useRef<HTMLDivElement>(null);
+  const [pdfLoading, setPdfLoading] = React.useState(false);
+
   React.useEffect(() => {
     contentApi.get('tech_responsible').then((d) => {
       if (Array.isArray(d) && d[0]?.name) setTech({ ...DEFAULT_TECH, ...d[0] });
     }).catch(() => {});
   }, []);
+
+  // Gera um PDF A4 (multipágina) do documento — mesmo motor do certificado.
+  const handleDownloadPdf = async () => {
+    const el = docRef.current;
+    if (!el) return;
+    setPdfLoading(true);
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const { jsPDF } = await import('jspdf');
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        windowWidth: el.scrollWidth,
+      });
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pageW = 210;
+      const pageH = 297;
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      let heightLeft = imgH;
+      let position = 0;
+      pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        position -= pageH;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      pdf.save('Projeto-Pedagogico-FalaInstrutor.pdf');
+    } catch {
+      // Fallback: usa a impressão do navegador (também permite salvar em PDF).
+      window.print();
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const sumario = [
     'Justificativa', 'Informações dos cursos', 'Objetivo Geral', 'Perfil profissional',
@@ -146,12 +188,12 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
         <button onClick={onNavigateHome} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </button>
-        <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg cursor-pointer">
-          <Printer className="w-4 h-4" /> Imprimir / Salvar PDF
+        <button onClick={handleDownloadPdf} disabled={pdfLoading} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white text-xs font-bold rounded-lg cursor-pointer">
+          {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} {pdfLoading ? 'Gerando PDF...' : 'Imprimir / Salvar PDF'}
         </button>
       </div>
 
-      <div className="mx-auto max-w-4xl bg-white shadow-lg print:shadow-none" style={{ color: '#1f2a3a' }}>
+      <div ref={docRef} className="mx-auto max-w-4xl bg-white shadow-lg print:shadow-none" style={{ color: '#1f2a3a' }}>
         {/* ---- CAPA ---- */}
         <section className="relative grid grid-cols-1 sm:grid-cols-2 overflow-hidden" style={{ minHeight: 520, backgroundColor: NAVY }}>
           <div className="relative z-10 p-8 sm:p-10 flex flex-col justify-between text-white">
