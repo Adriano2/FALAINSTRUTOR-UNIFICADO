@@ -14,7 +14,7 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive, Activity
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
@@ -24,6 +24,7 @@ import CompanyManager from './admin/CompanyManager';
 import HealthMappingManager from './admin/HealthMappingManager';
 import LeadManager from './admin/LeadManager';
 import FileManager from './admin/FileManager';
+import PedagogicalMonitor from './admin/PedagogicalMonitor';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -445,6 +446,7 @@ export default function AdminDashboard({
                   { id: 'courses', label: 'Gestão de cursos', icon: BookOpen },
                   { id: 'instructors', label: 'Gestão de instrutores', icon: GraduationCap },
                   { id: 'enrollments', label: 'Gestão de matrículas', icon: ClipboardList },
+                  { id: 'pedagogical', label: 'Gestão Pedagógica', icon: Activity },
                   { id: 'sales', label: 'Gestão de vendas', icon: DollarSign },
                   { id: 'invoices', label: 'Notas fiscais (NFS-e)', icon: Receipt },
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
@@ -850,6 +852,10 @@ export default function AdminDashboard({
 
           {activeTab === 'files' && (
             <FileManager />
+          )}
+
+          {activeTab === 'pedagogical' && (
+            <PedagogicalMonitor />
           )}
 
           {activeTab === 'health' && (

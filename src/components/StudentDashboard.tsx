@@ -6,6 +6,7 @@
 import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
 import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE, RESPONSAVEL_TECNICO } from '../data';
+import { enrollmentsApi } from '../api';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation,
   HardHat, Flame, Zap, Users, AlertTriangle, ClipboardList, ClipboardCheck, Eye, Droplets, Wrench, Layers, Thermometer, Factory, FlaskConical, Truck, Activity, BookOpen, Leaf, Settings, FileCheck, Flag, Wind, type LucideIcon } from 'lucide-react';
 
@@ -329,6 +330,25 @@ export default function StudentDashboard({
     onUpdateProfile({ name, dob, cpf, avatar });
     alert("Dados cadastrais atualizados com sucesso!");
   };
+
+  // Auditoria: enquanto a sala de aula está aberta e a aba visível, acumula a
+  // minutagem assistida (heartbeat a cada 30s) — alimenta a Gestão Pedagógica.
+  React.useEffect(() => {
+    const id = activeEnrollment?.id;
+    if (!id) return;
+    const STEP = 30;
+    const timer = setInterval(() => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        enrollmentsApi.study(id, STEP);
+      }
+    }, STEP * 1000);
+    return () => clearInterval(timer);
+  }, [activeEnrollment?.id]);
+
+  // Auditoria: marca o início da prova (tempo até a finalização).
+  React.useEffect(() => {
+    if (isTakingExam && activeEnrollment?.id) enrollmentsApi.examStart(activeEnrollment.id);
+  }, [isTakingExam, activeEnrollment?.id]);
 
   const handleOpenClassroom = (enrollment: Enrollment) => {
     setActiveEnrollment(enrollment);

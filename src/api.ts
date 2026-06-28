@@ -318,6 +318,35 @@ export const enrollmentsApi = {
     });
     return data.enrollment;
   },
+  // Heartbeat de estudo: acumula a minutagem assistida (auditoria).
+  async study(id: string, seconds: number): Promise<void> {
+    try {
+      await apiFetch(`/enrollments/${id}/study`, { method: 'POST', body: JSON.stringify({ seconds }) });
+    } catch { /* não bloqueia a aula se a auditoria falhar */ }
+  },
+  // Marca o início da prova (auditoria).
+  async examStart(id: string): Promise<void> {
+    try {
+      await apiFetch(`/enrollments/${id}/exam-start`, { method: 'POST', body: JSON.stringify({}) });
+    } catch { /* silencioso */ }
+  },
+};
+
+// Relatório da Gestão Pedagógica (monitoramento de alunos).
+export interface PedagogicalRow {
+  id: string;
+  studentName: string; studentEmail: string; studentCpf: string;
+  courseCode: string; courseName: string; workload: number;
+  progress: number; watchedSeconds: number;
+  firstAccessAt: string | null; examStartedAt: string | null; examFinishedAt: string | null;
+  examScore: number | null; passed: boolean; released: boolean; releasedAt: string | null;
+  certificateCode: string | null; enrolledAt: string;
+}
+export interface PedagogicalLogin { userName: string; userEmail: string; loginAt: string; userAgent: string | null; }
+export const pedagogicalApi = {
+  async load(): Promise<{ rows: PedagogicalRow[]; logins: PedagogicalLogin[] }> {
+    return apiFetch<{ rows: PedagogicalRow[]; logins: PedagogicalLogin[] }>('/admin/pedagogical');
+  },
 };
 
 // Converte data ISO -> "dd/mm/aaaa" (formato usado no painel).

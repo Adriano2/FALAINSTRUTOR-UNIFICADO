@@ -28,6 +28,53 @@ const sanitize = <T extends { passwordHash?: string }>(u: T) => {
   return rest;
 };
 
+// --- Gestão Pedagógica: monitoramento do progresso, tempos e certificados ---
+adminRouter.get('/pedagogical', async (_req, res) => {
+  const enrollments = await prisma.enrollment.findMany({
+    orderBy: [{ enrolledAt: 'desc' }],
+    include: {
+      user: { select: { id: true, name: true, email: true, cpf: true } },
+      course: { select: { code: true, name: true, duration: true } },
+    },
+  });
+
+  const rows = enrollments.map((e) => ({
+    id: e.id,
+    studentName: e.user.name,
+    studentEmail: e.user.email,
+    studentCpf: e.user.cpf,
+    courseCode: e.course.code,
+    courseName: e.course.name,
+    workload: e.course.duration,
+    progress: e.progress,
+    watchedSeconds: e.watchedSeconds,
+    firstAccessAt: e.firstAccessAt,
+    examStartedAt: e.examStartedAt,
+    examFinishedAt: e.examFinishedAt,
+    examScore: e.examScore,
+    passed: e.passed,
+    released: e.released,
+    releasedAt: e.releasedAt, // hora de liberação da prova pelo instrutor = emissão do certificado
+    certificateCode: e.certificateCode,
+    enrolledAt: e.enrolledAt,
+  }));
+
+  // Logs de acesso (hora de login por usuário) — últimos 200.
+  const sessions = await prisma.loginSession.findMany({
+    orderBy: { loginAt: 'desc' },
+    take: 200,
+    include: { user: { select: { name: true, email: true } } },
+  });
+  const logins = sessions.map((s) => ({
+    userName: s.user.name,
+    userEmail: s.user.email,
+    loginAt: s.loginAt,
+    userAgent: s.userAgent,
+  }));
+
+  res.json({ rows, logins });
+});
+
 // --- Usuários ---
 adminRouter.get('/users', async (_req, res) => {
   const users = await prisma.user.findMany({ orderBy: { registeredAt: 'desc' } });

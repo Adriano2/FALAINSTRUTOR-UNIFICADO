@@ -124,6 +124,33 @@ apiRouter.patch('/enrollments/:id/progress', authenticate, async (req: AuthedReq
   res.json({ enrollment });
 });
 
+// Heartbeat de estudo: acumula o tempo assistido (minutagem para auditoria) e
+// registra o primeiro acesso à sala de aula. Enviado periodicamente pelo aluno.
+apiRouter.post('/enrollments/:id/study', authenticate, async (req: AuthedRequest, res: Response) => {
+  const parsed = z.object({ seconds: z.number().int().min(1).max(300) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Tempo inválido.' });
+  const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+  if (!enr || enr.userId !== req.user!.sub) return res.status(404).json({ error: 'Matrícula não encontrada.' });
+  await prisma.enrollment.update({
+    where: { id: enr.id },
+    data: {
+      watchedSeconds: { increment: parsed.data.seconds },
+      firstAccessAt: enr.firstAccessAt ?? new Date(),
+    },
+  });
+  res.json({ ok: true });
+});
+
+// Marca o início da prova (auditoria do tempo até a finalização).
+apiRouter.post('/enrollments/:id/exam-start', authenticate, async (req: AuthedRequest, res: Response) => {
+  const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+  if (!enr || enr.userId !== req.user!.sub) return res.status(404).json({ error: 'Matrícula não encontrada.' });
+  if (!enr.examStartedAt) {
+    await prisma.enrollment.update({ where: { id: enr.id }, data: { examStartedAt: new Date() } });
+  }
+  res.json({ ok: true });
+});
+
 // Aproveitamento mínimo exigido para aprovação (portaria).
 const PASS_THRESHOLD = 75;
 
@@ -194,6 +221,7 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
       // Nova submissão zera a liberação anterior: precisa ser homologada de novo.
       released: false,
       releasedAt: null,
+      examFinishedAt: new Date(), // auditoria: hora de finalização da prova
     },
     include: enrollInclude,
   });
