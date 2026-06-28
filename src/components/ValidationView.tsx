@@ -45,7 +45,7 @@ function HolographicSeal({ size = 72, label = 'VÁLIDO' }: { size?: number; labe
 
 // Cartão de segurança holográfico (estilo documento "genuine"): fundo guilloché,
 // faixas iridescentes "GENUINE" e o logo da plataforma ao centro.
-function HolographicSecurityCard() {
+function HolographicSecurityCard({ instructor, register }: { instructor?: string; register?: string }) {
   const guilloche =
     'repeating-radial-gradient(circle at 18% 50%, transparent 0 5px, rgba(15,33,71,0.06) 5px 6px),' +
     'repeating-radial-gradient(circle at 50% 50%, transparent 0 5px, rgba(16,157,99,0.06) 5px 6px),' +
@@ -75,6 +75,13 @@ function HolographicSecurityCard() {
         <div className="leading-none text-center sm:text-left">
           <div className="font-black text-lg sm:text-xl" style={{ color: '#0f2147' }}>FALA<span style={{ color: '#10b981' }}>INSTRUTOR</span></div>
           <div className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.22em] text-slate-500 mt-0.5">Documento autenticado · Selo holográfico</div>
+          {instructor && (
+            <div className="mt-1.5 leading-tight">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-slate-400">Instrutor responsável</div>
+              <div className="text-[11px] sm:text-xs font-extrabold" style={{ color: '#0f2147' }}>{instructor}</div>
+              {register && <div className="text-[9px] font-bold text-emerald-700">{register}</div>}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -180,8 +187,11 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
           {matchedCertificate ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800 rounded-lg p-6 sm:p-8 shadow-lg space-y-6">
 
-              {/* Cartão de segurança holográfico (logo da plataforma) */}
-              <HolographicSecurityCard />
+              {/* Cartão de segurança holográfico (logo + instrutor responsável) */}
+              <HolographicSecurityCard
+                instructor={matchedCertificate.instructor}
+                register={matchedCertificate.instructorMte ? `MTE ${matchedCertificate.instructorMte}` : matchedCertificate.instructorCrea ? `CREA ${matchedCertificate.instructorCrea}` : undefined}
+              />
 
               {/* Authenticated Header */}
               <div className="flex flex-col sm:flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">

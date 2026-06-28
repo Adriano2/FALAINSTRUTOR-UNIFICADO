@@ -200,7 +200,7 @@ export default function StudentDashboard({
     }
     const url = `${window.location.origin}/?cert=${encodeURIComponent(viewingCertificate.certificateCode)}`;
     import('qrcode')
-      .then(({ default: QRCode }) => QRCode.toDataURL(url, { margin: 1, width: 240, errorCorrectionLevel: 'M' }))
+      .then(({ default: QRCode }) => QRCode.toDataURL(url, { margin: 1, width: 240, errorCorrectionLevel: 'M', color: { dark: '#0f2147', light: '#ffffff' } }))
       .then(setCertQrUrl)
       .catch(() => setCertQrUrl(''));
   }, [viewingCertificate]);
@@ -1115,15 +1115,16 @@ export default function StudentDashboard({
                   Conteúdo Programático — {course.name}
                   {part ? <span className="block text-[10px] font-semibold text-slate-500 mt-0.5">Página {part.n} de {part.total}</span> : null}
                 </h3>
-                <div className="flex-1 w-full text-[11px] leading-relaxed text-slate-800 px-2 columns-2 gap-8">
+                <div className="w-full text-[11px] leading-relaxed text-slate-800 px-2 columns-2 gap-8">
                   <ul className="list-disc pl-4 space-y-1 font-medium [&>li]:break-inside-avoid">
                     {items.map((it, i) => (
                       <li key={i}>{it}</li>
                     ))}
                   </ul>
                 </div>
-                {/* Faixa holográfica de segurança (autenticidade) — cores da marca */}
-                <div className="relative mt-auto h-[84px] rounded-md overflow-hidden border border-slate-200" style={{ backgroundColor: '#f4f2e9' }}>
+                {/* Faixa holográfica de segurança (autenticidade) — centralizada, um pouco acima da base */}
+                <div className="flex-1 flex items-center w-full">
+                <div className="relative w-full h-[84px] rounded-md overflow-hidden border border-slate-200" style={{ backgroundColor: '#f4f2e9' }}>
                   <div className="absolute inset-0" style={{ backgroundImage: 'repeating-radial-gradient(circle at 18% 50%, transparent 0 5px, rgba(15,33,71,0.06) 5px 6px),repeating-radial-gradient(circle at 50% 50%, transparent 0 5px, rgba(16,157,99,0.06) 5px 6px),repeating-radial-gradient(circle at 82% 50%, transparent 0 5px, rgba(245,178,26,0.06) 5px 6px),repeating-linear-gradient(60deg, rgba(0,0,0,0.035) 0 1px, transparent 1px 6px)' }} />
                   {(['left', 'right'] as const).map((side) => (
                     <div key={side} className="absolute top-0 bottom-0 w-7 flex items-center justify-center overflow-hidden" style={{ [side]: 0, background: 'conic-gradient(from 45deg,#1e9b46,#27b074,#7fe0b0,#f5b21a,#1f2a3a,#27b074,#1e9b46)' } as React.CSSProperties}>
@@ -1145,6 +1146,7 @@ export default function StudentDashboard({
                     </div>
                   </div>
                 </div>
+                </div>
                 <div className="pt-2 flex justify-center text-[12px] text-[#1e9b46] font-black tracking-[0.2em] w-full">
                   WWW.FALAINSTRUTOR.COM.BR
                 </div>
@@ -1165,12 +1167,12 @@ export default function StudentDashboard({
               }}
             />
             <div className="absolute inset-[9px] border border-slate-300 pointer-events-none" />
-            {/* Canto superior esquerdo (acima do conteúdo, z-20) */}
-            <div className="absolute top-0 left-0 w-[26%] h-[18%] pointer-events-none z-20" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
-            <div className="absolute top-0 left-0 w-[16%] h-[11%] pointer-events-none z-20" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            {/* Canto superior esquerdo (sempre à frente, z-30) */}
+            <div className="absolute top-0 left-0 w-[26%] h-[18%] pointer-events-none z-30" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+            <div className="absolute top-0 left-0 w-[15%] h-[10%] pointer-events-none z-30" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
             {/* Canto inferior direito */}
-            <div className="absolute bottom-0 right-0 w-[19%] h-[13%] pointer-events-none z-20" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
-            <div className="absolute bottom-0 right-0 w-[11%] h-[8%] pointer-events-none z-20" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
+            <div className="absolute bottom-0 right-0 w-[19%] h-[13%] pointer-events-none z-30" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1f2a44' }} />
+            <div className="absolute bottom-0 right-0 w-[11%] h-[8%] pointer-events-none z-30" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', backgroundColor: '#1e9b46' }} />
           </>
         );
 
@@ -1188,9 +1190,13 @@ export default function StudentDashboard({
               </div>
             </div>
             <ShieldEmblem className="w-[72px] h-auto" />
-            {certQrUrl
-              ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[78px] h-[78px] p-1 bg-white rounded" />
-              : <div className="w-[78px] h-[78px] bg-white border border-slate-300 rounded" />}
+            {/* QR de validação: cartão branco com borda clara para destacar no fundo navy */}
+            <div className="bg-white rounded-md p-1.5 shadow-md flex flex-col items-center gap-0.5">
+              {certQrUrl
+                ? <img src={certQrUrl} alt="QR Code de validação do certificado" className="w-[74px] h-[74px]" />
+                : <div className="w-[74px] h-[74px] flex items-center justify-center text-[8px] font-bold text-slate-400 text-center leading-tight border border-dashed border-slate-300 rounded">QR de<br/>validação</div>}
+              <span className="text-[7px] font-black uppercase tracking-wider text-[#1f2a44]">Validação</span>
+            </div>
           </div>
         );
 
@@ -1254,6 +1260,8 @@ export default function StudentDashboard({
                     {/* PAGE 1: FRONT SIDE */}
                 <div id="certificate-page-1" className="relative bg-white shadow-sm select-all font-sans text-slate-900 overflow-hidden" style={{ width: PAGE_W, height: PAGE_H, fontFamily: 'Arial, sans-serif' }}>
                   {Frame}
+                  {/* Faixa holográfica discreta na lateral direita (segurança) */}
+                  <div className="absolute top-[9px] bottom-[9px] right-[9px] w-[11px] pointer-events-none z-20 opacity-70" style={{ background: 'conic-gradient(from 45deg,#1e9b46,#27b074,#7fe0b0,#f5b21a,#1f2a3a,#27b074,#1e9b46)' }} />
 
                   <div className="relative z-10 flex w-full h-full px-[3%] py-[2.5%]">
                     {LeftColumn}
