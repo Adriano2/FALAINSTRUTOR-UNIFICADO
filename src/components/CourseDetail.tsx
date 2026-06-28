@@ -125,7 +125,11 @@ export default function CourseDetail({ course, onAddToCart, onNavigateHome }: Co
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">{inst.name}</h3>
                       <p className="text-xs text-amber-500 font-bold mb-1 uppercase tracking-wider">{inst.formation}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Profissional engenheiro habilitado, cadastrado e regularizado perante o CREA regional, atuando conforme as portarias da Previdência Social e diretrizes regulamentares de SST do trânsito e indústria.
+                        {inst.crea
+                          ? `Engenheiro habilitado, cadastrado e regularizado perante o CREA${inst.crea ? ` (CREA ${inst.crea})` : ''}, atuando conforme as Normas Regulamentadoras e diretrizes de Segurança e Saúde no Trabalho.`
+                          : inst.crq
+                            ? `Profissional habilitado e regularizado perante o CRQ${inst.crq ? ` (CRQ ${inst.crq})` : ''}, atuando conforme as Normas Regulamentadoras e diretrizes de Segurança e Saúde no Trabalho.`
+                            : `${inst.formation || 'Técnico de Segurança do Trabalho'} habilitado pelo Ministério do Trabalho e Emprego (MTE)${inst.mte ? ` — registro MTE ${inst.mte}` : ''}, atuando conforme as Normas Regulamentadoras e diretrizes de Segurança e Saúde no Trabalho.`}
                       </p>
                     </div>
                   </div>
