@@ -631,50 +631,36 @@ export default function StudentDashboard({
                             if (deck && deck.length > 0) {
                               const idx = Math.min(slideIdx, deck.length - 1);
                               const slide = deck[idx];
+                              const eyebrow = idx === 0 ? `${course.code} · Apresentação` : `${course.code} · Conteúdo`;
+                              const Icon = pickSlideIcon(slide.title);
                               return (
-                                <div className="flex-1 flex items-center justify-center bg-slate-100 text-slate-800 w-full overflow-hidden relative">
-                                  <div className="w-[90%] sm:w-[85%] h-[85%] bg-white shadow-2xl shadow-black/50 border border-slate-300 flex flex-col mt-4 sm:mt-0 relative max-h-[85%]">
-                                    <div className="h-8 shrink-0 bg-slate-800 flex items-center px-4 justify-between text-white border-b border-slate-700 select-none">
-                                      <span className="text-[10px] font-bold">Slide {idx + 1} de {deck.length}</span>
-                                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{course.code}</span>
-                                    </div>
-                                    <div className="flex-1 p-4 sm:p-8 flex flex-col items-center justify-center text-center overflow-auto min-h-0 w-full">
-                                      {(() => { const Icon = pickSlideIcon(slide.title); return (
-                                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-600/30 mb-3 shrink-0">
-                                          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" strokeWidth={2.2} />
-                                        </div>
-                                      ); })()}
-                                      <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 mb-4 font-display uppercase leading-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500 break-words w-full px-2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{slide.title}</h1>
-                                      <ul className="text-left max-w-prose space-y-2 w-full px-2">
+                                <div className="flex-1 flex items-center justify-center bg-slate-200 w-full overflow-hidden relative p-2 sm:p-4">
+                                  {/* Slide no modelo clean (navy + acento) */}
+                                  <div className="w-full h-full bg-white shadow-2xl shadow-black/40 border border-slate-200 flex flex-col relative overflow-hidden">
+                                    <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: '#0f2147' }} />
+                                    <div className="flex-1 px-6 sm:px-10 py-5 sm:py-7 flex flex-col min-h-0 overflow-auto">
+                                      <div className="flex items-center gap-2 mb-2 shrink-0">
+                                        <Icon className="w-4 h-4 text-emerald-600" strokeWidth={2.2} />
+                                        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">{eyebrow}</span>
+                                      </div>
+                                      <h1 className="text-lg sm:text-2xl md:text-3xl font-black leading-tight mb-4 shrink-0 break-words" style={{ color: '#0f2147', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{slide.title}</h1>
+                                      <ul className="space-y-2 sm:space-y-2.5">
                                         {slide.bullets.map((b, bi) => (
-                                          <li key={bi} className="flex items-start gap-2 text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                          <li key={bi} className="flex items-start gap-2.5 text-[12px] sm:text-sm text-slate-700 leading-relaxed">
+                                            <span className="mt-[7px] w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#10b981' }} />
                                             <span>{b}</span>
                                           </li>
                                         ))}
                                       </ul>
                                     </div>
-                                    {/* Navegação entre slides */}
-                                    <div className="h-10 shrink-0 bg-slate-100 border-t border-slate-300 flex items-center justify-between px-3 select-none">
-                                      <button
-                                        onClick={() => setSlideIdx((i) => Math.max(0, i - 1))}
-                                        disabled={idx === 0}
-                                        className="px-3 py-1 rounded bg-slate-800 text-white text-[10px] font-bold uppercase disabled:opacity-40 cursor-pointer disabled:cursor-default"
-                                      >
-                                        ← Anterior
-                                      </button>
-                                      <div className="flex gap-1">
-                                        {deck.map((_, di) => (
-                                          <button key={di} onClick={() => setSlideIdx(di)} className={`w-2 h-2 rounded-full ${di === idx ? 'bg-emerald-600' : 'bg-slate-400'}`} aria-label={`Ir para o slide ${di + 1}`} />
-                                        ))}
+                                    {/* Rodapé: marca + navegação + número do slide */}
+                                    <div className="shrink-0 border-t border-slate-200 px-4 sm:px-10 py-2 flex items-center justify-between select-none">
+                                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 truncate">FalaInstrutor · Segurança do Trabalho</span>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <button onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={idx === 0} className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold disabled:opacity-40 cursor-pointer disabled:cursor-default flex items-center justify-center" aria-label="Slide anterior">‹</button>
+                                        <span className="text-[10px] font-bold text-slate-500 tabular-nums">{idx + 1} / {deck.length}</span>
+                                        <button onClick={() => setSlideIdx((i) => Math.min(deck.length - 1, i + 1))} disabled={idx === deck.length - 1} className="w-7 h-7 rounded-full text-white font-bold disabled:opacity-40 cursor-pointer disabled:cursor-default flex items-center justify-center" style={{ backgroundColor: '#0f2147' }} aria-label="Próximo slide">›</button>
                                       </div>
-                                      <button
-                                        onClick={() => setSlideIdx((i) => Math.min(deck.length - 1, i + 1))}
-                                        disabled={idx === deck.length - 1}
-                                        className="px-3 py-1 rounded bg-emerald-600 text-white text-[10px] font-bold uppercase disabled:opacity-40 cursor-pointer disabled:cursor-default"
-                                      >
-                                        Próximo →
-                                      </button>
                                     </div>
                                   </div>
                                 </div>
