@@ -43,6 +43,44 @@ function HolographicSeal({ size = 72, label = 'VÁLIDO' }: { size?: number; labe
   );
 }
 
+// Cartão de segurança holográfico (estilo documento "genuine"): fundo guilloché,
+// faixas iridescentes "GENUINE" e o logo da plataforma ao centro.
+function HolographicSecurityCard() {
+  const guilloche =
+    'repeating-radial-gradient(circle at 18% 50%, transparent 0 5px, rgba(15,33,71,0.06) 5px 6px),' +
+    'repeating-radial-gradient(circle at 50% 50%, transparent 0 5px, rgba(16,157,99,0.06) 5px 6px),' +
+    'repeating-radial-gradient(circle at 82% 50%, transparent 0 5px, rgba(245,178,26,0.06) 5px 6px),' +
+    'repeating-linear-gradient(60deg, rgba(0,0,0,0.035) 0 1px, transparent 1px 6px)';
+  const Strip = ({ side }: { side: 'left' | 'right' }) => (
+    <div
+      className="absolute top-0 bottom-0 w-9 flex items-center justify-center overflow-hidden"
+      style={{ [side]: 0, background: 'conic-gradient(from 45deg,#22d3ee,#a78bfa,#f472b6,#fde047,#34d399,#38bdf8,#22d3ee)' } as React.CSSProperties}
+    >
+      <span className="text-white font-black text-[9px] tracking-[0.3em] uppercase" style={{ writingMode: 'vertical-rl', textShadow: '0 1px 2px rgba(0,0,0,0.45)' }}>
+        GENUINE · GENUINE · GENUINE
+      </span>
+    </div>
+  );
+  return (
+    <div className="relative w-full overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 shadow-inner" style={{ height: 120, background: '#f4f2e9' }}>
+      <style>{`@keyframes fiHoloSweep { 0% { transform: translateX(-60%);} 100% { transform: translateX(160%);} }`}</style>
+      <div className="absolute inset-0" style={{ backgroundImage: guilloche }} />
+      {/* brilho iridescente que percorre o cartão */}
+      <div className="absolute inset-y-0 w-1/3 opacity-40" style={{ background: 'linear-gradient(110deg,transparent,rgba(56,189,248,0.5),rgba(167,139,250,0.4),transparent)', animation: 'fiHoloSweep 5s linear infinite', mixBlendMode: 'screen' }} />
+      <Strip side="left" />
+      <Strip side="right" />
+      {/* Logo central (lugar do "SUA LOGO AQUI") */}
+      <div className="absolute inset-0 flex items-center justify-center gap-3 px-12">
+        <div style={{ width: 50 }} className="drop-shadow"><ShieldEmblem className="w-full h-auto" /></div>
+        <div className="leading-none text-center sm:text-left">
+          <div className="font-black text-lg sm:text-xl" style={{ color: '#0f2147' }}>FALA<span style={{ color: '#10b981' }}>INSTRUTOR</span></div>
+          <div className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.22em] text-slate-500 mt-0.5">Documento autenticado · Selo holográfico</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface ValidationViewProps {
   initialCode?: string;
 }
@@ -141,7 +179,10 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
         <div className="animate-fade-in">
           {matchedCertificate ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800 rounded-lg p-6 sm:p-8 shadow-lg space-y-6">
-              
+
+              {/* Cartão de segurança holográfico (logo da plataforma) */}
+              <HolographicSecurityCard />
+
               {/* Authenticated Header */}
               <div className="flex flex-col sm:flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">
                 <div className="flex items-center gap-3">
