@@ -101,6 +101,11 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Credenciais inválidas ou conta inativa.' });
   }
 
+  // Auditoria: registra a hora de início deste login (não bloqueia o login se falhar).
+  prisma.loginSession
+    .create({ data: { userId: user.id, userAgent: req.get('user-agent')?.slice(0, 255) ?? null } })
+    .catch(() => {});
+
   const token = signToken({ sub: user.id, role: user.role });
   res.json({ token, user: publicUser(user) });
 });

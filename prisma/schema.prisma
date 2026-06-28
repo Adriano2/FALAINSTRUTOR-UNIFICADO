@@ -101,6 +101,7 @@ model User {
   comments     Comment[]
   examSubmissions ExamSubmission[]
   orders       Order[]
+  loginSessions LoginSession[]
 }
 
 // Empresa cliente: agrupa funcionários (User.companyId) e tem um painel próprio
@@ -185,7 +186,25 @@ model Enrollment {
   certificateCode String?  @unique
   enrolledAt      DateTime @default(now())
 
+  // Rastreamento de tempo (auditoria do treinamento)
+  firstAccessAt   DateTime? // primeiro acesso à sala de aula
+  watchedSeconds  Int       @default(0) // tempo assistido acumulado, em segundos
+  examStartedAt   DateTime? // início da prova
+  examFinishedAt  DateTime? // finalização da prova
+
   @@unique([userId, courseId])
+}
+
+// Registro de logins (auditoria: hora de início de cada acesso por usuário).
+model LoginSession {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  loginAt   DateTime @default(now())
+  userAgent String?
+
+  @@index([userId])
+  @@index([loginAt])
 }
 
 model Transaction {
