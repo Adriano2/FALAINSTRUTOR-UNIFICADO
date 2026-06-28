@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
-import { obligatoryTrainings } from './nr04';
+import { obligatoryTrainings, workloadForRisk } from './nr04';
 
 export const companyRouter = Router();
 
@@ -73,9 +73,10 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const obligatoryCodes = obligatoryTrainings(company?.riskGrade);
   const courses = await prisma.course.findMany({
     where: { code: { in: obligatoryCodes } },
-    select: { code: true, name: true },
+    select: { code: true, name: true, duration: true },
   });
   const codeToName = new Map(courses.map((c) => [c.code, c.name]));
+  const codeToDuration = new Map(courses.map((c) => [c.code, c.duration]));
 
   // Conjunto de cursos concluídos (aprovado + certificado) por funcionário.
   const completedSets = employees.map(
@@ -87,6 +88,8 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
     code,
     name: codeToName.get(code) ?? code,
     completed: completedSets.filter((s) => s.has(code)).length,
+    // Carga horária exigida conforme o grau de risco da empresa (NR-04).
+    workload: workloadForRisk(code, company?.riskGrade, codeToDuration.get(code) ?? 0),
   }));
 
   const declaredTotal = company?.employeeCount ?? employees.length;

@@ -157,7 +157,7 @@ export interface CompanyDashboardData {
       date: string;
     }[];
   }[];
-  obligatory: { code: string; name: string; completed: number }[];
+  obligatory: { code: string; name: string; completed: number; workload: number }[];
   stats: { declaredEmployees: number; registeredEmployees: number; certificates: number; compliant: number; compliancePct: number };
 }
 

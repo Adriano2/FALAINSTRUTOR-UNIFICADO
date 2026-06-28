@@ -211,7 +211,10 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
               return (
                 <div key={o.code} className="p-2.5 rounded border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
                   <div className="flex justify-between text-[11px] mb-1">
-                    <span className="font-bold text-slate-700 dark:text-slate-200 truncate">{o.code} — {o.name}</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200 truncate">
+                      {o.code} — {o.name}
+                      {o.workload ? <span className="ml-1.5 font-bold text-blue-600">· {o.workload}h</span> : null}
+                    </span>
                     <span className="text-slate-400 shrink-0 ml-2">{o.completed}/{data.stats.declaredEmployees}</span>
                   </div>
                   <div className="w-full bg-slate-150 dark:bg-slate-800 rounded-full h-1.5"><div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, pct)}%` }} /></div>

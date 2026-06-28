@@ -58,6 +58,20 @@ export function obligatoryTrainings(riskGrade?: number | null): string[] {
   return OBLIGATORY_BY_RISK[g];
 }
 
+// Carga horária (horas) por grau de risco, para os treinamentos cuja duração
+// varia conforme o grau (NR-04). Quando o código não está aqui, usa a duração
+// padrão do curso. Base: tabela de carga horária do Projeto Pedagógico.
+export const WORKLOAD_BY_RISK: Record<string, Record<number, number>> = {
+  'NR 05': { 1: 8, 2: 12, 3: 16, 4: 20 }, // CIPA — escala com o grau de risco
+};
+
+// Retorna a carga horária do treinamento conforme o grau de risco; cai para a
+// duração padrão (defaultHours) quando o curso não varia por grau.
+export function workloadForRisk(code: string, riskGrade?: number | null, defaultHours = 0): number {
+  const g = riskGrade && riskGrade >= 1 && riskGrade <= 4 ? riskGrade : 2;
+  return WORKLOAD_BY_RISK[code]?.[g] ?? defaultHours;
+}
+
 export interface CnpjInfo {
   cnpj: string;
   razaoSocial: string | null;
