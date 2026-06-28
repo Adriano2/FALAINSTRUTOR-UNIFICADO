@@ -165,7 +165,7 @@ export interface CompanyDashboardData {
 export interface InstructorDashboardData {
   instructor: { name: string };
   courses: { id: string; code: string; name: string; examQuestions: { question: string; options: string[]; correctIndex: number }[]; sales: number; enrollments: number; examsCount: number; approved: number; revenue: number }[];
-  exams: { id: string; studentName: string; studentCpf: string; courseId: string; courseCode: string; courseName: string; score: number; passed: boolean; validated: boolean; answers: Record<number, number>; date: string }[];
+  exams: { id: string; studentName: string; studentCpf: string; courseId: string; courseCode: string; courseName: string; score: number; passed: boolean; validated: boolean; answers: Record<number, number>; date: string; enrollmentId: string | null; released: boolean; certificateCode: string | null; revocationRequested: boolean; revoked: boolean }[];
   stats: { courses: number; totalSales: number; totalEnrollments: number; totalExams: number; totalRevenue: number; commissionPercent: number; commissionValue: number };
 }
 
@@ -242,15 +242,15 @@ export const coursesApi = {
 };
 
 export const certificatesApi = {
-  // Returns the certificate when valid, or null when not found.
-  async validate(code: string): Promise<CertificateResult | null> {
+  // Retorna o certificado quando válido; sinaliza 'revoked' quando revogado.
+  async validate(code: string): Promise<{ certificate: CertificateResult | null; revoked: boolean }> {
     try {
-      const data = await apiFetch<{ valid: boolean; certificate: CertificateResult }>(
+      const data = await apiFetch<{ valid: boolean; revoked?: boolean; certificate?: CertificateResult }>(
         `/certificates/${encodeURIComponent(code.trim())}`,
       );
-      return data.valid ? data.certificate : null;
+      return { certificate: data.valid && data.certificate ? data.certificate : null, revoked: !!data.revoked };
     } catch {
-      return null;
+      return { certificate: null, revoked: false };
     }
   },
 };
@@ -351,6 +351,8 @@ export interface PedagogicalRow {
   firstAccessAt: string | null; examStartedAt: string | null; examFinishedAt: string | null;
   examScore: number | null; passed: boolean; released: boolean; releasedAt: string | null;
   certificateCode: string | null; enrolledAt: string;
+  revocationRequested?: boolean; revocationReason?: string | null; revocationRequestedBy?: string | null;
+  revoked?: boolean; revokedAt?: string | null;
 }
 export interface PedagogicalLogin { userName: string; userEmail: string; loginAt: string; userAgent: string | null; }
 export interface PedagogicalAccessWindow { name: string; schedule: AccessSchedule; }
@@ -520,6 +522,13 @@ export const adminApi = {
   saveContent(key: string, data: any[]) {
     return apiFetch(`/admin/content/${key}`, { method: 'PUT', body: JSON.stringify({ data }) });
   },
+  // Etapa 2: revogação definitiva (apenas administrador).
+  revokeCertificate(enrollmentId: string) {
+    return apiFetch(`/admin/enrollments/${enrollmentId}/revoke`, { method: 'POST', body: JSON.stringify({}) });
+  },
+  rejectRevocation(enrollmentId: string) {
+    return apiFetch(`/admin/enrollments/${enrollmentId}/revocation/reject`, { method: 'POST', body: JSON.stringify({}) });
+  },
 };
 
 // Conteúdo editável do site (notícias, parceiros, páginas, produtos, e-mails).
@@ -554,6 +563,10 @@ export const instructorApi = {
   },
   validateExam(id: string, validated: boolean) {
     return apiFetch(`/instructor/exams/${id}/validate`, { method: 'PATCH', body: JSON.stringify({ validated }) });
+  },
+  // Etapa 1: solicitar revogação do certificado (instrutor/responsável).
+  requestRevocation(enrollmentId: string, reason: string) {
+    return apiFetch(`/instructor/enrollments/${enrollmentId}/request-revocation`, { method: 'POST', body: JSON.stringify({ reason }) });
   },
 };
 

@@ -22,8 +22,23 @@ export default function InstructorDashboard() {
   const [error, setError] = React.useState('');
   const [reviewing, setReviewing] = React.useState<ExamItem | null>(null);
   const [validatedMap, setValidatedMap] = React.useState<Record<string, boolean>>({});
+  const [requestedMap, setRequestedMap] = React.useState<Record<string, boolean>>({});
 
   const isValidated = (ex: ExamItem) => validatedMap[ex.id] ?? ex.validated;
+
+  // Etapa 1 da revogação: solicita a revogação do certificado (admin confirma).
+  const requestRevocation = async (ex: ExamItem) => {
+    if (!ex.enrollmentId) return;
+    const reason = window.prompt(`Solicitar revogação do certificado de ${ex.studentName} (${ex.courseCode}).\nInforme o motivo:`);
+    if (!reason || reason.trim().length < 3) return;
+    try {
+      await instructorApi.requestRevocation(ex.enrollmentId, reason.trim());
+      setRequestedMap((m) => ({ ...m, [ex.id]: true }));
+      alert('Solicitação de revogação enviada. A revogação definitiva será feita pelo administrador.');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Não foi possível solicitar a revogação.');
+    }
+  };
 
   const toggleValidate = async (ex: ExamItem) => {
     const next = !isValidated(ex);
@@ -152,6 +167,12 @@ export default function InstructorDashboard() {
                     >
                       {validated ? 'Revogar' : 'Liberar'}
                     </button>
+                    {ex.released && ex.certificateCode && !ex.revoked && (
+                      (ex.revocationRequested || requestedMap[ex.id])
+                        ? <span className="ml-1.5 px-2 py-1 bg-amber-500/10 text-amber-600 rounded text-[10px] font-bold">Revog. solicitada</span>
+                        : <button onClick={() => requestRevocation(ex)} className="ml-1.5 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-bold">Solicitar revogação</button>
+                    )}
+                    {ex.revoked && <span className="ml-1.5 px-2 py-1 bg-rose-500/15 text-rose-600 rounded text-[10px] font-bold">Revogado</span>}
                   </td>
                 </tr>
                 );

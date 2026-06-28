@@ -10,8 +10,8 @@
  */
 
 import React from 'react';
-import { Loader2, RefreshCw, GraduationCap, Clock, Activity, ScrollText, Download, Search, Building2 } from 'lucide-react';
-import { pedagogicalApi, PedagogicalRow, PedagogicalLogin, PedagogicalAccessWindow, AccessSchedule } from '../../api';
+import { Loader2, RefreshCw, GraduationCap, Clock, Activity, ScrollText, Download, Search, Building2, ShieldX, Ban, Check } from 'lucide-react';
+import { pedagogicalApi, PedagogicalRow, PedagogicalLogin, PedagogicalAccessWindow, AccessSchedule, adminApi } from '../../api';
 
 const DOW = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 // Texto legível da janela de acesso de uma empresa.
@@ -64,6 +64,15 @@ export default function PedagogicalMonitor() {
   }, []);
 
   React.useEffect(() => { load(); }, [load]);
+
+  // Revogação (etapa 2 — definitiva, só admin) e rejeição da solicitação.
+  const revoke = async (r: PedagogicalRow) => {
+    if (!window.confirm(`REVOGAR DEFINITIVAMENTE o certificado de ${r.studentName} (${r.courseCode})?\nO certificado deixará de ser válido na validação pública. Esta ação é permanente.`)) return;
+    try { await adminApi.revokeCertificate(r.id); await load(); } catch (e) { alert(e instanceof Error ? e.message : 'Falha ao revogar.'); }
+  };
+  const rejectRevocation = async (r: PedagogicalRow) => {
+    try { await adminApi.rejectRevocation(r.id); await load(); } catch (e) { alert(e instanceof Error ? e.message : 'Falha ao rejeitar.'); }
+  };
 
   // Monitoramento "em tempo real": atualiza a cada 30s quando ligado.
   React.useEffect(() => {
@@ -136,6 +145,28 @@ export default function PedagogicalMonitor() {
         ))}
       </div>
 
+      {/* Solicitações de revogação pendentes (etapa 2: admin decide) */}
+      {rows.some((r) => r.revocationRequested && !r.revoked) && (
+        <div className="bg-rose-50 dark:bg-slate-900 border border-rose-200 dark:border-rose-900/40 rounded-lg p-4">
+          <p className="text-[11px] font-black uppercase text-rose-700 dark:text-rose-400 flex items-center gap-1.5 mb-2"><ShieldX className="w-4 h-4" /> Solicitações de revogação pendentes</p>
+          <div className="space-y-2">
+            {rows.filter((r) => r.revocationRequested && !r.revoked).map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-2">
+                <div className="text-[11px] min-w-0">
+                  <span className="font-bold text-slate-900 dark:text-white">{r.studentName}</span>
+                  <span className="text-slate-400"> · {r.courseCode} · {r.certificateCode}</span>
+                  <div className="text-slate-500 dark:text-slate-400">Motivo: {r.revocationReason || '—'} <span className="text-slate-400">(solicitado por {r.revocationRequestedBy || '—'})</span></div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => revoke(r)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-bold bg-rose-600 hover:bg-rose-700 text-white"><Ban className="w-3.5 h-3.5" /> Revogar definitivamente</button>
+                  <button onClick={() => rejectRevocation(r)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200"><Check className="w-3.5 h-3.5" /> Manter (rejeitar)</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Janelas de acesso por empresa (restrição de horário) */}
       {accessWindows.length > 0 && (
         <div className="bg-amber-50 dark:bg-slate-900 border border-amber-100 dark:border-slate-800 rounded-lg p-4">
@@ -205,7 +236,9 @@ export default function PedagogicalMonitor() {
                     <td className={td}>{fmtDateTime(r.examStartedAt)} → {fmtDateTime(r.examFinishedAt)}</td>
                     <td className={td}>{r.examScore != null ? `${r.examScore}%` : '—'}</td>
                     <td className={td}>
-                      {r.released && r.certificateCode ? <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 font-bold text-[10px]">Certificado emitido</span>
+                      {r.revoked ? <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 font-bold text-[10px]">Revogado</span>
+                        : r.revocationRequested ? <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 font-bold text-[10px]">Revog. solicitada</span>
+                        : r.released && r.certificateCode ? <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 font-bold text-[10px]">Certificado emitido</span>
                         : r.passed ? <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 font-bold text-[10px]">Aguardando liberação</span>
                         : <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 font-bold text-[10px]">Em andamento</span>}
                     </td>

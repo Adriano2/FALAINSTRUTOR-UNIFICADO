@@ -81,6 +81,39 @@ instructorRouter.patch('/exams/:id/validate', async (req: AuthedRequest, res: Re
   res.json({ ok: true, released: validated && Boolean(enr?.passed) });
 });
 
+// Nome do responsável técnico geral (pode solicitar revogação em qualquer curso).
+async function generalResponsibleName(): Promise<string> {
+  const row = await prisma.siteContent.findUnique({ where: { key: 'tech_responsible' } });
+  const data = Array.isArray(row?.data) ? (row!.data as Array<{ name?: string }>) : [];
+  return data[0]?.name || 'Magnus Leandro de Souza';
+}
+
+// Etapa 1 da revogação: o instrutor (dos seus cursos) OU o responsável técnico
+// geral SOLICITA a revogação do certificado. A revogação definitiva é do admin.
+instructorRouter.post('/enrollments/:id/request-revocation', async (req: AuthedRequest, res: Response) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor/responsável.' });
+  const parsed = z.object({ reason: z.string().min(3).max(500) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Informe o motivo da revogação (mínimo 3 caracteres).' });
+
+  const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+  if (!enr) return res.status(404).json({ error: 'Matrícula/certificado não encontrado.' });
+
+  const isGeneral = norm(user.name) === norm(await generalResponsibleName());
+  const mine = await instructorCourseIds(user.name);
+  if (!isGeneral && !mine.has(enr.courseId)) {
+    return res.status(403).json({ error: 'Este certificado não pertence aos seus cursos.' });
+  }
+  if (enr.revoked) return res.status(400).json({ error: 'Certificado já revogado definitivamente.' });
+  if (!enr.released || !enr.certificateCode) return res.status(400).json({ error: 'Só é possível solicitar a revogação de um certificado já emitido.' });
+
+  await prisma.enrollment.update({
+    where: { id: enr.id },
+    data: { revocationRequested: true, revocationReason: parsed.data.reason, revocationRequestedBy: user.name, revocationRequestedAt: new Date() },
+  });
+  res.json({ ok: true });
+});
+
 instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
   if (!user || user.role !== 'INSTRUCTOR') {
@@ -123,19 +156,37 @@ instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
       })
     : [];
 
-  const exams = submissions.map((s) => ({
-    id: s.id,
-    studentName: s.user.name,
-    studentCpf: s.user.cpf,
-    courseId: s.courseId,
-    courseCode: s.course.code,
-    courseName: s.course.name,
-    score: s.score,
-    passed: s.passed,
-    validated: s.validatedByInstructor,
-    answers: s.answers as Record<number, number>,
-    date: s.date,
-  }));
+  // Mapa de matrículas (para status de certificado/revogação por aluno+curso).
+  const enrRows = courseIds.length
+    ? await prisma.enrollment.findMany({
+        where: { courseId: { in: courseIds } },
+        select: { id: true, userId: true, courseId: true, released: true, certificateCode: true, revocationRequested: true, revoked: true },
+      })
+    : [];
+  const enrMap = new Map(enrRows.map((e) => [`${e.userId}_${e.courseId}`, e]));
+
+  const exams = submissions.map((s) => {
+    const e = enrMap.get(`${s.userId}_${s.courseId}`);
+    return {
+      id: s.id,
+      studentName: s.user.name,
+      studentCpf: s.user.cpf,
+      courseId: s.courseId,
+      courseCode: s.course.code,
+      courseName: s.course.name,
+      score: s.score,
+      passed: s.passed,
+      validated: s.validatedByInstructor,
+      answers: s.answers as Record<number, number>,
+      date: s.date,
+      // Certificado / revogação
+      enrollmentId: e?.id ?? null,
+      released: e?.released ?? false,
+      certificateCode: e?.certificateCode ?? null,
+      revocationRequested: e?.revocationRequested ?? false,
+      revoked: e?.revoked ?? false,
+    };
+  });
 
   // Percentual de comissão definido pelo admin (SiteContent "commissions").
   const commRow = await prisma.siteContent.findUnique({ where: { key: 'commissions' } });

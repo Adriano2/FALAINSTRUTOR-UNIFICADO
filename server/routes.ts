@@ -273,6 +273,14 @@ apiRouter.get('/certificates/:code', async (req, res) => {
   if (!enrollment) {
     return res.status(404).json({ valid: false, error: 'Certificado não encontrado.' });
   }
+  // Certificado REVOGADO definitivamente pelo administrador: inválido.
+  if (enrollment.revoked) {
+    return res.status(200).json({
+      valid: false,
+      revoked: true,
+      error: 'Certificado REVOGADO. Esta credencial foi cancelada e não é mais válida.',
+    });
+  }
   // O certificado só é válido publicamente após a liberação (homologação) do
   // instrutor responsável pela prova.
   if (!enrollment.released) {

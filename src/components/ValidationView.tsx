@@ -95,6 +95,7 @@ interface ValidationViewProps {
 export default function ValidationView({ initialCode }: ValidationViewProps) {
   const [searchCode, setSearchCode] = React.useState(initialCode ?? '');
   const [matchedCertificate, setMatchedCertificate] = React.useState<any | null>(null);
+  const [revoked, setRevoked] = React.useState(false);
   const [performedSearch, setPerformedSearch] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
@@ -104,8 +105,10 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
 
     setLoading(true);
     // Validate the certificate against the API (queries the shared database).
-    const cert = await certificatesApi.validate(cleanCode);
+    const res = await certificatesApi.validate(cleanCode);
+    const cert = res.certificate;
     setPerformedSearch(true);
+    setRevoked(res.revoked);
 
     if (cert) {
       setMatchedCertificate({
@@ -325,6 +328,17 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
 
               </div>
 
+            </div>
+          ) : revoked ? (
+            <div className="bg-white dark:bg-slate-900 border-2 border-rose-300 dark:border-rose-800 p-8 rounded-lg shadow text-center space-y-4">
+              <div className="p-3 bg-rose-500/10 text-rose-600 rounded-full inline-block">
+                <AlertTriangle className="w-10 h-10" />
+              </div>
+              <h2 className="text-lg font-extrabold text-rose-600 uppercase tracking-tight">Certificado Revogado</h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-normal">
+                Este certificado foi <strong>revogado</strong> pela administração do FalaInstrutor e <strong>não é mais válido</strong>.
+                Caso tenha dúvidas, entre em contato com a instituição.
+              </p>
             </div>
           ) : (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow text-center space-y-4">

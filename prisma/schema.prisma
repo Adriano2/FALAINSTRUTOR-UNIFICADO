@@ -196,6 +196,16 @@ model Enrollment {
   examStartedAt   DateTime? // início da prova
   examFinishedAt  DateTime? // finalização da prova
 
+  // Revogação do certificado (2 etapas): solicitação (instrutor/responsável) →
+  // revogação definitiva (apenas administrador).
+  revocationRequested   Boolean   @default(false)
+  revocationRequestedBy String?   // nome de quem solicitou (instrutor/responsável)
+  revocationReason      String?   // motivo da solicitação
+  revocationRequestedAt DateTime?
+  revoked               Boolean   @default(false) // revogação definitiva (admin)
+  revokedBy             String?   // administrador que revogou
+  revokedAt             DateTime?
+
   @@unique([userId, courseId])
 }
 

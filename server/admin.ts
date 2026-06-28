@@ -57,6 +57,12 @@ adminRouter.get('/pedagogical', async (_req, res) => {
     releasedAt: e.releasedAt, // hora de liberação da prova pelo instrutor = emissão do certificado
     certificateCode: e.certificateCode,
     enrolledAt: e.enrolledAt,
+    // Revogação (2 etapas)
+    revocationRequested: e.revocationRequested,
+    revocationReason: e.revocationReason,
+    revocationRequestedBy: e.revocationRequestedBy,
+    revoked: e.revoked,
+    revokedAt: e.revokedAt,
   }));
 
   // Logs de acesso (hora de login por usuário) — últimos 200.
@@ -83,6 +89,30 @@ adminRouter.get('/pedagogical', async (_req, res) => {
     .filter((c) => c.schedule && (c.schedule as { enabled?: boolean }).enabled);
 
   res.json({ rows, logins, accessWindows });
+});
+
+// Etapa 2 (final) da revogação: APENAS o administrador revoga definitivamente.
+// O certificado deixa de ser válido na validação pública.
+adminRouter.post('/enrollments/:id/revoke', async (req: AuthedRequest, res) => {
+  const admin = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+  const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+  if (!enr) return res.status(404).json({ error: 'Matrícula/certificado não encontrado.' });
+  await prisma.enrollment.update({
+    where: { id: enr.id },
+    data: { revoked: true, revokedAt: new Date(), revokedBy: admin?.name ?? 'Administrador', released: false },
+  });
+  res.json({ ok: true });
+});
+
+// Rejeita (descarta) uma solicitação de revogação pendente.
+adminRouter.post('/enrollments/:id/revocation/reject', async (req: AuthedRequest, res) => {
+  const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+  if (!enr) return res.status(404).json({ error: 'Matrícula não encontrada.' });
+  await prisma.enrollment.update({
+    where: { id: enr.id },
+    data: { revocationRequested: false, revocationReason: null, revocationRequestedBy: null, revocationRequestedAt: null },
+  });
+  res.json({ ok: true });
 });
 
 // --- Usuários ---
