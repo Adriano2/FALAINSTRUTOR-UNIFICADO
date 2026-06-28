@@ -6,6 +6,42 @@
 import React from 'react';
 import { ShieldCheck, Search, FileText, CheckCircle2, User, Key, Calendar, MapPin, Award, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { certificatesApi } from '../api';
+import { ShieldEmblem } from './BrandLogo';
+
+// Selo holográfico de autenticidade com o logo da plataforma (FalaInstrutor).
+function HolographicSeal({ size = 72, label = 'VÁLIDO' }: { size?: number; label?: string }) {
+  return (
+    <div className="relative shrink-0 select-none" style={{ width: size, height: size }} aria-label="Selo holográfico de autenticidade">
+      <style>{`
+        @keyframes fiHoloSpin { to { transform: rotate(360deg); } }
+        @keyframes fiHoloShine { 0% { transform: translateX(-140%); } 60%, 100% { transform: translateX(160%); } }
+      `}</style>
+      {/* Anel holográfico (iridescente, girando) */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: 'conic-gradient(from 0deg,#22d3ee,#a78bfa,#f472b6,#fde047,#34d399,#38bdf8,#22d3ee)',
+          animation: 'fiHoloSpin 7s linear infinite',
+          filter: 'saturate(1.25)',
+          boxShadow: '0 0 14px rgba(56,189,248,0.45)',
+        }}
+      />
+      {/* Miolo navy com o logo */}
+      <div
+        className="absolute rounded-full flex flex-col items-center justify-center text-white overflow-hidden"
+        style={{ inset: Math.max(3, size * 0.09), background: 'radial-gradient(circle at 30% 22%, #1e3a8a, #0f2147 72%)' }}
+      >
+        <div style={{ width: size * 0.42 }}><ShieldEmblem className="w-full h-auto" /></div>
+        <span className="font-black tracking-wider leading-none mt-0.5" style={{ fontSize: Math.max(7, size * 0.13) }}>{label}</span>
+        {/* Brilho que percorre o selo */}
+        <div
+          className="absolute top-0 bottom-0"
+          style={{ width: '34%', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent)', animation: 'fiHoloShine 3.5s ease-in-out infinite' }}
+        />
+      </div>
+    </div>
+  );
+}
 
 interface ValidationViewProps {
   initialCode?: string;
@@ -109,12 +145,11 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
               {/* Authenticated Header */}
               <div className="flex flex-col sm:flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-full">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
+                  <HolographicSeal size={64} label="VÁLIDO" />
                   <div>
                     <span className="text-xs font-black uppercase text-emerald-500 tracking-wider block">Status do Certificado</span>
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{matchedCertificate.status}</h2>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-1.5">{matchedCertificate.status} <CheckCircle2 className="w-4 h-4 text-emerald-500" /></h2>
+                    <span className="text-[10px] text-slate-400 font-semibold">Selo holográfico • FalaInstrutor</span>
                   </div>
                 </div>
                 
@@ -199,8 +234,14 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-500 leading-normal">
                 
                 <div className="space-y-1">
-                  <strong className="text-slate-400 font-bold uppercase tracking-wider block text-[10px]">Identificador de Autenticidade</strong>
-                  <span className="font-mono text-slate-800 dark:text-slate-350 select-all font-semibold block">{matchedCertificate.digitalSeal}</span>
+                  <div className="flex items-start gap-3">
+                    <HolographicSeal size={58} label="VÁLIDO" />
+                    <div className="min-w-0">
+                      <strong className="text-slate-400 font-bold uppercase tracking-wider block text-[10px]">Identificador de Autenticidade</strong>
+                      <span className="font-mono text-slate-800 dark:text-slate-350 select-all font-semibold block break-all">{matchedCertificate.digitalSeal}</span>
+                      <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wide">Selo holográfico • Fala Instrutor</span>
+                    </div>
+                  </div>
                   <span>Assinatura eletrônica em conformidade com o ICP-Brasil e homologação de responsabilidade técnica pela FALA INSTRUTOR A2 CONSUTORIA SEG HIGIENE OCUPACIONAL.</span>
                   {matchedCertificate.digitalSignature && (
                     <div className="pt-1.5 mt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
