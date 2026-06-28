@@ -19,6 +19,7 @@ import {
   INITIAL_LAYOUT_CONFIG,
   INITIAL_PAYMENT_CONFIG,
   getExamQuestions,
+  SLIDES_BY_CODE,
 } from '../src/data';
 
 const prisma = new PrismaClient();
@@ -104,6 +105,20 @@ async function main() {
     await prisma.course.update({
       where: { id: c.id },
       data: { examQuestions: questions as unknown as Prisma.InputJsonValue },
+    });
+  }
+
+  // 2b-2) Slides: preenche o deck a partir de SLIDES_BY_CODE[code] APENAS quando
+  // o curso ainda não tem slides salvos (preserva edições do Gerenciador de Slides).
+  const coursesNeedingSlides = await prisma.course.findMany({ select: { id: true, code: true, slides: true } });
+  for (const c of coursesNeedingSlides) {
+    const current = Array.isArray(c.slides) ? c.slides : [];
+    if (current.length > 0) continue;
+    const deck = SLIDES_BY_CODE[c.code];
+    if (!deck || deck.length === 0) continue;
+    await prisma.course.update({
+      where: { id: c.id },
+      data: { slides: deck as unknown as Prisma.InputJsonValue },
     });
   }
 

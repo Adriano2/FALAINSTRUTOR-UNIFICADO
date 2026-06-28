@@ -14,7 +14,7 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive, Activity
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive, Activity, Presentation
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
@@ -25,6 +25,7 @@ import HealthMappingManager from './admin/HealthMappingManager';
 import LeadManager from './admin/LeadManager';
 import FileManager from './admin/FileManager';
 import PedagogicalMonitor from './admin/PedagogicalMonitor';
+import SlideManager from './admin/SlideManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -461,6 +462,7 @@ export default function AdminDashboard({
                   { id: 'coupons', label: 'Gestão de cupons', icon: Tag },
                   { id: 'health', label: 'Mapeamento da Saúde', icon: HeartPulse },
                   { id: 'exam-editor', label: 'Editor de provas', icon: BookOpenCheck },
+                  { id: 'slides', label: 'Gerenciador de slides', icon: Presentation },
                   { id: 'exams', label: 'Auditoria de provas', icon: ClipboardList },
                 ],
               },
@@ -839,6 +841,10 @@ export default function AdminDashboard({
           {/* TAB: EDITOR DE PROVAS */}
           {activeTab === 'exam-editor' && (
             <ExamEditor courses={courses} onSaved={onRefreshCourses} initialCourseId={examCourseId} />
+          )}
+
+          {activeTab === 'slides' && (
+            <SlideManager courses={courses} onSaved={onRefreshCourses} />
           )}
 
           {/* TAB: GESTÃO DE EMPRESAS */}

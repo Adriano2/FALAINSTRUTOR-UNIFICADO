@@ -626,7 +626,7 @@ export default function StudentDashboard({
                           )
                         ) : (
                           (() => {
-                            const deck = SLIDES_BY_CODE[course.code];
+                            const deck = (course.slides && course.slides.length > 0) ? course.slides : SLIDES_BY_CODE[course.code];
                             // Deck real do treinamento (se houver); senão, mantém o aviso genérico.
                             if (deck && deck.length > 0) {
                               const idx = Math.min(slideIdx, deck.length - 1);

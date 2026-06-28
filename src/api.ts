@@ -82,6 +82,7 @@ interface ApiCourse {
   moduleVideos: string[] | null;
   documents: { name: string; url: string }[] | null;
   examQuestions: { question: string; options: string[]; correctIndex: number }[] | null;
+  slides: { title: string; bullets: string[] }[] | null;
   instructors: {
     id: string;
     name: string;
@@ -205,6 +206,7 @@ export function mapApiCourse(c: ApiCourse): Course {
     moduleVideos: Array.isArray(c.moduleVideos) ? c.moduleVideos : [],
     documents: Array.isArray(c.documents) ? c.documents : [],
     examQuestions: Array.isArray(c.examQuestions) ? c.examQuestions : [],
+    slides: Array.isArray(c.slides) ? c.slides : [],
     instructors: (c.instructors ?? []).map((i) => ({
       id: i.id,
       name: i.name,
@@ -511,6 +513,9 @@ export const adminApi = {
   },
   saveExam(courseId: string, questions: { question: string; options: string[]; correctIndex: number }[]) {
     return apiFetch(`/admin/courses/${courseId}/exam`, { method: 'PATCH', body: JSON.stringify({ questions }) });
+  },
+  saveSlides(courseId: string, slides: { title: string; bullets: string[] }[]) {
+    return apiFetch(`/admin/courses/${courseId}/slides`, { method: 'PATCH', body: JSON.stringify({ slides }) });
   },
   saveConfig(layout: LayoutConfig, payment: PaymentConfig) {
     return apiFetch('/admin/config', { method: 'PUT', body: JSON.stringify({ layout, payment }) });

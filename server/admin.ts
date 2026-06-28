@@ -506,6 +506,27 @@ adminRouter.patch('/courses/:id/exam', async (req, res) => {
   res.json({ course });
 });
 
+// Salva o deck de slides do treinamento (Gerenciador de Slides do admin).
+adminRouter.patch('/courses/:id/slides', async (req, res) => {
+  const parsed = z
+    .object({
+      slides: z.array(
+        z.object({
+          title: z.string().min(1),
+          bullets: z.array(z.string().min(1)),
+        }),
+      ),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Slides inválidos. Cada slide precisa de título e ao menos um tópico.' });
+  const course = await prisma.course.update({
+    where: { id: req.params.id },
+    data: { slides: parsed.data.slides as unknown as Prisma.InputJsonValue },
+    include: { instructors: true },
+  });
+  res.json({ course });
+});
+
 adminRouter.post('/courses/:id/modules', async (req, res) => {
   const parsed = z.object({ module: z.string().min(2) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Módulo inválido.' });

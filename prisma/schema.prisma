@@ -143,6 +143,7 @@ model Course {
   moduleVideos     Json    @default("[]") // links por módulo (alinhado a "modules")
   documents        Json    @default("[]") // materiais de apoio: [{ name, url }]
   examQuestions    Json    @default("[]") // prova do curso: [{ question, options[], correctIndex }]
+  slides           Json    @default("[]") // deck de slides do treinamento: [{ title, bullets[] }]
 
   instructors     Instructor[]
   enrollments     Enrollment[]
