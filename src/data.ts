@@ -273,6 +273,32 @@ export const SEED_COURSES: Course[] = [
     ],
     instructors: [INSTRUTOR_GILVAN], manualActivities: [],
   },
+  {
+    id: "course-leilucas-4", code: "LEI LUCAS", name: "Lei Lucas nº 13.722 - Primeiros Socorros (04 Horas)",
+    description: "Capacitação em noções básicas de primeiros socorros conforme a Lei Lucas (nº 13.722/2018): sinais vitais, OVACE, manobra de Heimlich, convulsões, traumas, hemorragias e parada cardiorrespiratória.",
+    duration: 4, price: 60, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: [
+      "Módulo 01 - Sinais Vitais e Avaliação da Vítima",
+      "Módulo 02 - OVACE e Manobra de Heimlich (Desengasgo)",
+      "Módulo 03 - Convulsões, Traumas e Hemorragias",
+      "Módulo 04 - Parada Respiratória e Cardiorrespiratória (RCP)",
+    ],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
+  {
+    id: "course-leilucas-10", code: "LEI LUCAS", name: "Lei Lucas nº 13.722 - Primeiros Socorros (10 Horas)",
+    description: "Capacitação ampliada em primeiros socorros conforme a Lei Lucas (nº 13.722/2018): sinais vitais, OVACE, manobra de Heimlich, convulsões, traumas, controle de hemorragias, RCP e acionamento dos canais de urgência.",
+    duration: 10, price: 120, isActive: true, isFeatured: false, coverImage: IMG.geral,
+    modules: [
+      "Módulo 01 - Sinais Vitais e Avaliação da Vítima",
+      "Módulo 02 - OVACE e Manobra de Heimlich (Desengasgo)",
+      "Módulo 03 - Convulsões e Emergências Clínicas",
+      "Módulo 04 - Traumas e Protocolo de Atendimento",
+      "Módulo 05 - Controle de Hemorragias",
+      "Módulo 06 - Parada Respiratória e Cardiorrespiratória (RCP) e Canais de Urgência",
+    ],
+    instructors: [INSTRUTOR_PADRAO], manualActivities: [],
+  },
 ];
 
 /**
@@ -469,6 +495,19 @@ export const CONTEUDO_PROGRAMATICO: Record<string, string[]> = {
     "Boas práticas de manuseio, transporte e contenção",
     "Ventilação, áreas de armazenagem e controle de derramamentos",
     "Resposta a emergências químicas e primeiros socorros",
+  ],
+  "LEI LUCAS": [
+    "Sinais vitais",
+    "Interpretação de sintomas e sinais",
+    "OVACE: obstrução de vias aéreas por corpo estranho — no adulto, na criança e no bebê",
+    "Manobra de Heimlich (desengasgo)",
+    "Crise convulsiva (febril, hipoglicemia e convulsões)",
+    "Traumas: crânio, ocular, face, membros e choques elétricos",
+    "Protocolo de traumas",
+    "Controle de hemorragias",
+    "PR — Parada respiratória",
+    "PCR — Parada cardiorrespiratória",
+    "Canais de atendimento de urgência",
   ],
 };
 
@@ -1605,6 +1644,81 @@ export const SLIDES_BY_CODE: Record<string, TrainingSlide[]> = {
       ],
     },
   ],
+
+  "LEI LUCAS": [
+    {
+      title: "Lei Lucas nº 13.722 — Primeiros Socorros",
+      bullets: [
+        "Capacitação em noções básicas de primeiros socorros (Lei nº 13.722/2018).",
+        "Objetivo: reconhecer emergências e agir corretamente até o socorro especializado.",
+        "Aplica-se a quem atua com público, especialmente em ambientes escolares e recreativos.",
+        "Avaliação final de homologação ao término.",
+      ],
+    },
+    {
+      title: "Sinais Vitais e Avaliação da Vítima",
+      bullets: [
+        "Sinais vitais: consciência, respiração, pulso e temperatura.",
+        "Avaliar o local: garantir a segurança antes de socorrer.",
+        "Interpretar sintomas e sinais para decidir a conduta.",
+        "Acionar ajuda (SAMU 192 / Bombeiros 193) o quanto antes.",
+      ],
+    },
+    {
+      title: "OVACE — Obstrução de Vias Aéreas",
+      bullets: [
+        "OVACE: obstrução das vias aéreas por corpo estranho (engasgo).",
+        "Reconhecer o sinal universal de asfixia (mãos no pescoço).",
+        "Conduta diferente para adulto, criança e bebê.",
+        "Estimular a tosse enquanto a obstrução for parcial.",
+      ],
+    },
+    {
+      title: "Manobra de Heimlich (Desengasgo)",
+      bullets: [
+        "Adulto/criança: compressões abdominais acima do umbigo.",
+        "Bebê: 5 golpes nas costas + 5 compressões torácicas.",
+        "Manter até desobstruir ou a vítima perder a consciência.",
+        "Se desmaiar, iniciar a RCP e chamar socorro.",
+      ],
+    },
+    {
+      title: "Convulsões e Emergências Clínicas",
+      bullets: [
+        "Crise convulsiva: febril, por hipoglicemia ou epilepsia.",
+        "Proteger a cabeça, afastar objetos e NÃO conter a vítima.",
+        "Não colocar nada na boca; lateralizar após a crise.",
+        "Cronometrar a crise e acionar socorro se prolongada.",
+      ],
+    },
+    {
+      title: "Traumas e Controle de Hemorragias",
+      bullets: [
+        "Traumas: crânio, ocular, face, membros e choques elétricos.",
+        "Protocolo de traumas: imobilizar e não mover sem necessidade.",
+        "Hemorragias: compressão direta no ferimento com pano limpo.",
+        "Manter a vítima aquecida e monitorar os sinais vitais.",
+      ],
+    },
+    {
+      title: "PR e PCR — RCP",
+      bullets: [
+        "PR (parada respiratória): vítima não respira, mas tem pulso.",
+        "PCR (parada cardiorrespiratória): sem respiração e sem pulso.",
+        "RCP: 30 compressões torácicas para 2 ventilações.",
+        "Compressões rápidas e fortes; usar o DEA assim que disponível.",
+      ],
+    },
+    {
+      title: "Encerramento",
+      bullets: [
+        "Primeiros socorros salvam vidas nos minutos iniciais.",
+        "Garanta a segurança, acione o socorro e aja com calma.",
+        "Conheça os canais de atendimento de urgência (SAMU 192, Bombeiros 193).",
+        "Realize agora a avaliação final para homologação do certificado.",
+      ],
+    },
+  ],
 };
 
 // Vídeo de referência por NR (fallback quando o curso não tem vídeo no banco).
@@ -1828,7 +1942,83 @@ export const SEED_CONTACTS: ContactMessage[] = [
 /**
  * Question banks for the course exams
  */
+// Prova de Primeiros Socorros (Lei Lucas) — usada pelas duas cargas (4h e 10h).
+const LEI_LUCAS_EXAM: ExamQuestion[] = [
+  {
+    question: "A Lei Lucas (nº 13.722/2018) tornou obrigatória qual capacitação?",
+    options: [
+      "A) Treinamento de combate a incêndio para todos os trabalhadores",
+      "B) Capacitação em noções básicas de primeiros socorros para profissionais de estabelecimentos de ensino e de recreação infantil",
+      "C) Curso de direção defensiva para professores",
+      "D) Capacitação em segurança em altura",
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "O que significa OVACE?",
+    options: [
+      "A) Obstrução de Vias Aéreas por Corpo Estranho",
+      "B) Oxigenação Venosa Arterial Cardíaca Especial",
+      "C) Observação de Vítima em Atendimento Clínico de Emergência",
+      "D) Operação de Ventilação Assistida Cardíaca",
+    ],
+    correctIndex: 0,
+  },
+  {
+    question: "Diante de um adulto consciente engasgado (OVACE grave), a conduta correta é:",
+    options: [
+      "A) Oferecer água imediatamente",
+      "B) Deitar a vítima e elevar as pernas",
+      "C) Aplicar a Manobra de Heimlich (compressões abdominais)",
+      "D) Não fazer nada e aguardar passar sozinho",
+    ],
+    correctIndex: 2,
+  },
+  {
+    question: "Durante uma crise convulsiva, deve-se:",
+    options: [
+      "A) Conter firmemente os movimentos e colocar um objeto na boca",
+      "B) Proteger a cabeça, afastar objetos, não conter e lateralizar após a crise",
+      "C) Oferecer comida e água durante a crise",
+      "D) Jogar água fria no rosto da vítima",
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "Qual a diferença entre Parada Respiratória (PR) e Parada Cardiorrespiratória (PCR)?",
+    options: [
+      "A) São exatamente a mesma coisa",
+      "B) Na PR a vítima não respira mas tem pulso; na PCR não há respiração nem pulso",
+      "C) A PR é mais grave que a PCR",
+      "D) A PCR ocorre apenas em crianças",
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "Na Reanimação Cardiopulmonar (RCP) do adulto, a relação entre compressões e ventilações é:",
+    options: ["A) 15 compressões para 1 ventilação", "B) 5 compressões para 1 ventilação", "C) 30 compressões para 2 ventilações", "D) 10 compressões para 5 ventilações"],
+    correctIndex: 2,
+  },
+  {
+    question: "Diante de uma hemorragia externa, a primeira conduta é:",
+    options: [
+      "A) Aplicar torniquete imediatamente em qualquer caso",
+      "B) Fazer compressão direta sobre o ferimento com pano limpo",
+      "C) Lavar o ferimento com álcool",
+      "D) Aguardar o sangramento parar sozinho",
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "Qual o número do SAMU (atendimento móvel de urgência)?",
+    options: ["A) 190", "B) 193", "C) 199", "D) 192"],
+    correctIndex: 3,
+  },
+];
+
 export const RECORD_EXAMS: Record<string, ExamQuestion[]> = {
+  "course-leilucas-4": LEI_LUCAS_EXAM,
+  "course-leilucas-10": LEI_LUCAS_EXAM,
   "course-nr06": [
     {
       question: "Segundo a NR-06, o que é Equipamento de Proteção Individual (EPI)?",
