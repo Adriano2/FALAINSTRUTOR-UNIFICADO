@@ -93,6 +93,7 @@ export default function AdminDashboard({
 }: AdminDashboardProps) {
   // Sidebar State
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
+  const [certQuery, setCertQuery] = React.useState('');
   const [examCourseId, setExamCourseId] = React.useState<string | undefined>(undefined);
   const [dashboardDaysFilter, setDashboardDaysFilter] = React.useState<number>(30);
 
@@ -1762,43 +1763,62 @@ export default function AdminDashboard({
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2">
                 Certificados Emitidos
               </h2>
-              <p className="text-xs text-slate-400">
-                Lista de certificados gerados após aprovação na avaliação. O código é validável publicamente em
-                <span className="font-mono text-amber-500"> /validar</span>.
-              </p>
-
-              <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-205 dark:border-slate-800 overflow-x-auto shadow-sm">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th className="p-3">Aluno</th>
-                      <th className="p-3">Treinamento</th>
-                      <th className="p-3 text-center">Nota</th>
-                      <th className="p-3">Código de Validação</th>
-                      <th className="p-3 text-right">Emissão</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {enrollments.filter(e => e.passed && e.certificateCode).length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-6 text-center text-slate-400">Nenhum certificado emitido ainda.</td>
-                      </tr>
-                    ) : (
-                      enrollments.filter(e => e.passed && e.certificateCode).map(enr => (
-                        <tr key={enr.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
-                          <td className="p-3 font-bold text-slate-900 dark:text-slate-150">{enr.userName}</td>
-                          <td className="p-3 font-semibold text-slate-650 dark:text-slate-350">{enr.courseCode} - {enr.courseName}</td>
-                          <td className="p-3 text-center font-bold">{enr.examScore !== null ? `${enr.examScore}%` : '—'}</td>
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded font-mono font-bold select-all">{enr.certificateCode}</span>
-                          </td>
-                          <td className="p-3 text-right text-slate-450 font-bold font-mono">{enr.startDate}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              {(() => {
+                const all = enrollments.filter((e) => e.passed && e.certificateCode);
+                const s = certQuery.trim().toLowerCase();
+                const list = s
+                  ? all.filter((e) => e.userName.toLowerCase().includes(s) || `${e.courseCode} ${e.courseName}`.toLowerCase().includes(s) || (e.certificateCode ?? '').toLowerCase().includes(s))
+                  : all;
+                const exportCsv = () => {
+                  const head = ['Aluno', 'Treinamento', 'Nota(%)', 'Codigo de Validacao', 'Emissao'];
+                  const lines = list.map((e) => [e.userName, `${e.courseCode} - ${e.courseName}`, e.examScore ?? '', e.certificateCode ?? '', e.startDate].map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';'));
+                  const blob = new Blob(['﻿' + [head.join(';'), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+                  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'certificados_emitidos.csv'; a.click(); URL.revokeObjectURL(a.href);
+                };
+                return (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative flex-1 min-w-[220px]">
+                        <input value={certQuery} onChange={(e) => setCertQuery(e.target.value)} placeholder="Buscar por aluno, treinamento ou código" className="w-full text-xs pl-3 pr-3 py-2 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none" />
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-bold">{list.length} certificado(s)</span>
+                      <button onClick={exportCsv} className="inline-flex items-center gap-1.5 px-3 py-2 rounded text-[11px] font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"><Download className="w-3.5 h-3.5" /> Exportar CSV</button>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-205 dark:border-slate-800 overflow-x-auto shadow-sm">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-950 text-slate-450 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+                          <tr>
+                            <th className="p-3">Aluno</th>
+                            <th className="p-3">Treinamento</th>
+                            <th className="p-3 text-center">Nota</th>
+                            <th className="p-3">Código de Validação</th>
+                            <th className="p-3 text-right">Emissão</th>
+                            <th className="p-3 text-right">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {list.length === 0 ? (
+                            <tr><td colSpan={6} className="p-6 text-center text-slate-400">Nenhum certificado emitido ainda.</td></tr>
+                          ) : (
+                            list.map((enr) => (
+                              <tr key={enr.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                                <td className="p-3 font-bold text-slate-900 dark:text-slate-150">{enr.userName}</td>
+                                <td className="p-3 font-semibold text-slate-650 dark:text-slate-350">{enr.courseCode} - {enr.courseName}</td>
+                                <td className="p-3 text-center font-bold">{enr.examScore !== null ? `${enr.examScore}%` : '—'}</td>
+                                <td className="p-3"><span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded font-mono font-bold select-all">{enr.certificateCode}</span></td>
+                                <td className="p-3 text-right text-slate-450 font-bold font-mono">{enr.startDate}</td>
+                                <td className="p-3 text-right">
+                                  <button onClick={() => window.open(`/?cert=${encodeURIComponent(enr.certificateCode!)}`, '_blank')} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold"><ShieldCheck className="w-3.5 h-3.5" /> Ver / Baixar</button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
 
