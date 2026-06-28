@@ -27,6 +27,91 @@ const DEFAULT_TECH: TechResp = {
 
 const NAVY = '#0f2147';
 
+// Catálogo oficial de treinamentos e a carga horária na plataforma (NR-01, Anexo II).
+const CARGA_HORARIA: [string, number][] = [
+  ['NR 01 – Treinamento de Integração de Segurança 1', 2],
+  ['NR 01 – Treinamento de Integração de Segurança 2', 6],
+  ['NR 05 CIPA Nomeado – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 1', 8],
+  ['NR 05 CIPA Nomeado – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 2', 12],
+  ['NR 05 CIPA Nomeado – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 3', 16],
+  ['NR 05 CIPA Nomeado – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 4', 20],
+  ['NR 05 CIPA – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 1', 8],
+  ['NR 05 CIPA – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 2 – Parte Teórica', 8],
+  ['NR 05 CIPA – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 3 – Parte Teórica', 8],
+  ['NR 05 CIPA – Comissão Interna De Prevenção A Acidentes e Assédio – Grau De Risco 4 – Parte Teórica', 12],
+  ['NR 06 EPI – Equipamento De Proteção Individual – 01 Hora', 1],
+  ['NR 06 EPI – Equipamento De Proteção Individual – 04 Horas', 4],
+  ['NR 10 – Segurança Em Serviço Com Eletricidade – Básico', 40],
+  ['NR 10 – Curso Complementar – Segurança No Sistema Elétrico De Potência (SEP) E Em Suas Proximidades', 40],
+  ['NR 11 – Hilo Tombador – Teórico', 5],
+  ['NR 11 – Operador De Empilhadeira – Teórico – 8 Horas', 8],
+  ['NR 11 – Operador De Empilhadeira – Teórico – 16 Horas', 16],
+  ['NR 11 – Operador De Guindaste Articulado', 8],
+  ['NR 11 – Operação De Ponte Rolante E Talha Elétrica – Teórico – 8 Horas', 8],
+  ['NR 11 – Operador De Guincho Agrícola', 8],
+  ['NR 11 – Operador Máquinas Agrícolas E Equipamentos', 16],
+  ['NR 11/12 – Segurança Na Operação de Bobcat, Retro Escavadeira, Escavadeira Hidr. E Pá Carregadeira – Teórico', 8],
+  ['NR 12 – Segurança Em Máquinas E Equipamentos – 04 Horas', 4],
+  ['NR 12 – Segurança Em Máquinas E Equipamentos – 08 Horas', 8],
+  ['NR 12 – Máquinas E Equipamentos – Ferramentas Elétricas E Manuais', 4],
+  ['NR 12 – Máquinas E Equipamentos – Máquinas Para Açougue, Mercearia, Bar E Restaurante', 4],
+  ['NR 12 – Máquinas e Equipamentos – Injetoras De Materiais Plásticos – Teórico', 4],
+  ['NR 12 – Máquinas e Equipamentos – Motosserra – Teórico', 2],
+  ['NR 12 – Máquinas e Equipamentos – Máquinas para Panificação e Confeitaria', 4],
+  ['NR 12 – Máquinas e Equipamentos – Prensa e Similares', 4],
+  ['NR 13 – Treinamento De Segurança Na Operação De Caldeiras', 40],
+  ['NR 17 – Ergonomia – Capacitação Ergonômica', 4],
+  ['NR 17 – Ergonomia – Ergonomia Para Operadores De Checkout – Anexo I', 2],
+  ['NR 17 – Ergonomia – Trabalho Em Teleatendimento/Telemarketing – Anexo II', 4],
+  ['NR 17 – Ginástica Laboral', 1],
+  ['NR 18 – Integração De Segurança Na Construção Civil – 04 Horas', 4],
+  ['NR 18 – Integração De Segurança Na Construção Civil – 16 Horas', 16],
+  ['NR 18 – Plataforma Elevatória Móvel De Trabalho (PEMT) – Teórico', 2],
+  ['NR 20 – Exposição Ocupacional Ao Benzeno Em Postos Revendedores De Combustíveis – PRC', 4],
+  ['NR 20 – Iniciação Sobre Inflamáveis E Combustíveis', 3],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Básico – Classe 1', 4],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Básico – Classe 2', 6],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Básico – Classe 3', 8],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Intermediário – Classe 1', 12],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Intermediário – Classe 2', 14],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Intermediário – Classe 3', 16],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Específico – Classe 2', 14],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Específico – Classe 3', 16],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Avançado 1', 20],
+  ['NR 20 – Segurança Com Líquidos E Inflamáveis – Avançado 2', 32],
+  ['NR 26 – Sinalização de Segurança', 2],
+  ['NR 31 CIPATR – Comissão Interna De Prevenção De Acidentes e de Assédio do Trabalho Rural – Teórico', 20],
+  ['NR 31.7 – Agrotóxicos, Adjuvantes E Produtos Afins – Teórico', 20],
+  ['NR 31.12 – Segurança No Trabalho Em Máquinas E Implementos Agrícolas – Teórico', 24],
+  ['NR 32 – Treinamento De Capacitação Para Profissional De Saúde', 10],
+  ['NR 33 – Trabalhador Autorizado e Vigia – Teórico', 8],
+  ['NR 33 – Supervisor de Entrada – Teórico', 20],
+  ['NR 34.5 – Segurança para Trabalhos a Quente – Básico', 8],
+  ['NR 34.5 – Observador de Trabalhos a Quente – Básico', 8],
+  ['NR 35 – Trabalho Em Altura', 8],
+  ['NR 36 – Segurança E Saúde No Trabalho Em Empresas De Abate, Processamento De Carnes E Derivados', 5],
+  ['NR 38 – Segurança E Saúde No Trab. Nas Atividades De Limp. Urbana E Manejo De Resíduos Sólidos – Teórico', 4],
+  ['Combate A Incêndio – 04 Horas', 4],
+  ['Combate A Incêndio – 08 Horas', 8],
+  ['Combate A Incêndio – 12 Horas', 12],
+  ['Combate A Incêndio – 16 Horas', 16],
+  ['Conhecendo as Normas Regulamentadoras do MTE', 2],
+  ['Lei Lucas nº 13.722 – Primeiros Socorros – 04 Horas', 4],
+  ['Lei Lucas nº 13.722 – Primeiros Socorros – 10 Horas', 10],
+  ['Direção Defensiva – 06 Horas', 6],
+  ['Direção Defensiva – 08 Horas', 8],
+  ['APR – Análise Preliminar de Risco', 1],
+  ['LOTO – Lockout e Tagout', 2],
+  ['PPR – Programa de Proteção Respiratória', 1],
+  ['PCA – Programa de Conservação Auditiva', 1],
+  ['Comportamento Seguro', 1],
+  ['Primeiros Socorros – Básico', 4],
+  ['Primeiros Socorros', 10],
+  ['Operações De Soldagem E Corte A Quente', 4],
+  ['Riscos Psicossociais no Trabalho para Operadores, Colaboradores e Público Operacional', 4],
+  ['Riscos Psicossociais no Trabalho para Gestores', 4],
+];
+
 // Cabeçalho de seção no estilo do documento (pílula navy).
 function SecHeader({ n, title }: { n: string; title: string }) {
   return (
@@ -51,6 +136,7 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
     'Conteúdo programático', 'Instalações e equipamentos', 'Perfil dos instrutores',
     'Materiais didáticos', 'Bibliografia de apoio', 'Certificação',
     'Equipe técnica responsável', 'Validade', 'Responsabilidades', 'Anexos',
+    'Metodologia, prazos e avaliação', 'Considerações finais',
   ];
 
   return (
@@ -79,8 +165,8 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
                 <p className="text-lg font-semibold leading-snug">Treinamentos Normativos de Segurança e Saúde do Trabalho — SST</p>
               </div>
               <p className="text-[11px] text-white/70 leading-relaxed mt-4 max-w-xs">
-                Documento elaborado em conformidade com a NR-01 (Anexo II), que exige projeto pedagógico
-                para capacitações nas modalidades EaD e semipresencial.
+                Plano Pedagógico para Treinamentos de Normas Regulamentadoras na modalidade EAD,
+                elaborado de acordo com o disposto na NR-01, em seu Anexo II, item 3.
               </p>
             </div>
             <div className="text-[11px] text-white/60 mt-6">FalaInstrutor • Segurança do Trabalho</div>
@@ -185,12 +271,28 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
 
           <section>
             <SecHeader n="8" title="Conteúdo programático" />
-            <p className="mb-3">Os conteúdos seguem o exigido por cada Norma Regulamentadora. Cursos disponíveis na plataforma:</p>
-            <ul className="list-disc pl-5 space-y-1 columns-1 sm:columns-2">
-              {courses.map((c) => (
-                <li key={c.id}>{c.name} — {c.duration}h</li>
-              ))}
-            </ul>
+            <p className="mb-3">
+              Os conteúdos seguem o exigido por cada Norma Regulamentadora. A tabela a seguir relaciona
+              os treinamentos e a respectiva <strong>carga horária na plataforma</strong>:
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[12px]">
+                <thead>
+                  <tr style={{ backgroundColor: NAVY }} className="text-white">
+                    <th className="text-left p-2 border border-slate-300 font-bold">Treinamento / Formação</th>
+                    <th className="text-center p-2 border border-slate-300 font-bold w-40">Carga Horária na Plataforma</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CARGA_HORARIA.map(([t, h], i) => (
+                    <tr key={i} className={i % 2 ? 'bg-slate-50' : ''} style={{ breakInside: 'avoid' }}>
+                      <td className="p-2 border border-slate-300 align-top">{t}</td>
+                      <td className="p-2 border border-slate-300 text-center font-bold whitespace-nowrap">{h}h</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section>
@@ -285,8 +387,72 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
             <p>Modelos de certificado, conteúdos programáticos detalhados por norma e fichas de avaliação.</p>
           </section>
 
+          <section>
+            <SecHeader n="18" title="Metodologia, prazos e avaliação" />
+
+            <p className="font-bold mb-1">j) Estimativa de tempo mínimo de dedicação diária ao curso</p>
+            <p className="mb-3">
+              Todos os nossos cursos são estruturados para atender à carga horária exigida pelas Normas
+              Regulamentadoras (NRs). As aulas e atividades são organizadas com base nesses critérios, garantindo
+              conformidade legal e qualidade no aprendizado. Além disso, os cursos ficam disponíveis na plataforma
+              24 horas por dia, permitindo que o aluno acesse os conteúdos no horário mais conveniente, conforme sua
+              rotina ou necessidade. Quando for necessário restringir o acesso ao curso ao horário de expediente,
+              cabe à empresa contratante comunicar essa exigência, a fim de garantir o cumprimento adequado dentro
+              do período de trabalho.
+            </p>
+
+            <p className="font-bold mb-1">k) Prazo máximo para conclusão da capacitação</p>
+            <p className="mb-3">
+              Em nossa plataforma, o acesso dos alunos aos treinamentos é ajustado conforme a necessidade do
+              cliente. Os registros de acesso são mantidos por 2 anos após a conclusão, conforme exigido pela NR-01,
+              servindo como comprovação da formação e conclusão do treinamento.
+            </p>
+
+            <p className="font-bold mb-1">l) Público-alvo</p>
+            <p className="mb-3">Pessoas físicas e empresas em geral.</p>
+
+            <p className="font-bold mb-1">m) Material didático</p>
+            <p className="mb-3">
+              Oferecemos treinamentos online de Normas Regulamentadoras (NRs) que incluem videoaulas teóricas e
+              demonstrações práticas, materiais de leitura em formato de apostila para acompanhamento na plataforma,
+              além do acesso à norma regulamentadora correspondente, conforme as diretrizes do Ministério do Trabalho
+              e Emprego (MTE). Nossos alunos realizam avaliações para comprovar a aprendizagem e podem interagir com
+              tutores qualificados para esclarecer dúvidas de forma virtual, garantindo suporte contínuo durante o
+              processo de aprendizado.
+            </p>
+
+            <p className="font-bold mb-1">n) Instrumentos para potencialização do aprendizado</p>
+            <ul className="list-disc pl-5 space-y-1 mb-3">
+              <li>Vídeo aulas teóricas;</li>
+              <li>Vídeo aulas práticas;</li>
+              <li>Apostila exclusiva para cada treinamento;</li>
+              <li>Material de leitura complementar; e</li>
+              <li>Tutores online para esclarecimento de dúvidas.</li>
+            </ul>
+
+            <p className="font-bold mb-1">o) Avaliação de aprendizagem</p>
+            <p className="mb-2">
+              Nossa avaliação de aprendizagem é feita dentro da plataforma online, cumprindo o disposto na NR-01.
+              Os alunos podem realizar as avaliações à medida que avançam nas aulas de cada módulo, permitindo que
+              avaliem seu entendimento progressivamente e garantam uma assimilação eficaz do conteúdo.
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Alunos que, após a avaliação, obtiverem conceito inferior a 6 pontos devem realizar uma nova avaliação.</li>
+              <li>Alunos que, após a avaliação, obtiverem conceito igual ou superior a 6 pontos são considerados aptos no treinamento realizado.</li>
+            </ul>
+          </section>
+
+          <section>
+            <SecHeader n="19" title="Considerações finais" />
+            <p>
+              Conforme estabelecido pela NR-01, no Anexo II detalhado no item 3, apresentamos nosso Plano Pedagógico
+              para a realização dos treinamentos online. Garantimos que todos os requisitos mencionados e descritos
+              nestas normas estão sendo atendidos em nosso Plano Pedagógico.
+            </p>
+          </section>
+
           <div className="pt-6 border-t border-slate-200 text-center text-[11px] text-slate-400">
-            Documento em conformidade com o Anexo II da NR-01 — modalidade de ensino a distância e semipresencial. • WWW.FALAINSTRUTOR.COM.BR
+            Documento em conformidade com o Anexo II da NR-01 — Plano Pedagógico para treinamentos na modalidade EAD. • WWW.FALAINSTRUTOR.COM.BR
           </div>
         </div>
       </div>
