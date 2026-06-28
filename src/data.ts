@@ -106,6 +106,15 @@ const INSTRUTOR_PADRAO: Instructor = {
   icpEnabled: true,
 };
 
+// Engenheiro de Segurança do Trabalho — responsável técnico (ex.: NR 10).
+const INSTRUTOR_MAGNUS: Instructor = {
+  id: "inst-magnus",
+  name: "Magnus Leandro de Souza",
+  formation: "Engenheiro de Segurança do Trabalho",
+  crea: "SP 5070766148",
+  icpEnabled: true,
+};
+
 // Instrutor responsável técnico em Química (cursos químicos).
 const INSTRUTOR_GILVAN: Instructor = {
   id: "inst-gilvan",
@@ -152,7 +161,7 @@ export const SEED_COURSES: Course[] = [
     description: "Segurança em instalações e serviços em eletricidade e Sistema Elétrico de Potência (SEP): riscos elétricos, medidas de controle, aterramento e procedimentos.",
     duration: 40, price: 350, isActive: true, isFeatured: true, coverImage: IMG.eletric,
     modules: ["Módulo 01 - Introdução à Segurança com Eletricidade", "Módulo 02 - Riscos em Instalações e Serviços", "Módulo 03 - Técnicas de Análise de Risco Elétrico", "Módulo 04 - Medidas de Controle (EPC e EPI)", "Módulo 05 - Sistema Elétrico de Potência (SEP) e Proximidades", "Módulo 06 - Procedimentos, Acidentes e Primeiros Socorros"],
-    instructors: [INSTRUTOR_PADRAO], manualActivities: ["Bloqueio e Travamento de Disjuntores", "Aterramento Temporário"],
+    instructors: [INSTRUTOR_MAGNUS], manualActivities: ["Bloqueio e Travamento de Disjuntores", "Aterramento Temporário"],
   },
   {
     id: "course-nr11", code: "NR 11", name: "NR 11 - Transporte, Movimentação, Armazenagem e Manuseio de Materiais",

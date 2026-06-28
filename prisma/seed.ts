@@ -116,6 +116,20 @@ async function main() {
     })
     .catch(() => {});
 
+  // 2c) Magnus Leandro de Souza como instrutor da NR 10 (e registrado na base).
+  await prisma.instructor.deleteMany({ where: { courseId: 'course-nr10' } }).catch(() => {});
+  await prisma.instructor
+    .create({
+      data: {
+        name: 'Magnus Leandro de Souza',
+        formation: 'Engenheiro de Segurança do Trabalho',
+        crea: 'SP 5070766148',
+        icpEnabled: true,
+        courseId: 'course-nr10',
+      },
+    })
+    .catch(() => {});
+
   // 3) Cupons
   for (const cp of SEED_COUPONS) {
     const type: CouponType = cp.type === 'fixed' ? 'FIXED' : 'PERCENTAGE';
