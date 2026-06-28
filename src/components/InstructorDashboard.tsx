@@ -15,6 +15,7 @@ import { instructorApi, coursesApi, InstructorDashboardData } from '../api';
 import { getExamQuestions } from '../data';
 import { Course } from '../types';
 import SlideManager from './admin/SlideManager';
+import ExamEditor from './admin/ExamEditor';
 
 type ExamItem = InstructorDashboardData['exams'][number];
 
@@ -192,13 +193,22 @@ export default function InstructorDashboard() {
         const myCourses = allCourses.filter((c) => ids.has(c.id));
         if (myCourses.length === 0) return null;
         return (
-          <div className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
-            <SlideManager
-              courses={myCourses}
-              onSave={(id, slides) => instructorApi.saveSlides(id, slides)}
-              onSaved={() => coursesApi.list().then(setAllCourses).catch(() => {})}
-            />
-          </div>
+          <>
+            <div className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
+              <SlideManager
+                courses={myCourses}
+                onSave={(id, slides) => instructorApi.saveSlides(id, slides)}
+                onSaved={() => coursesApi.list().then(setAllCourses).catch(() => {})}
+              />
+            </div>
+            <div className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
+              <ExamEditor
+                courses={myCourses}
+                onSave={(id, questions) => instructorApi.saveExam(id, questions)}
+                onSaved={() => coursesApi.list().then(setAllCourses).catch(() => {})}
+              />
+            </div>
+          </>
         );
       })()}
 

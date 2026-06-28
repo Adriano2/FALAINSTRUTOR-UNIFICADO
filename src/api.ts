@@ -577,6 +577,10 @@ export const instructorApi = {
   saveSlides(courseId: string, slides: { title: string; bullets: string[] }[]) {
     return apiFetch(`/instructor/courses/${courseId}/slides`, { method: 'PATCH', body: JSON.stringify({ slides }) });
   },
+  // Edita a prova de um curso do próprio instrutor.
+  saveExam(courseId: string, questions: { question: string; options: string[]; correctIndex: number }[]) {
+    return apiFetch(`/instructor/courses/${courseId}/exam`, { method: 'PATCH', body: JSON.stringify({ questions }) });
+  },
 };
 
 export const paymentsApi = {

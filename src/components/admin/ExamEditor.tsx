@@ -19,6 +19,8 @@ interface ExamEditorProps {
   courses: Course[];
   onSaved?: () => void;
   initialCourseId?: string;
+  // Função de salvar (admin por padrão; o painel do instrutor passa a sua).
+  onSave?: (courseId: string, questions: { question: string; options: string[]; correctIndex: number }[]) => Promise<unknown>;
 }
 
 function downloadCsv(filename: string, content: string) {
@@ -33,7 +35,8 @@ function downloadCsv(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function ExamEditor({ courses, onSaved, initialCourseId }: ExamEditorProps) {
+export default function ExamEditor({ courses, onSaved, initialCourseId, onSave }: ExamEditorProps) {
+  const saveFn = onSave ?? ((id: string, q: { question: string; options: string[]; correctIndex: number }[]) => adminApi.saveExam(id, q));
   const [courseId, setCourseId] = React.useState<string>(initialCourseId || courses[0]?.id || '');
   const [questions, setQuestions] = React.useState<ExamQuestion[]>([]);
   const [saving, setSaving] = React.useState(false);
@@ -135,7 +138,7 @@ export default function ExamEditor({ courses, onSaved, initialCourseId }: ExamEd
     if (err) { alert(err); return; }
     setSaving(true);
     try {
-      await adminApi.saveExam(courseId, questions.map((q) => ({ question: q.question.trim(), options: q.options.map((o) => o.trim()), correctIndex: q.correctIndex })));
+      await saveFn(courseId, questions.map((q) => ({ question: q.question.trim(), options: q.options.map((o) => o.trim()), correctIndex: q.correctIndex })));
       setSavedAt(Date.now());
       onSaved?.();
     } catch (e) {

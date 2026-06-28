@@ -132,6 +132,34 @@ instructorRouter.patch('/courses/:id/slides', async (req: AuthedRequest, res: Re
   res.json({ ok: true });
 });
 
+// Edição da prova de um treinamento — apenas dos cursos do próprio instrutor.
+instructorRouter.patch('/courses/:id/exam', async (req: AuthedRequest, res: Response) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
+  const parsed = z
+    .object({
+      questions: z.array(
+        z.object({
+          question: z.string().min(1),
+          options: z.array(z.string().min(1)).min(2),
+          correctIndex: z.number().int().min(0),
+        }),
+      ),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Prova inválida. Verifique questões, alternativas e a resposta correta.' });
+  for (const q of parsed.data.questions) {
+    if (q.correctIndex >= q.options.length) return res.status(400).json({ error: 'Há uma questão com resposta correta fora das alternativas.' });
+  }
+  const mine = await instructorCourseIds(user.name);
+  if (!mine.has(req.params.id)) return res.status(403).json({ error: 'Este treinamento não pertence aos seus cursos.' });
+  await prisma.course.update({
+    where: { id: req.params.id },
+    data: { examQuestions: parsed.data.questions as unknown as Prisma.InputJsonValue },
+  });
+  res.json({ ok: true });
+});
+
 instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
   if (!user || user.role !== 'INSTRUCTOR') {
