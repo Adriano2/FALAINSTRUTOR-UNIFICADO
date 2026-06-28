@@ -54,7 +54,7 @@ function HolographicSecurityCard() {
   const Strip = ({ side }: { side: 'left' | 'right' }) => (
     <div
       className="absolute top-0 bottom-0 w-9 flex items-center justify-center overflow-hidden"
-      style={{ [side]: 0, background: 'conic-gradient(from 45deg,#22d3ee,#a78bfa,#f472b6,#fde047,#34d399,#38bdf8,#22d3ee)' } as React.CSSProperties}
+      style={{ [side]: 0, background: 'conic-gradient(from 45deg,#1e9b46,#27b074,#7fe0b0,#f5b21a,#1f2a3a,#27b074,#1e9b46)' } as React.CSSProperties}
     >
       <span className="text-white font-black text-[9px] tracking-[0.3em] uppercase" style={{ writingMode: 'vertical-rl', textShadow: '0 1px 2px rgba(0,0,0,0.45)' }}>
         GENUINE · GENUINE · GENUINE
