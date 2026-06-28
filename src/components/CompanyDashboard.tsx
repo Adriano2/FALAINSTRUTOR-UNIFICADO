@@ -10,12 +10,87 @@
  */
 
 import React from 'react';
-import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2 } from 'lucide-react';
-import { companyApi, CompanyDashboardData } from '../api';
+import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2, Clock, Save } from 'lucide-react';
+import { companyApi, CompanyDashboardData, AccessSchedule } from '../api';
 import { CIPA_NR5_BY_GRADE, cipaRequirement } from '../lib/cipa';
 
 interface CompanyDashboardProps {
   onValidateCertificate: (code: string) => void;
+}
+
+const WEEK = [
+  { d: 1, l: 'Seg' }, { d: 2, l: 'Ter' }, { d: 3, l: 'Qua' }, { d: 4, l: 'Qui' },
+  { d: 5, l: 'Sex' }, { d: 6, l: 'Sáb' }, { d: 0, l: 'Dom' },
+];
+
+// Editor de restrição de horário de acesso aos treinamentos (definido pela empresa).
+function AccessScheduleCard({ initial }: { initial?: AccessSchedule }) {
+  const [enabled, setEnabled] = React.useState(!!initial?.enabled);
+  const [days, setDays] = React.useState<number[]>(initial?.days ?? [1, 2, 3, 4, 5]);
+  const [start, setStart] = React.useState(initial?.start ?? '08:00');
+  const [end, setEnd] = React.useState(initial?.end ?? '18:00');
+  const [saving, setSaving] = React.useState(false);
+  const [status, setStatus] = React.useState('');
+
+  const toggleDay = (d: number) =>
+    setDays((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]).sort());
+
+  const save = async () => {
+    setSaving(true); setStatus('');
+    try {
+      await companyApi.setAccessSchedule({ enabled, days, start, end });
+      setStatus('✓ Restrição de horário salva.');
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : 'Não foi possível salvar.');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 mb-6 shadow-sm">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600"><Clock className="w-5 h-5" /></div>
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Restrição de horário de acesso</h2>
+            <p className="text-xs text-slate-400">Defina os dias e a faixa de horário em que sua equipe pode acessar os treinamentos. Fora disso, o acesso é bloqueado (horário de Brasília).</p>
+          </div>
+        </div>
+        <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-emerald-600 w-4 h-4" />
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{enabled ? 'Ativa' : 'Desativada'}</span>
+        </label>
+      </div>
+
+      <div className={enabled ? '' : 'opacity-50 pointer-events-none'}>
+        <p className="text-[10px] font-bold uppercase text-slate-400 mb-1.5">Dias permitidos</p>
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {WEEK.map((w) => (
+            <button key={w.d} type="button" onClick={() => toggleDay(w.d)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${days.includes(w.d) ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
+              {w.l}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Das</label>
+            <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="text-sm p-2 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Até</label>
+            <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="text-sm p-2 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 mt-4">
+        <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 font-bold text-xs uppercase rounded cursor-pointer">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar restrição
+        </button>
+        {status && <span className={`text-xs ${status.startsWith('✓') ? 'text-emerald-600' : 'text-slate-400'}`}>{status}</span>}
+      </div>
+    </div>
+  );
 }
 
 export default function CompanyDashboard({ onValidateCertificate }: CompanyDashboardProps) {
@@ -58,6 +133,9 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
           </p>
         </div>
       </div>
+
+      {/* Restrição de horário de acesso aos treinamentos */}
+      <AccessScheduleCard initial={data.company?.accessSchedule} />
 
       {/* Indicadores: total de funcionários vs. concluíram os obrigatórios */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">

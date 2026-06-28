@@ -137,8 +137,9 @@ export interface CnpjInfo {
   riskGrade: number | null;
 }
 
+export interface AccessSchedule { enabled?: boolean; days?: number[]; start?: string; end?: string }
 export interface CompanyDashboardData {
-  company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null; employeeCount: number; cnae: string | null; cnaeDescription: string | null; riskGrade: number | null } | null;
+  company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null; employeeCount: number; cnae: string | null; cnaeDescription: string | null; riskGrade: number | null; accessSchedule?: AccessSchedule } | null;
   employees: {
     id: string;
     name: string;
@@ -329,6 +330,14 @@ export const enrollmentsApi = {
     try {
       await apiFetch(`/enrollments/${id}/exam-start`, { method: 'POST', body: JSON.stringify({}) });
     } catch { /* silencioso */ }
+  },
+  // Verifica a janela de acesso (restrição de horário definida pela empresa).
+  async accessWindow(): Promise<{ allowed: boolean; restricted: boolean; message?: string; schedule?: AccessSchedule }> {
+    try {
+      return await apiFetch('/enrollments/access-window');
+    } catch {
+      return { allowed: true, restricted: false };
+    }
   },
 };
 
@@ -527,6 +536,12 @@ export const contentApi = {
 export const companyApi = {
   getDashboard() {
     return apiFetch<CompanyDashboardData>('/company/me');
+  },
+  setAccessSchedule(schedule: AccessSchedule) {
+    return apiFetch<{ accessSchedule: AccessSchedule }>('/company/access-schedule', {
+      method: 'PATCH',
+      body: JSON.stringify(schedule),
+    });
   },
 };
 

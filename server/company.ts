@@ -10,6 +10,8 @@
  */
 
 import { Router, type Response } from 'express';
+import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
 import { obligatoryTrainings } from './nr04';
@@ -94,6 +96,7 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
       ? {
           id: company.id, name: company.name, cnpj: company.cnpj, email: company.email, phone: company.phone,
           employeeCount: company.employeeCount, cnae: company.cnae, cnaeDescription: company.cnaeDescription, riskGrade: company.riskGrade,
+          accessSchedule: company.accessSchedule ?? {},
         }
       : null,
     employees,
@@ -106,4 +109,25 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
       compliancePct: declaredTotal > 0 ? Math.round((compliantCount / declaredTotal) * 100) : 0,
     },
   });
+});
+
+// Define a restrição de horário de acesso aos treinamentos (dias e faixa).
+companyRouter.patch('/access-schedule', async (req: AuthedRequest, res: Response) => {
+  const companyId = await requireCompany(req, res);
+  if (!companyId) return;
+  const hhmm = z.string().regex(/^\d{1,2}:\d{2}$/);
+  const parsed = z
+    .object({
+      enabled: z.boolean(),
+      days: z.array(z.number().int().min(0).max(6)).max(7).default([]),
+      start: hhmm.optional(),
+      end: hhmm.optional(),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Configuração de horário inválida.' });
+  const company = await prisma.company.update({
+    where: { id: companyId },
+    data: { accessSchedule: parsed.data as unknown as Prisma.InputJsonValue },
+  });
+  res.json({ accessSchedule: company.accessSchedule });
 });

@@ -350,7 +350,13 @@ export default function StudentDashboard({
     if (isTakingExam && activeEnrollment?.id) enrollmentsApi.examStart(activeEnrollment.id);
   }, [isTakingExam, activeEnrollment?.id]);
 
-  const handleOpenClassroom = (enrollment: Enrollment) => {
+  const handleOpenClassroom = async (enrollment: Enrollment) => {
+    // Restrição de horário definida pela empresa: bloqueia o acesso fora da janela.
+    const access = await enrollmentsApi.accessWindow();
+    if (!access.allowed) {
+      alert(`Acesso aos treinamentos bloqueado pela sua empresa neste momento.\n\n${access.message ?? ''}`.trim());
+      return;
+    }
     setActiveEnrollment(enrollment);
     setSelectedModuleIdx(0);
     setSlideIdx(0);

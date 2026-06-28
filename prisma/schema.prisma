@@ -119,6 +119,10 @@ model Company {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
+  // Restrição de horário de acesso aos treinamentos pelos funcionários.
+  // { enabled, days:[0..6], start:"HH:MM", end:"HH:MM" } (horário de Brasília).
+  accessSchedule  Json    @default("{}")
+
   members   User[]
 }
 

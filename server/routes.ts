@@ -19,6 +19,7 @@ import { getSignerInfo, signPayload, isIcpConfigured, extractPfx, signWithKey } 
 import { decryptSecret, electronicSign } from './crypto';
 import { sendLeadNotification } from './email';
 import { sendLeadWhatsApp } from './whatsapp';
+import { evaluateUserAccess } from './accessSchedule';
 
 export const apiRouter = Router();
 
@@ -124,11 +125,20 @@ apiRouter.patch('/enrollments/:id/progress', authenticate, async (req: AuthedReq
   res.json({ enrollment });
 });
 
+// Verifica se o aluno pode acessar os treinamentos AGORA (restrição de horário
+// definida pela empresa). O front bloqueia a sala de aula quando não permitido.
+apiRouter.get('/enrollments/access-window', authenticate, async (req: AuthedRequest, res: Response) => {
+  const result = await evaluateUserAccess(req.user!.sub);
+  res.json(result);
+});
+
 // Heartbeat de estudo: acumula o tempo assistido (minutagem para auditoria) e
 // registra o primeiro acesso à sala de aula. Enviado periodicamente pelo aluno.
 apiRouter.post('/enrollments/:id/study', authenticate, async (req: AuthedRequest, res: Response) => {
   const parsed = z.object({ seconds: z.number().int().min(1).max(300) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Tempo inválido.' });
+  const access = await evaluateUserAccess(req.user!.sub);
+  if (!access.allowed) return res.status(403).json({ error: access.message ?? 'Acesso fora do horário permitido.' });
   const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
   if (!enr || enr.userId !== req.user!.sub) return res.status(404).json({ error: 'Matrícula não encontrada.' });
   await prisma.enrollment.update({
@@ -143,6 +153,8 @@ apiRouter.post('/enrollments/:id/study', authenticate, async (req: AuthedRequest
 
 // Marca o início da prova (auditoria do tempo até a finalização).
 apiRouter.post('/enrollments/:id/exam-start', authenticate, async (req: AuthedRequest, res: Response) => {
+  const access = await evaluateUserAccess(req.user!.sub);
+  if (!access.allowed) return res.status(403).json({ error: access.message ?? 'Acesso fora do horário permitido.' });
   const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
   if (!enr || enr.userId !== req.user!.sub) return res.status(404).json({ error: 'Matrícula não encontrada.' });
   if (!enr.examStartedAt) {
@@ -169,6 +181,9 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
     })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Dados do exame inválidos.' });
+
+  const access = await evaluateUserAccess(req.user!.sub);
+  if (!access.allowed) return res.status(403).json({ error: access.message ?? 'Acesso fora do horário permitido.' });
 
   const enr = await prisma.enrollment.findUnique({
     where: { id: req.params.id },
