@@ -1122,7 +1122,30 @@ export default function StudentDashboard({
                     ))}
                   </ul>
                 </div>
-                <div className="mt-auto pt-4 flex justify-center text-[12px] text-[#1e9b46] font-black tracking-[0.2em] w-full">
+                {/* Faixa holográfica de segurança (autenticidade) — cores da marca */}
+                <div className="relative mt-auto h-[84px] rounded-md overflow-hidden border border-slate-200" style={{ backgroundColor: '#f4f2e9' }}>
+                  <div className="absolute inset-0" style={{ backgroundImage: 'repeating-radial-gradient(circle at 18% 50%, transparent 0 5px, rgba(15,33,71,0.06) 5px 6px),repeating-radial-gradient(circle at 50% 50%, transparent 0 5px, rgba(16,157,99,0.06) 5px 6px),repeating-radial-gradient(circle at 82% 50%, transparent 0 5px, rgba(245,178,26,0.06) 5px 6px),repeating-linear-gradient(60deg, rgba(0,0,0,0.035) 0 1px, transparent 1px 6px)' }} />
+                  {(['left', 'right'] as const).map((side) => (
+                    <div key={side} className="absolute top-0 bottom-0 w-7 flex items-center justify-center overflow-hidden" style={{ [side]: 0, background: 'conic-gradient(from 45deg,#1e9b46,#27b074,#7fe0b0,#f5b21a,#1f2a3a,#27b074,#1e9b46)' } as React.CSSProperties}>
+                      <span className="text-white font-black text-[7px] tracking-[0.25em] uppercase" style={{ writingMode: 'vertical-rl', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>GENUINE · GENUINE</span>
+                    </div>
+                  ))}
+                  <div className="absolute inset-0 flex items-center gap-3 px-12">
+                    <div className="relative w-[52px] h-[52px] shrink-0">
+                      <div className="absolute inset-0 rounded-full" style={{ background: 'conic-gradient(from 0deg,#1e9b46,#27b074,#7fe0b0,#f5b21a,#1f2a3a,#27b074,#1e9b46)' }} />
+                      <div className="absolute inset-[5px] rounded-full flex flex-col items-center justify-center" style={{ background: 'radial-gradient(circle at 30% 22%, #1e3a8a, #0f2147 72%)' }}>
+                        <div className="w-[22px]"><ShieldEmblem className="w-full h-auto" /></div>
+                        <span className="text-white font-black text-[7px] mt-px tracking-wide">VÁLIDO</span>
+                      </div>
+                    </div>
+                    <div className="leading-tight">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Selo holográfico de autenticidade</div>
+                      <div className="font-mono font-bold text-slate-800 text-[12px] break-all">{viewingCertificate.certificateCode}</div>
+                      <div className="text-[8px] font-bold uppercase tracking-wide text-[#1e9b46]">Fala Instrutor · Documento autenticado</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-2 flex justify-center text-[12px] text-[#1e9b46] font-black tracking-[0.2em] w-full">
                   WWW.FALAINSTRUTOR.COM.BR
                 </div>
               </div>

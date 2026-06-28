@@ -20,7 +20,7 @@ function HolographicSeal({ size = 72, label = 'VÁLIDO' }: { size?: number; labe
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          background: 'conic-gradient(from 0deg,#22d3ee,#a78bfa,#f472b6,#fde047,#34d399,#38bdf8,#22d3ee)',
+          background: 'conic-gradient(from 0deg,#1e9b46,#27b074,#7fe0b0,#f5b21a,#1f2a3a,#27b074,#1e9b46)',
           animation: 'fiHoloSpin 7s linear infinite',
           filter: 'saturate(1.25)',
           boxShadow: '0 0 14px rgba(56,189,248,0.45)',
