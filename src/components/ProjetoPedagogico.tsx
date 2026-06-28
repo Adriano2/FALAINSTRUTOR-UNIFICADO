@@ -141,27 +141,39 @@ export default function ProjetoPedagogico({ courses, onNavigateHome }: ProjetoPe
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
       const { jsPDF } = await import('jspdf');
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        windowWidth: el.scrollWidth,
-      });
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       const pageW = 210;
       const pageH = 297;
       const imgW = pageW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-      const imgData = canvas.toDataURL('image/jpeg', 0.92);
-      let heightLeft = imgH;
-      let position = 0;
-      pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-      heightLeft -= pageH;
-      while (heightLeft > 0) {
-        position -= pageH;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-        heightLeft -= pageH;
+      const GAP = 2; // respiro entre blocos (mm)
+
+      // Captura bloco a bloco (capa, sumário e cada seção) para não cortar
+      // conteúdo no meio de uma página.
+      const blocks: HTMLElement[] = [];
+      el.querySelectorAll(':scope > section').forEach((s) => blocks.push(s as HTMLElement));
+      const wrapper = el.querySelector(':scope > div');
+      if (wrapper) wrapper.querySelectorAll(':scope > section, :scope > div').forEach((s) => blocks.push(s as HTMLElement));
+
+      let cursorY = 0;
+      for (const block of blocks.length ? blocks : [el]) {
+        const canvas = await html2canvas(block, { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: el.scrollWidth });
+        const imgH = (canvas.height * imgW) / canvas.width;
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        if (imgH <= pageH) {
+          // Bloco cabe em uma página: quebra antes se não couber no restante.
+          if (cursorY > 0 && cursorY + imgH > pageH) { pdf.addPage(); cursorY = 0; }
+          pdf.addImage(imgData, 'JPEG', 0, cursorY, imgW, imgH);
+          cursorY += imgH + GAP;
+        } else {
+          // Bloco maior que a página (ex.: tabela longa): inicia nova página e fatia.
+          if (cursorY > 0) { pdf.addPage(); cursorY = 0; }
+          let heightLeft = imgH;
+          let pos = 0;
+          pdf.addImage(imgData, 'JPEG', 0, pos, imgW, imgH);
+          heightLeft -= pageH;
+          while (heightLeft > 0) { pos -= pageH; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, pos, imgW, imgH); heightLeft -= pageH; }
+          cursorY = pageH; // próximo bloco começa em nova página
+        }
       }
       pdf.save('Projeto-Pedagogico-FalaInstrutor.pdf');
     } catch {
