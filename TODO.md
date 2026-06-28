@@ -2,6 +2,13 @@
 
 Lista de itens combinados para evolução posterior da plataforma.
 
+> ## 🔒 REGRA FIXA — LAYOUT DO CERTIFICADO CONGELADO
+> **NÃO alterar o layout do certificado (frente e verso)** sem pedido explícito do cliente.
+> O modelo atual (frente + verso, com a faixa holográfica centralizada no verso)
+> foi aprovado. A cada modificação no projeto, **lembrar o cliente desta regra**.
+> Arquivos do certificado: `src/components/StudentDashboard.tsx` (front `certificate-page-1`,
+> verso `BackPage`). Mexer apenas quando o cliente autorizar.
+
 ## 🧾 Integração de emissão de NFS-e (Nota Fiscal de Serviço)
 
 **Status:** base de gerenciamento já implementada (cadastro manual, status
