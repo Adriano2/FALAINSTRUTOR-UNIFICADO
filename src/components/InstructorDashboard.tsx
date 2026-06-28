@@ -11,8 +11,10 @@
 
 import React from 'react';
 import { GraduationCap, DollarSign, Percent, BookOpenCheck, Loader2, X } from 'lucide-react';
-import { instructorApi, InstructorDashboardData } from '../api';
+import { instructorApi, coursesApi, InstructorDashboardData } from '../api';
 import { getExamQuestions } from '../data';
+import { Course } from '../types';
+import SlideManager from './admin/SlideManager';
 
 type ExamItem = InstructorDashboardData['exams'][number];
 
@@ -21,6 +23,8 @@ export default function InstructorDashboard() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
   const [reviewing, setReviewing] = React.useState<ExamItem | null>(null);
+  const [allCourses, setAllCourses] = React.useState<Course[]>([]);
+  React.useEffect(() => { coursesApi.list().then(setAllCourses).catch(() => {}); }, []);
   const [validatedMap, setValidatedMap] = React.useState<Record<string, boolean>>({});
   const [requestedMap, setRequestedMap] = React.useState<Record<string, boolean>>({});
 
@@ -181,6 +185,22 @@ export default function InstructorDashboard() {
           </table>
         </div>
       </div>
+
+      {/* Gerenciador de slides dos meus treinamentos (instrutor associado) */}
+      {(() => {
+        const ids = new Set(data.courses.map((c) => c.id));
+        const myCourses = allCourses.filter((c) => ids.has(c.id));
+        if (myCourses.length === 0) return null;
+        return (
+          <div className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
+            <SlideManager
+              courses={myCourses}
+              onSave={(id, slides) => instructorApi.saveSlides(id, slides)}
+              onSaved={() => coursesApi.list().then(setAllCourses).catch(() => {})}
+            />
+          </div>
+        );
+      })()}
 
       {/* Modal de revisão da prova */}
       {reviewing && (() => {

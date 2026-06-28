@@ -15,14 +15,17 @@ import { Course } from '../../types';
 import { adminApi } from '../../api';
 import { SLIDES_BY_CODE } from '../../data';
 
+type Slide = { title: string; bullets: string[] };
+
 interface SlideManagerProps {
   courses: Course[];
   onSaved?: () => void;
+  // Função de salvar (admin por padrão; o painel do instrutor passa a sua).
+  onSave?: (courseId: string, slides: Slide[]) => Promise<unknown>;
 }
 
-type Slide = { title: string; bullets: string[] };
-
-export default function SlideManager({ courses, onSaved }: SlideManagerProps) {
+export default function SlideManager({ courses, onSaved, onSave }: SlideManagerProps) {
+  const saveFn = onSave ?? ((id: string, s: Slide[]) => adminApi.saveSlides(id, s));
   const [courseId, setCourseId] = React.useState<string>(courses[0]?.id || '');
   const [slides, setSlides] = React.useState<Slide[]>([]);
   const [saving, setSaving] = React.useState(false);
@@ -68,7 +71,7 @@ export default function SlideManager({ courses, onSaved }: SlideManagerProps) {
     }
     setSaving(true);
     try {
-      await adminApi.saveSlides(courseId, clean);
+      await saveFn(courseId, clean);
       setSavedAt(Date.now());
       onSaved?.();
     } catch (e) {

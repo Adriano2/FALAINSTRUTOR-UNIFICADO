@@ -573,6 +573,10 @@ export const instructorApi = {
   requestRevocation(enrollmentId: string, reason: string) {
     return apiFetch(`/instructor/enrollments/${enrollmentId}/request-revocation`, { method: 'POST', body: JSON.stringify({ reason }) });
   },
+  // Edita os slides de um curso do próprio instrutor.
+  saveSlides(courseId: string, slides: { title: string; bullets: string[] }[]) {
+    return apiFetch(`/instructor/courses/${courseId}/slides`, { method: 'PATCH', body: JSON.stringify({ slides }) });
+  },
 };
 
 export const paymentsApi = {

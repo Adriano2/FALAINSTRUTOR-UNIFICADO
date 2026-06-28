@@ -14,6 +14,7 @@
 
 import { Router, type Response } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
 import { sendCertificateEmail } from './email';
@@ -110,6 +111,23 @@ instructorRouter.post('/enrollments/:id/request-revocation', async (req: AuthedR
   await prisma.enrollment.update({
     where: { id: enr.id },
     data: { revocationRequested: true, revocationReason: parsed.data.reason, revocationRequestedBy: user.name, revocationRequestedAt: new Date() },
+  });
+  res.json({ ok: true });
+});
+
+// Edição dos slides de um treinamento — apenas dos cursos do próprio instrutor.
+instructorRouter.patch('/courses/:id/slides', async (req: AuthedRequest, res: Response) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
+  const parsed = z
+    .object({ slides: z.array(z.object({ title: z.string().min(1), bullets: z.array(z.string().min(1)) })) })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Slides inválidos. Cada slide precisa de título e ao menos um tópico.' });
+  const mine = await instructorCourseIds(user.name);
+  if (!mine.has(req.params.id)) return res.status(403).json({ error: 'Este treinamento não pertence aos seus cursos.' });
+  await prisma.course.update({
+    where: { id: req.params.id },
+    data: { slides: parsed.data.slides as unknown as Prisma.InputJsonValue },
   });
   res.json({ ok: true });
 });
