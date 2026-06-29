@@ -370,41 +370,6 @@ export default function App() {
     }
   };
 
-  // Evaluator Quick Login shortcut — faz login real (token) com as contas
-  // semente para que os dados venham do banco. Cai para sessão local apenas
-  // se o backend estiver indisponível.
-  const handleEvaluatorShortcut = async (role: 'admin' | 'student' | 'company' | 'instructor') => {
-    const creds =
-      role === 'admin'
-        ? { email: 'adriano.ricardo01@gmail.com', password: 'Anthony9936#' }
-        : role === 'company'
-          ? { email: 'empresa@gmail.com', password: 'empresa123' }
-          : role === 'instructor'
-            ? { email: 'instrutor@gmail.com', password: 'instrutor123' }
-            : { email: 'jessica@gmail.com', password: 'aluno123' };
-    const label = role === 'admin' ? 'Administrador' : role === 'company' ? 'Empresa' : role === 'instructor' ? 'Instrutor' : 'Aluno';
-    try {
-      const user = await authApi.login(creds.email, creds.password);
-      setCurrentUser(user);
-      await refreshMyEnrollments(user);
-      if (user.role === 'admin') await loadAdminData();
-      handleNavigate(dashboardForRole(user.role));
-      alert(`Sessão ${label}: ${user.name}`);
-    } catch {
-      if (role === 'company' || role === 'instructor') {
-        alert(`Não foi possível acessar a conta de ${label.toLowerCase()} de demonstração. Verifique se o servidor está ativo.`);
-        return;
-      }
-      // Fallback local (offline / sem backend)
-      const acc = role === 'admin'
-        ? users.find((u) => u.role === 'admin') || SEED_USERS[0]
-        : users.find((u) => u.email === 'jessica@gmail.com') || SEED_USERS[1];
-      setCurrentUser(acc);
-      handleNavigate(dashboardForRole(role));
-      alert(`Sessão ${label} (local): ${acc.name}`);
-    }
-  };
-
   // Signup Register handler — cria a conta no backend.
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -765,42 +730,6 @@ export default function App() {
         {/* LOGIN SCREEN SECTION */}
         {currentScreen === 'login' && (
           <div className="mx-auto max-w-md px-4 py-20 font-sans">
-            
-            {/* Quick evaluator login guides */}
-            <div className="mb-6 p-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 shadow-2xs">
-              <h3 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5 font-display">
-                <Info className="w-4 h-4 shrink-0" /> Guia de avaliação ágil
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                Para fins de teste das perspectivas (Administrador, Aluno ou Empresa), utilize os atalhos de acesso instantâneo abaixo:
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEvaluatorShortcut('admin')}
-                  className="flex-1 py-1.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
-                >
-                  Administrador
-                </button>
-                <button
-                  onClick={() => handleEvaluatorShortcut('student')}
-                  className="flex-1 py-1.5 bg-slate-905 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
-                >
-                  Aluno
-                </button>
-                <button
-                  onClick={() => handleEvaluatorShortcut('company')}
-                  className="flex-1 py-1.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
-                >
-                  Empresa
-                </button>
-                <button
-                  onClick={() => handleEvaluatorShortcut('instructor')}
-                  className="flex-1 py-1.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold text-[10px] uppercase tracking-wide rounded-xl hover:bg-blue-600 transition cursor-pointer font-display"
-                >
-                  Instrutor
-                </button>
-              </div>
-            </div>
 
             <div className="bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 p-6 sm:p-8 rounded-2xl shadow-xs space-y-6">
               

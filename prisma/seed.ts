@@ -168,6 +168,19 @@ async function main() {
     });
   }
 
+  // Dados de demonstração (aluno/empresa/instrutor de exemplo).
+  // Em PRODUÇÃO ficam DESLIGADOS por padrão: defina SEED_DEMO=true para criá-los.
+  // Quando desligado, o seed também REMOVE quaisquer contas demo já existentes,
+  // deixando apenas o admin master e os dados reais (cursos, instrutores, cupons).
+  const SEED_DEMO = process.env.SEED_DEMO === 'true';
+  const DEMO_USER_IDS = ['usr-2', 'usr-3', 'usr-company', 'usr-instrutor'];
+  const DEMO_COMPANY_ID = 'comp-demo';
+
+  if (!SEED_DEMO) {
+    // Limpeza (idempotente): cascade remove matrículas, sessões e afins dos demo.
+    await prisma.user.deleteMany({ where: { id: { in: DEMO_USER_IDS } } }).catch(() => {});
+    await prisma.company.deleteMany({ where: { id: DEMO_COMPANY_ID } }).catch(() => {});
+  } else {
   // 3b) Alunos de exemplo + certificados emitidos (para testar a validação)
   const studentHash = await bcrypt.hash('aluno123', 10);
   const demoStudents = [
@@ -277,6 +290,7 @@ async function main() {
       isActive: true,
     },
   });
+  } // fim do bloco de demonstração (SEED_DEMO)
 
   // 4) Configurações globais (layout + pagamento)
   const layout = INITIAL_LAYOUT_CONFIG as unknown as Prisma.InputJsonValue;
