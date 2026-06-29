@@ -170,6 +170,24 @@ export default function DivulgacaoLanding({ courses, onNavigate }: DivulgacaoLan
         </section>
       )}
 
+      {/* VÍDEO INSTITUCIONAL (autoplay) — após os treinamentos em destaque */}
+      <section className="bg-slate-50 text-slate-900 pb-16">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-black">
+            <video
+              src="/media/destaque.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="auto"
+              className="w-full h-auto block"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* CAPTAÇÃO DE LEADS */}
       <section id="captacao" className="bg-slate-900 py-16">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
