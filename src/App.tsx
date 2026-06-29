@@ -654,8 +654,12 @@ export default function App() {
         )}
 
         {currentScreen === 'cart' && (
-          <CartView 
-            cartItems={cart}
+          <CartView
+            cartItems={cart.map((item) => {
+              // Reconcilia com o preço atual do curso (evita valor antigo no carrinho).
+              const live = courses.find((c) => c.id === item.id);
+              return live ? { ...item, price: live.price } : item;
+            })}
             currentUser={currentUser}
             coupons={coupons}
             onRemoveFromCart={handleRemoveFromCart}
