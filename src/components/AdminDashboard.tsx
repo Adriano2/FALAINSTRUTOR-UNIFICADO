@@ -59,6 +59,7 @@ interface AdminDashboardProps {
   onSaveCourseContent: (courseId: string, input: { videoUrl?: string; moduleVideos?: string[]; documents?: { name: string; url: string }[]; modality?: string }) => void;
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
   onRefreshCourses?: () => void;
+  onOpenInstructorView?: () => void;
 }
 
 export default function AdminDashboard({
@@ -91,6 +92,7 @@ export default function AdminDashboard({
   onSaveCourseContent,
   onSaveConfig,
   onRefreshCourses,
+  onOpenInstructorView,
 }: AdminDashboardProps) {
   // Sidebar State
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
@@ -447,6 +449,7 @@ export default function AdminDashboard({
                   { id: 'dashboard', label: 'Dashboard', icon: BarChart },
                   { id: 'courses', label: 'Gestão de cursos', icon: BookOpen },
                   { id: 'instructors', label: 'Gestão de instrutores', icon: GraduationCap },
+                  { id: 'instructor-panel', label: 'Painel do Instrutor', icon: GraduationCap },
                   { id: 'enrollments', label: 'Gestão de matrículas', icon: ClipboardList },
                   { id: 'pedagogical', label: 'Gestão Pedagógica', icon: Activity },
                   { id: 'sales', label: 'Gestão de vendas', icon: DollarSign },
@@ -486,7 +489,7 @@ export default function AdminDashboard({
                     return (
                       <button
                         key={opt.id}
-                        onClick={() => setActiveTab(opt.id)}
+                        onClick={() => (opt.id === 'instructor-panel' && onOpenInstructorView ? onOpenInstructorView() : setActiveTab(opt.id))}
                         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-left transition select-none cursor-pointer ${
                           active
                             ? 'bg-blue-600 text-white font-bold shadow-sm'

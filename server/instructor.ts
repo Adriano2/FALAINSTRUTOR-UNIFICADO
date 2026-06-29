@@ -31,18 +31,31 @@ async function instructorCourseIds(userName: string): Promise<Set<string>> {
   return new Set(links.filter((l) => norm(l.name) === norm(userName)).map((l) => l.courseId));
 }
 
+// Escopo de cursos do usuário no painel. O ADMIN master enxerga TODOS os cursos
+// (acesso de instrutor geral); o instrutor enxerga apenas os seus (por nome).
+async function scopedCourseIds(user: { role: string; name: string }): Promise<Set<string>> {
+  if (user.role === 'ADMIN') {
+    const all = await prisma.course.findMany({ select: { id: true } });
+    return new Set(all.map((c) => c.id));
+  }
+  return instructorCourseIds(user.name);
+}
+
+// Permite acesso ao painel: instrutor OU admin master.
+const canUsePanel = (role?: string) => role === 'INSTRUCTOR' || role === 'ADMIN';
+
 // Libera/valida (ou revoga) uma prova — apenas dos cursos do próprio instrutor.
 // Ao liberar uma prova APROVADA, o certificado da matrícula é homologado
 // (released=true) e o e-mail de certificado é enviado ao aluno. Ao revogar, o
 // certificado volta a ficar pendente (released=false) e deixa de ser válido.
 instructorRouter.patch('/exams/:id/validate', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
-  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
+  if (!user || !canUsePanel(user.role)) return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
   const parsed = z.object({ validated: z.boolean() }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos.' });
   const sub = await prisma.examSubmission.findUnique({ where: { id: req.params.id } });
   if (!sub) return res.status(404).json({ error: 'Prova não encontrada.' });
-  const mine = await instructorCourseIds(user.name);
+  const mine = await scopedCourseIds(user);
   if (!mine.has(sub.courseId)) return res.status(403).json({ error: 'Esta prova não pertence aos seus cursos.' });
 
   const validated = parsed.data.validated;
@@ -93,15 +106,15 @@ async function generalResponsibleName(): Promise<string> {
 // geral SOLICITA a revogação do certificado. A revogação definitiva é do admin.
 instructorRouter.post('/enrollments/:id/request-revocation', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
-  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor/responsável.' });
+  if (!user || !canUsePanel(user.role)) return res.status(403).json({ error: 'Acesso restrito ao instrutor/responsável.' });
   const parsed = z.object({ reason: z.string().min(3).max(500) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Informe o motivo da revogação (mínimo 3 caracteres).' });
 
   const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
   if (!enr) return res.status(404).json({ error: 'Matrícula/certificado não encontrado.' });
 
-  const isGeneral = norm(user.name) === norm(await generalResponsibleName());
-  const mine = await instructorCourseIds(user.name);
+  const isGeneral = user.role === 'ADMIN' || norm(user.name) === norm(await generalResponsibleName());
+  const mine = await scopedCourseIds(user);
   if (!isGeneral && !mine.has(enr.courseId)) {
     return res.status(403).json({ error: 'Este certificado não pertence aos seus cursos.' });
   }
@@ -118,12 +131,12 @@ instructorRouter.post('/enrollments/:id/request-revocation', async (req: AuthedR
 // Edição dos slides de um treinamento — apenas dos cursos do próprio instrutor.
 instructorRouter.patch('/courses/:id/slides', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
-  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
+  if (!user || !canUsePanel(user.role)) return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
   const parsed = z
     .object({ slides: z.array(z.object({ title: z.string().min(1), bullets: z.array(z.string().min(1)) })) })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Slides inválidos. Cada slide precisa de título e ao menos um tópico.' });
-  const mine = await instructorCourseIds(user.name);
+  const mine = await scopedCourseIds(user);
   if (!mine.has(req.params.id)) return res.status(403).json({ error: 'Este treinamento não pertence aos seus cursos.' });
   await prisma.course.update({
     where: { id: req.params.id },
@@ -135,7 +148,7 @@ instructorRouter.patch('/courses/:id/slides', async (req: AuthedRequest, res: Re
 // Edição da prova de um treinamento — apenas dos cursos do próprio instrutor.
 instructorRouter.patch('/courses/:id/exam', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
-  if (!user || user.role !== 'INSTRUCTOR') return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
+  if (!user || !canUsePanel(user.role)) return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
   const parsed = z
     .object({
       questions: z.array(
@@ -151,7 +164,7 @@ instructorRouter.patch('/courses/:id/exam', async (req: AuthedRequest, res: Resp
   for (const q of parsed.data.questions) {
     if (q.correctIndex >= q.options.length) return res.status(400).json({ error: 'Há uma questão com resposta correta fora das alternativas.' });
   }
-  const mine = await instructorCourseIds(user.name);
+  const mine = await scopedCourseIds(user);
   if (!mine.has(req.params.id)) return res.status(403).json({ error: 'Este treinamento não pertence aos seus cursos.' });
   await prisma.course.update({
     where: { id: req.params.id },
@@ -162,15 +175,16 @@ instructorRouter.patch('/courses/:id/exam', async (req: AuthedRequest, res: Resp
 
 instructorRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
-  if (!user || user.role !== 'INSTRUCTOR') {
+  if (!user || !canUsePanel(user.role)) {
     return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
   }
 
   // Cursos do instrutor (associação por nome cadastrado em Instructor).
+  // O ADMIN master enxerga TODOS os cursos (acesso de instrutor geral).
   const links = await prisma.instructor.findMany({
     include: { course: { select: { id: true, code: true, name: true, price: true, examQuestions: true } } },
   });
-  const mine = links.filter((l) => norm(l.name) === norm(user.name));
+  const mine = user.role === 'ADMIN' ? links : links.filter((l) => norm(l.name) === norm(user.name));
   const courseMap = new Map<string, { id: string; code: string; name: string; price: number; examQuestions: unknown }>();
   for (const l of mine) courseMap.set(l.course.id, l.course);
   const courseIds = [...courseMap.keys()];

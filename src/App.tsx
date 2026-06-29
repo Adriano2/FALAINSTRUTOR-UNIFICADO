@@ -689,8 +689,11 @@ export default function App() {
           <CompanyDashboard onValidateCertificate={(code) => handleNavigate('validate-certificate', code)} />
         )}
 
-        {currentScreen === 'instructor-dashboard' && currentUser && currentUser.role === 'instructor' && (
-          <InstructorDashboard />
+        {currentScreen === 'instructor-dashboard' && currentUser && (currentUser.role === 'instructor' || currentUser.role === 'admin') && (
+          <InstructorDashboard
+            isAdmin={currentUser.role === 'admin'}
+            onBack={currentUser.role === 'admin' ? () => handleNavigate('admin-dashboard') : undefined}
+          />
         )}
 
         {currentScreen === 'admin-dashboard' && currentUser && currentUser.role === 'admin' && (
@@ -724,6 +727,7 @@ export default function App() {
             onSaveCourseContent={handleAdminSaveCourseContent}
             onSaveConfig={handleAdminSaveConfig}
             onRefreshCourses={refreshCourses}
+            onOpenInstructorView={() => handleNavigate('instructor-dashboard')}
           />
         )}
 

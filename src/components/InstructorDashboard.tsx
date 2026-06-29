@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { GraduationCap, DollarSign, Percent, BookOpenCheck, Loader2, X } from 'lucide-react';
+import { GraduationCap, DollarSign, Percent, BookOpenCheck, Loader2, X, ArrowLeft } from 'lucide-react';
 import { instructorApi, coursesApi, InstructorDashboardData } from '../api';
 import { getExamQuestions } from '../data';
 import { Course } from '../types';
@@ -19,7 +19,7 @@ import ExamEditor from './admin/ExamEditor';
 
 type ExamItem = InstructorDashboardData['exams'][number];
 
-export default function InstructorDashboard() {
+export default function InstructorDashboard({ isAdmin, onBack }: { isAdmin?: boolean; onBack?: () => void } = {}) {
   const [data, setData] = React.useState<InstructorDashboardData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -76,11 +76,18 @@ export default function InstructorDashboard() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 font-sans">
       {/* Cabeçalho */}
+      {onBack && (
+        <button onClick={onBack} className="mb-4 inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+          <ArrowLeft className="w-4 h-4" /> Voltar ao painel administrativo
+        </button>
+      )}
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 rounded-xl bg-blue-600/10 text-blue-600"><GraduationCap className="w-7 h-7" /></div>
         <div className="min-w-0">
           <h1 className="text-xl font-extrabold text-slate-900 dark:text-white truncate">Painel do Instrutor</h1>
-          <p className="text-xs text-slate-400 truncate">{data.instructor.name} • Provas e vendas dos seus treinamentos</p>
+          <p className="text-xs text-slate-400 truncate">
+            {isAdmin ? 'Acesso do administrador • todos os treinamentos' : `${data.instructor.name} • Provas e vendas dos seus treinamentos`}
+          </p>
         </div>
       </div>
 
