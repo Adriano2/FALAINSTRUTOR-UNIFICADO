@@ -179,7 +179,7 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
             </button>
           </div>
           <span className="text-[10px] text-slate-400 leading-normal block font-sans">
-            * Caso queira testar a validação imediata, utilize o código de JESSICA: <strong className="text-blue-600 select-all">CERT-35-JESSICA-01A</strong> ou o de THIAGO: <strong className="text-blue-600 select-all">CERT-35-THIAGO-02B</strong>
+            * Digite o código autenticador impresso no certificado (ex.: <strong className="text-blue-600">CERT-NR06-NOME-000</strong>). O resultado só é exibido após a verificação no nosso banco de dados, com o certificado já liberado pelo instrutor responsável.
           </span>
         </form>
       </div>
