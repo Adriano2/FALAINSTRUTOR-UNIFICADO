@@ -283,7 +283,7 @@ export const SEED_COURSES: Course[] = [
     instructors: [INSTRUTOR_GILVAN], manualActivities: [],
   },
   {
-    id: "course-leilucas-4", code: "LEI LUCAS", name: "Lei Lucas nº 13.722 - Primeiros Socorros (04 Horas)",
+    id: "course-leilucas-4", code: "LEI LUCAS 4H", name: "Lei Lucas nº 13.722 - Primeiros Socorros (04 Horas)",
     description: "Capacitação em noções básicas de primeiros socorros conforme a Lei Lucas (nº 13.722/2018): sinais vitais, OVACE, manobra de Heimlich, convulsões, traumas, hemorragias e parada cardiorrespiratória.",
     duration: 4, price: 60, isActive: true, isFeatured: false, coverImage: IMG.geral,
     modules: [
@@ -295,7 +295,7 @@ export const SEED_COURSES: Course[] = [
     instructors: [INSTRUTOR_PADRAO], manualActivities: [],
   },
   {
-    id: "course-leilucas-10", code: "LEI LUCAS", name: "Lei Lucas nº 13.722 - Primeiros Socorros (10 Horas)",
+    id: "course-leilucas-10", code: "LEI LUCAS 10H", name: "Lei Lucas nº 13.722 - Primeiros Socorros (10 Horas)",
     description: "Capacitação ampliada em primeiros socorros conforme a Lei Lucas (nº 13.722/2018): sinais vitais, OVACE, manobra de Heimlich, convulsões, traumas, controle de hemorragias, RCP e acionamento dos canais de urgência.",
     duration: 10, price: 120, isActive: true, isFeatured: false, coverImage: IMG.geral,
     modules: [
@@ -505,7 +505,7 @@ export const CONTEUDO_PROGRAMATICO: Record<string, string[]> = {
     "Ventilação, áreas de armazenagem e controle de derramamentos",
     "Resposta a emergências químicas e primeiros socorros",
   ],
-  "LEI LUCAS": [
+  "LEI LUCAS 4H": [
     "Sinais vitais",
     "Interpretação de sintomas e sinais",
     "OVACE: obstrução de vias aéreas por corpo estranho — no adulto, na criança e no bebê",
@@ -519,6 +519,8 @@ export const CONTEUDO_PROGRAMATICO: Record<string, string[]> = {
     "Canais de atendimento de urgência",
   ],
 };
+// Lei Lucas: a versão de 10h compartilha o mesmo conteúdo programático da de 4h.
+CONTEUDO_PROGRAMATICO["LEI LUCAS 10H"] = CONTEUDO_PROGRAMATICO["LEI LUCAS 4H"];
 
 // --- Treinamento em slides (deck por NR) ------------------------------------
 // Conteúdo didático em slides, exibido no player do aluno (aba "Apresentação de
@@ -1654,7 +1656,7 @@ export const SLIDES_BY_CODE: Record<string, TrainingSlide[]> = {
     },
   ],
 
-  "LEI LUCAS": [
+  "LEI LUCAS 4H": [
     {
       title: "Lei Lucas nº 13.722 — Primeiros Socorros",
       bullets: [
@@ -1729,6 +1731,8 @@ export const SLIDES_BY_CODE: Record<string, TrainingSlide[]> = {
     },
   ],
 };
+// Lei Lucas: a versão de 10h compartilha o mesmo deck de slides da de 4h.
+SLIDES_BY_CODE["LEI LUCAS 10H"] = SLIDES_BY_CODE["LEI LUCAS 4H"];
 
 // Vídeo de referência por NR (fallback quando o curso não tem vídeo no banco).
 export const REFERENCE_VIDEO_BY_CODE: Record<string, string> = {

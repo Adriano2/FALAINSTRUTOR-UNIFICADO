@@ -49,7 +49,10 @@ async function main() {
   });
 
   // 2) Cursos (preservando os ids originais para casar com os cupons)
+  // Resiliente: um curso com erro (ex.: code duplicado) é logado e ignorado,
+  // sem abortar o seed inteiro.
   for (const c of SEED_COURSES) {
+    try {
     await prisma.course.upsert({
       where: { id: c.id },
       update: {
@@ -91,6 +94,9 @@ async function main() {
         },
       },
     });
+    } catch (err) {
+      console.warn(`[seed] curso ignorado (${c.id} / ${c.code}):`, (err as Error).message);
+    }
   }
 
   // 2b) Provas no banco (correção autoritativa no servidor).
