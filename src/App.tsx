@@ -738,6 +738,33 @@ export default function App() {
                 <p className="text-xs text-slate-505 dark:text-slate-400 font-sans">Informe suas credenciais FalaInstrutor do portal.</p>
               </div>
 
+              {/* Atalhos de perfil: preenchem o e-mail da conta correspondente. */}
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase text-center font-display">Selecione o perfil</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { role: 'Instrutor', email: 'instrutor@falainstrutor.com.br', icon: '👷' },
+                    { role: 'Empresa', email: 'empresa@falainstrutor.com.br', icon: '🏢' },
+                    { role: 'Aluno', email: 'aluno@falainstrutor.com.br', icon: '🎓' },
+                  ].map((p) => (
+                    <button
+                      key={p.role}
+                      type="button"
+                      onClick={() => { setLoginEmail(p.email); setLoginPassword(''); }}
+                      className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border transition cursor-pointer font-display ${
+                        loginEmail === p.email
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-300 hover:border-emerald-400'
+                      }`}
+                    >
+                      <span className="text-lg leading-none">{p.icon}</span>
+                      <span className="text-[11px] font-bold">{p.role}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 text-center font-sans">Depois é só informar a senha do perfil.</p>
+              </div>
+
               <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs font-medium text-slate-505">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase block font-display">E-mail Cadastrado</label>
