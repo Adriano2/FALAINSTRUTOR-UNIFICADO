@@ -355,21 +355,8 @@ export default function CartView({
 
                     <label className="flex items-center justify-between p-2.5 rounded border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-colors cursor-pointer text-xs">
                       <div className="flex items-center gap-2">
-                        <input 
-                          type="radio" 
-                          name="payment_opt"
-                          checked={paymentMethod === 'as_boleto'}
-                          onChange={() => setPaymentMethod('as_boleto')}
-                        />
-                        <span className="font-bold text-slate-800 dark:text-slate-200">Boleto Bancário</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400 px-2 py-0.5 rounded uppercase font-bold">Até 24h compensação</span>
-                    </label>
-
-                    <label className="flex items-center justify-between p-2.5 rounded border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-colors cursor-pointer text-xs">
-                      <div className="flex items-center gap-2">
-                        <input 
-                          type="radio" 
+                        <input
+                          type="radio"
                           name="payment_opt"
                           checked={paymentMethod === 'as_credit'}
                           onChange={() => setPaymentMethod('as_credit')}
