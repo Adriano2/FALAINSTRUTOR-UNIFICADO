@@ -26,6 +26,7 @@ import LeadManager from './admin/LeadManager';
 import FileManager from './admin/FileManager';
 import PedagogicalMonitor from './admin/PedagogicalMonitor';
 import SlideManager from './admin/SlideManager';
+import MyAccount from './admin/MyAccount';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -60,6 +61,8 @@ interface AdminDashboardProps {
   onSaveConfig: (layout: LayoutConfig, payment: PaymentConfig) => void;
   onRefreshCourses?: () => void;
   onOpenInstructorView?: () => void;
+  currentUser?: User;
+  onUpdateProfile?: (props: Partial<User>) => void;
 }
 
 export default function AdminDashboard({
@@ -93,6 +96,8 @@ export default function AdminDashboard({
   onSaveConfig,
   onRefreshCourses,
   onOpenInstructorView,
+  currentUser,
+  onUpdateProfile,
 }: AdminDashboardProps) {
   // Sidebar State
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
@@ -472,6 +477,7 @@ export default function AdminDashboard({
               {
                 group: 'Configuração',
                 items: [
+                  { id: 'profile', label: 'Minha conta', icon: Users },
                   { id: 'settings', label: 'Configurações', icon: Settings },
                   { id: 'comments', label: 'Comentários', icon: MessageSquare },
                   { id: 'contacts', label: 'Mensagem de contato', icon: Mail },
@@ -848,6 +854,10 @@ export default function AdminDashboard({
 
           {activeTab === 'slides' && (
             <SlideManager courses={courses} onSaved={onRefreshCourses} />
+          )}
+
+          {activeTab === 'profile' && (
+            <MyAccount currentUser={currentUser} onSave={onUpdateProfile} />
           )}
 
           {/* TAB: GESTÃO DE EMPRESAS */}

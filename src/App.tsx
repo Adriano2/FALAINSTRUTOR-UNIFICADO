@@ -478,6 +478,10 @@ export default function App() {
     const nextUser = { ...currentUser, ...updatedProps };
     setCurrentUser(nextUser);
     setUsers(users.map(u => u.id === currentUser.id ? nextUser : u));
+    // Persiste no banco (nome/dob/cpf/avatar). Mantém o estado local se o backend falhar.
+    authApi
+      .updateProfile({ name: updatedProps.name, dob: updatedProps.dob, cpf: updatedProps.cpf, avatar: updatedProps.avatar })
+      .catch(() => {});
   };
 
   // Submit Comments / plantão de dúvidas
@@ -728,6 +732,8 @@ export default function App() {
             onSaveConfig={handleAdminSaveConfig}
             onRefreshCourses={refreshCourses}
             onOpenInstructorView={() => handleNavigate('instructor-dashboard')}
+            currentUser={currentUser}
+            onUpdateProfile={handleUpdateStudentProfile}
           />
         )}
 

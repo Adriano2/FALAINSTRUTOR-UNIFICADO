@@ -697,4 +697,14 @@ export const authApi = {
     const data = await apiFetch<{ user: ApiUser }>('/auth/me');
     return mapApiUser(data.user);
   },
+
+  // Atualiza o próprio perfil (nome/dob/cpf/avatar). O avatar pode ser uma URL
+  // ou um data URL (foto enviada pelo usuário).
+  async updateProfile(input: { name?: string; dob?: string; cpf?: string; avatar?: string }): Promise<User> {
+    const data = await apiFetch<{ user: ApiUser }>('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+    return mapApiUser(data.user);
+  },
 };

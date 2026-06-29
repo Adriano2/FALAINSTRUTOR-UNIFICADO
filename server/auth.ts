@@ -125,6 +125,27 @@ authRouter.get('/me', authenticate, async (req: AuthedRequest, res: Response) =>
   res.json({ user: publicUser(user) });
 });
 
+// Updates the authenticated user's own profile (name/dob/cpf/avatar).
+// O avatar pode ser uma URL ou um data URL (imagem enviada pelo usuário).
+authRouter.patch('/me', authenticate, async (req: AuthedRequest, res: Response) => {
+  const parsed = z
+    .object({
+      name: z.string().min(2).max(120).optional(),
+      dob: z.string().max(20).optional(),
+      cpf: z.string().max(25).optional(),
+      avatar: z.string().max(3_000_000).optional(), // suporta foto em data URL
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados de perfil inválidos.' });
+  const data: Record<string, unknown> = {};
+  for (const k of ['name', 'dob', 'cpf', 'avatar'] as const) {
+    if (parsed.data[k] !== undefined) data[k] = parsed.data[k];
+  }
+  if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada para atualizar.' });
+  const user = await prisma.user.update({ where: { id: req.user!.sub }, data });
+  res.json({ user: publicUser(user) });
+});
+
 // --- Middlewares ---
 
 export function authenticate(req: AuthedRequest, res: Response, next: NextFunction) {

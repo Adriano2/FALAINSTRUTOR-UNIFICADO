@@ -7,6 +7,7 @@ import React from 'react';
 import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, ExamQuestion, PaymentConfig } from '../types';
 import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE, RESPONSAVEL_TECNICO } from '../data';
 import { enrollmentsApi } from '../api';
+import AvatarUploader from './AvatarUploader';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation,
   HardHat, Flame, Zap, Users, AlertTriangle, ClipboardList, ClipboardCheck, Eye, Droplets, Wrench, Layers, Thermometer, Factory, FlaskConical, Truck, Activity, BookOpen, Leaf, Settings, FileCheck, Flag, Wind, type LucideIcon } from 'lucide-react';
 
@@ -988,15 +989,9 @@ export default function StudentDashboard({
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">URL Imagem de Perfil (Avatar)</label>
-                    <input 
-                      type="text" 
-                      value={avatar}
-                      onChange={(e) => setAvatar(e.target.value)}
-                      placeholder="https://exemplo-unsplash.com/avatar.jpg"
-                      className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Foto de Perfil (Avatar)</label>
+                    <AvatarUploader value={avatar} name={name} onChange={setAvatar} />
                   </div>
 
                   <button 
