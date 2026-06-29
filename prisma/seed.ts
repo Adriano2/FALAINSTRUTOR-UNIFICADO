@@ -138,10 +138,9 @@ async function main() {
         name: c.name,
         description: c.description,
         duration: c.duration,
-        price: c.price,
+        // price NÃO é sobrescrito no update: o preço é gerenciado no painel
+        // (Gestão de Cursos) e deve sobreviver aos redeploys/seed.
         coverImage: c.coverImage,
-        isActive: c.isActive,
-        isFeatured: c.isFeatured,
         modules: c.modules,
         manualActivities: c.manualActivities,
         modality: c.modality ?? 'EaD',

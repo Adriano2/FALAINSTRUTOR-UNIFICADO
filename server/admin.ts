@@ -478,6 +478,29 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
   res.json({ course });
 });
 
+// Atualização de preço/visibilidade do curso (Gestão de Cursos).
+adminRouter.patch('/courses/:id/price', async (req, res) => {
+  const parsed = z
+    .object({
+      price: z.number().min(0).max(1_000_000).optional(),
+      isActive: z.boolean().optional(),
+      isFeatured: z.boolean().optional(),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Valores inválidos.' });
+  const data: Prisma.CourseUpdateInput = {};
+  if (parsed.data.price !== undefined) data.price = parsed.data.price;
+  if (parsed.data.isActive !== undefined) data.isActive = parsed.data.isActive;
+  if (parsed.data.isFeatured !== undefined) data.isFeatured = parsed.data.isFeatured;
+  if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada para atualizar.' });
+  const course = await prisma.course.update({
+    where: { id: req.params.id },
+    data,
+    include: { instructors: true },
+  });
+  res.json({ course });
+});
+
 // Editor de provas: salva o banco de questões do curso.
 adminRouter.patch('/courses/:id/exam', async (req, res) => {
   const parsed = z

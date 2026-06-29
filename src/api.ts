@@ -514,6 +514,10 @@ export const adminApi = {
   saveExam(courseId: string, questions: { question: string; options: string[]; correctIndex: number }[]) {
     return apiFetch(`/admin/courses/${courseId}/exam`, { method: 'PATCH', body: JSON.stringify({ questions }) });
   },
+  // Atualiza preço/visibilidade do curso (Gestão de Cursos).
+  updateCoursePrice(courseId: string, input: { price?: number; isActive?: boolean; isFeatured?: boolean }) {
+    return apiFetch(`/admin/courses/${courseId}/price`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
   saveSlides(courseId: string, slides: { title: string; bullets: string[] }[]) {
     return apiFetch(`/admin/courses/${courseId}/slides`, { method: 'PATCH', body: JSON.stringify({ slides }) });
   },

@@ -27,6 +27,7 @@ import FileManager from './admin/FileManager';
 import PedagogicalMonitor from './admin/PedagogicalMonitor';
 import SlideManager from './admin/SlideManager';
 import MyAccount from './admin/MyAccount';
+import CoursePriceEditor from './admin/CoursePriceEditor';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -829,6 +830,9 @@ export default function AdminDashboard({
                           ({course.examQuestions?.length ?? 0} questões)
                         </span>
                       </button>
+
+                      {/* Edição rápida do preço (aumentar/diminuir e salvar) */}
+                      <CoursePriceEditor course={course} onSaved={onRefreshCourses} />
                     </div>
                   </div>
                 ))}
