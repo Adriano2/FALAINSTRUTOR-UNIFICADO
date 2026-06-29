@@ -646,8 +646,9 @@ export default function App() {
         )}
 
         {currentScreen === 'course-detail' && selectedCourse && (
-          <CourseDetail 
-            course={selectedCourse}
+          <CourseDetail
+            // Usa o curso atual do catálogo (preço/dados vivos), não a cópia salva.
+            course={courses.find((c) => c.id === selectedCourse.id) || selectedCourse}
             onAddToCart={handleAddToCart}
             onNavigateHome={() => handleNavigate('home')}
           />
