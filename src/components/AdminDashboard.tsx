@@ -230,6 +230,9 @@ export default function AdminDashboard({
   const [cfgInstagram, setCfgInstagram] = React.useState(layoutConfig.instagramUrl || '');
   const [cfgYoutube, setCfgYoutube] = React.useState(layoutConfig.youtubeUrl || '');
   const [cfgLinkedin, setCfgLinkedin] = React.useState(layoutConfig.linkedinUrl || '');
+  const [cfgAsaasToken, setCfgAsaasToken] = React.useState(paymentConfig.asaasToken || '');
+  const [cfgAsaasEnv, setCfgAsaasEnv] = React.useState<'sandbox' | 'production'>(paymentConfig.asaasEnv || 'production');
+  const [cfgAsaasWebhook, setCfgAsaasWebhook] = React.useState(paymentConfig.asaasWebhookToken || '');
   const [cfgCnpj, setCfgCnpj] = React.useState(paymentConfig.cnpj);
   const [cfgCep, setCfgCep] = React.useState(paymentConfig.cep);
   const [cfgStreet, setCfgStreet] = React.useState(paymentConfig.street);
@@ -413,6 +416,9 @@ export default function AdminDashboard({
       { ...layoutConfig, companyName: layoutCompany, phone: layoutPhone, primaryColor: cfgPrimary, secondaryColor: cfgSecondary, instagramUrl: cfgInstagram, youtubeUrl: cfgYoutube, linkedinUrl: cfgLinkedin },
       {
         ...paymentConfig,
+        asaasToken: cfgAsaasToken.trim(),
+        asaasEnv: cfgAsaasEnv,
+        asaasWebhookToken: cfgAsaasWebhook.trim(),
         cnpj: cfgCnpj, cep: cfgCep, street: cfgStreet, number: cfgNum, complement: cfgComp, city: cfgCity, state: cfgState,
         digitalCertificateName: cfgCertName,
         digitalCertificateHolder: cfgCertHolder,
@@ -1178,7 +1184,52 @@ export default function AdminDashboard({
               </h2>
 
               <div className="space-y-6">
-                
+
+                {/* Section 0: Gateway de pagamento (Asaas) */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-1">Pagamento — Integração Asaas</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Chave de API (Asaas)</label>
+                      <input
+                        type="password"
+                        value={cfgAsaasToken}
+                        onChange={(e) => setCfgAsaasToken(e.target.value)}
+                        placeholder="Cole aqui a API Key do Asaas"
+                        autoComplete="off"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none font-mono"
+                      />
+                      <p className="text-[10px] text-slate-400">Asaas → Configurações → Integrações → Chave de API. Salva com segurança no servidor.</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Ambiente</label>
+                      <select
+                        value={cfgAsaasEnv}
+                        onChange={(e) => setCfgAsaasEnv(e.target.value as 'sandbox' | 'production')}
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      >
+                        <option value="production">Produção (cobrança real)</option>
+                        <option value="sandbox">Sandbox (testes)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Token do Webhook</label>
+                      <input
+                        type="text"
+                        value={cfgAsaasWebhook}
+                        onChange={(e) => setCfgAsaasWebhook(e.target.value)}
+                        placeholder="defina um segredo (ex.: fala-webhook-2026)"
+                        className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none font-mono"
+                      />
+                      <p className="text-[10px] text-slate-400">Use o mesmo valor no webhook do Asaas (cabeçalho de autenticação).</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Webhook a cadastrar no Asaas (eventos PAYMENT_CONFIRMED e PAYMENT_RECEIVED):
+                    <span className="font-mono text-slate-600 dark:text-slate-300"> {window.location.origin}/api/payments/webhook</span>
+                  </p>
+                </div>
+
                 {/* Section A: Layout Configs */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-1">Canal e Visual de Cores</h3>

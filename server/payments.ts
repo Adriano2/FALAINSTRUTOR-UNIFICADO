@@ -16,28 +16,52 @@ import { z } from 'zod';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
 
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
-const ASAAS_BASE_URL =
-  process.env.ASAAS_BASE_URL ||
-  (process.env.ASAAS_ENV === 'production'
-    ? 'https://api.asaas.com/v3'
-    : 'https://sandbox.asaas.com/api/v3');
-const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN;
+const ENV_ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+const ENV_ASAAS_ENV = process.env.ASAAS_ENV;
+const ENV_ASAAS_BASE_URL = process.env.ASAAS_BASE_URL;
+const ENV_ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN;
 const PUBLIC_URL =
   process.env.PUBLIC_URL ||
   process.env.RENDER_EXTERNAL_URL ||
   `http://localhost:${process.env.PORT || 8787}`;
 
-export const paymentsConfigured = Boolean(ASAAS_API_KEY);
+function baseUrlFor(env?: string | null): string {
+  if (ENV_ASAAS_BASE_URL) return ENV_ASAAS_BASE_URL;
+  return env === 'production' ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/api/v3';
+}
+
+// Resolve a configuração ativa do Asaas: PRIORIZA o que foi salvo no painel
+// (Configurações → pagamento), caindo para as variáveis de ambiente.
+async function resolveAsaas(): Promise<{ key: string | null; baseUrl: string; webhookToken: string | null }> {
+  let token: string | null = null;
+  let env: string | null = ENV_ASAAS_ENV ?? null;
+  let webhookToken: string | null = ENV_ASAAS_WEBHOOK_TOKEN ?? null;
+  try {
+    const cfg = await prisma.appConfig.findUnique({ where: { id: 'singleton' } });
+    const p = (cfg?.payment ?? {}) as Record<string, unknown>;
+    if (typeof p.asaasToken === 'string' && p.asaasToken.trim()) token = p.asaasToken.trim();
+    if (typeof p.asaasEnv === 'string' && p.asaasEnv.trim()) env = p.asaasEnv.trim();
+    if (typeof p.asaasWebhookToken === 'string' && p.asaasWebhookToken.trim()) webhookToken = p.asaasWebhookToken.trim();
+  } catch {
+    /* sem banco: usa o ambiente */
+  }
+  if (!token) token = ENV_ASAAS_API_KEY ?? null;
+  return { key: token, baseUrl: baseUrlFor(env), webhookToken };
+}
+
+// Mantido para o /health (configuração via ambiente). O /status reflete o painel.
+export const paymentsConfigured = Boolean(ENV_ASAAS_API_KEY);
 
 async function asaas<T = any>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${ASAAS_BASE_URL}${path}`, {
+  const { key, baseUrl } = await resolveAsaas();
+  if (!key) throw new Error('Asaas não configurado (defina a chave no painel ou ASAAS_API_KEY).');
+  const res = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       // O Asaas recomenda um User-Agent identificável nas requisições.
       'User-Agent': 'FalaInstrutor/1.0',
-      access_token: ASAAS_API_KEY as string,
+      access_token: key,
       ...(options.headers as Record<string, string>),
     },
   });
@@ -106,15 +130,17 @@ async function fulfillOrder(orderId: string, paymentId?: string) {
 
 export const paymentsRouter = Router();
 
-// Status da configuração (não vaza segredos).
-paymentsRouter.get('/status', (_req, res) => {
-  res.json({ configured: paymentsConfigured });
+// Status da configuração (não vaza segredos). Reflete painel OU ambiente.
+paymentsRouter.get('/status', async (_req, res) => {
+  const { key } = await resolveAsaas();
+  res.json({ configured: Boolean(key) });
 });
 
 // Inicia o checkout: cria o pedido + cobrança no Asaas e devolve a URL.
 paymentsRouter.post('/checkout', authenticate, async (req: AuthedRequest, res: Response) => {
-  if (!paymentsConfigured) {
-    return res.status(503).json({ error: 'Pagamento ainda não configurado (defina ASAAS_API_KEY).' });
+  const { key } = await resolveAsaas();
+  if (!key) {
+    return res.status(503).json({ error: 'Pagamento ainda não configurado (defina a chave Asaas no painel ou ASAAS_API_KEY).' });
   }
   const parsed = z
     .object({ courseIds: z.array(z.string()).min(1), couponCode: z.string().optional() })
@@ -169,7 +195,8 @@ paymentsRouter.get('/order/:id', authenticate, async (req: AuthedRequest, res: R
 
 // Webhook do Asaas: confirma o pagamento e provisiona as matrículas.
 paymentsRouter.post('/webhook', async (req: Request, res: Response) => {
-  if (ASAAS_WEBHOOK_TOKEN && req.headers['asaas-access-token'] !== ASAAS_WEBHOOK_TOKEN) {
+  const { webhookToken } = await resolveAsaas();
+  if (webhookToken && req.headers['asaas-access-token'] !== webhookToken) {
     return res.status(401).json({ error: 'Webhook não autorizado.' });
   }
   const event = req.body?.event as string | undefined;

@@ -131,6 +131,8 @@ export interface LayoutConfig {
 
 export interface PaymentConfig {
   asaasToken: string;
+  asaasEnv?: 'sandbox' | 'production';
+  asaasWebhookToken?: string;
   mercadoPagoToken: string;
   activeAcquirer: 'Asaas' | 'Mercado Pago';
   maxInstallments: number;
