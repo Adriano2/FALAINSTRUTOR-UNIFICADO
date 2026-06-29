@@ -4,11 +4,13 @@
  */
 
 /**
- * Consulta de CNPJ direto do navegador (BrasilAPI, com CORS). Feito no client
- * porque a saída de rede do servidor pode estar bloqueada por allowlist — o
- * navegador do usuário não tem essa restrição. Também calcula o grau de risco
- * sugerido (NR-04) a partir da divisão do CNAE.
+ * Consulta de CNPJ: tenta primeiro o servidor (/api/cnpj/:cnpj — a VPS tem
+ * saída de rede e não sofre CORS) e, se indisponível, cai para a BrasilAPI
+ * direto do navegador. Também calcula o grau de risco sugerido (NR-04) a
+ * partir da divisão do CNAE.
  */
+
+import { apiUrl } from '../config';
 
 export interface CnpjInfo {
   cnpj: string;
@@ -51,6 +53,21 @@ export function riskGradeForCnae(cnae?: string | null): number | null {
 export async function lookupCnpjClient(cnpjRaw: string): Promise<CnpjInfo> {
   const cnpj = (cnpjRaw || '').replace(/\D/g, '');
   if (cnpj.length !== 14) throw new Error('CNPJ inválido (14 dígitos).');
+
+  // 1) Servidor (VPS tem rede e não sofre CORS). Se indisponível, cai no passo 2.
+  try {
+    const r = await fetch(apiUrl(`/cnpj/${cnpj}`), { headers: { Accept: 'application/json' } });
+    if (r.ok) {
+      const d = (await r.json()) as Partial<CnpjInfo>;
+      if (d && (d.razaoSocial || d.cnae)) {
+        return { ...(d as CnpjInfo), riskGrade: d.riskGrade ?? riskGradeForCnae(d.cnae ?? null) };
+      }
+    }
+  } catch {
+    /* segue para o fallback no navegador */
+  }
+
+  // 2) Fallback: BrasilAPI direto do navegador.
   const resp = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
     headers: { Accept: 'application/json' },
   });

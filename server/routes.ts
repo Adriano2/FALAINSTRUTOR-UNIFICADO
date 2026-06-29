@@ -20,8 +20,21 @@ import { decryptSecret, electronicSign } from './crypto';
 import { sendLeadNotification } from './email';
 import { sendLeadWhatsApp } from './whatsapp';
 import { evaluateUserAccess } from './accessSchedule';
+import { lookupCnpj } from './nr04';
 
 export const apiRouter = Router();
+
+// --- Consulta de CNPJ (razão social + CNAE + grau de risco NR-04) ---
+// Feita no servidor (a VPS tem saída de rede e não sofre CORS). O cliente
+// usa esta rota primeiro e cai para a BrasilAPI direta apenas se ela falhar.
+apiRouter.get('/cnpj/:cnpj', async (req, res) => {
+  try {
+    const info = await lookupCnpj(req.params.cnpj);
+    res.json(info);
+  } catch (e) {
+    res.status(502).json({ error: e instanceof Error ? e.message : 'Não foi possível consultar o CNPJ.' });
+  }
+});
 
 // --- Catálogo público ---
 
