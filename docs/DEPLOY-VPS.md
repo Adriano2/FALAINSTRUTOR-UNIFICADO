@@ -103,6 +103,27 @@ sem downtime perceptível.
 
 ---
 
+## 6b. Deploy automático (a cada atualização)
+
+Para a VPS se atualizar sozinha sempre que houver commit novo no `main`,
+instale o auto-deploy via cron (verifica a cada 2 min e só redeploya quando
+há mudança). Rode uma vez na VPS:
+
+```bash
+cd /var/www/falainstrutor && git fetch origin main && git reset --hard origin/main
+printf '*/2 * * * * root /usr/bin/flock -n /tmp/fi-deploy.lock bash /var/www/falainstrutor/deploy/auto-deploy.sh >> /var/log/falainstrutor-deploy.log 2>&1\n' > /etc/cron.d/falainstrutor-deploy
+chmod 644 /etc/cron.d/falainstrutor-deploy
+systemctl restart cron 2>/dev/null || service cron restart
+```
+
+- Log do auto-deploy: `tail -f /var/log/falainstrutor-deploy.log`
+- Desativar: `rm -f /etc/cron.d/falainstrutor-deploy && systemctl restart cron`
+- `flock` evita que dois redeploys rodem ao mesmo tempo.
+
+> Alternativa (deploy instantâneo via push): um GitHub Action que faz SSH na
+> VPS e roda `deploy/update.sh`. Requer guardar a chave SSH privada como
+> secret no repositório. O cron acima é mais simples e não expõe a chave.
+
 ## 7. Comandos úteis
 
 ```bash
