@@ -4,31 +4,34 @@
 # Instala Node, PostgreSQL, Nginx, PM2; clona o projeto; cria o banco; builda;
 # roda migrações + seed; sobe a aplicação com PM2; configura Nginx + HTTPS.
 #
-# Como usar (como root no VPS):
-#   1) Edite as variáveis abaixo (DOMAIN, DB_PASS, ADMIN_PASSWORD, etc).
-#   2) bash setup-vps.sh
+# Como usar (como root no VPS) — duas formas:
+#   A) Edite as variáveis abaixo e rode:  bash setup-vps.sh
+#   B) Passe por variáveis de ambiente (sem editar nada), ex.:
+#        DB_PASS='senhaForte' ADMIN_PASSWORD='senhaAdmin' bash setup-vps.sh
+# Qualquer variável definida no ambiente tem prioridade sobre os padrões abaixo.
 # =============================================================================
 set -euo pipefail
 
 # ----------------------- CONFIGURE AQUI --------------------------------------
-REPO_URL="https://github.com/adriano2/falainstrutor-unificado.git"
-BRANCH="main"
-APP_DIR="/var/www/falainstrutor"
-APP_PORT="8787"
+# (todas respeitam o valor passado por variável de ambiente, se houver)
+REPO_URL="${REPO_URL:-https://github.com/adriano2/falainstrutor-unificado.git}"
+BRANCH="${BRANCH:-main}"
+APP_DIR="${APP_DIR:-/var/www/falainstrutor}"
+APP_PORT="${APP_PORT:-8787}"
 
-DOMAIN=""                      # ex.: "falainstrutor.com.br" (deixe vazio p/ usar só IP por enquanto)
-DB_NAME="falainstrutor"
-DB_USER="falainstrutor"
-DB_PASS="TROQUE_ESTA_SENHA"    # senha do banco (forte)
+DOMAIN="${DOMAIN:-}"                      # ex.: "falainstrutor.com.br" (vazio = só IP)
+DB_NAME="${DB_NAME:-falainstrutor}"
+DB_USER="${DB_USER:-falainstrutor}"
+DB_PASS="${DB_PASS:-TROQUE_ESTA_SENHA}"   # senha do banco (forte)
 
 # Variáveis da aplicação (preencha as que usar; o resto pode ficar vazio)
-ADMIN_PASSWORD="TROQUE_ADMIN"  # senha inicial do admin (seed)
-GEMINI_API_KEY=""
-GEMINI_MODEL="gemini-2.5-flash"
-ASAAS_API_KEY=""
-ASAAS_ENV="sandbox"
-RESEND_API_KEY=""
-EMAIL_FROM=""
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-TROQUE_ADMIN}"  # senha inicial do admin (seed)
+GEMINI_API_KEY="${GEMINI_API_KEY:-}"
+GEMINI_MODEL="${GEMINI_MODEL:-gemini-2.5-flash}"
+ASAAS_API_KEY="${ASAAS_API_KEY:-}"
+ASAAS_ENV="${ASAAS_ENV:-sandbox}"
+RESEND_API_KEY="${RESEND_API_KEY:-}"
+EMAIL_FROM="${EMAIL_FROM:-}"
 # -----------------------------------------------------------------------------
 
 echo "==> Atualizando o sistema"
