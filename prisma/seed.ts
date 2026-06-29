@@ -28,6 +28,18 @@ const prisma = new PrismaClient();
 const ADMIN_EMAIL = 'adriano.ricardo01@gmail.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Anthony9936#';
 
+// Contas operacionais de acesso (produção): Instrutor, Empresa e Aluno.
+// Login e senha definíveis por .env (use ASPAS se a senha tiver '#').
+const INSTRUCTOR_EMAIL = process.env.INSTRUCTOR_EMAIL || 'instrutor@falainstrutor.com.br';
+const INSTRUCTOR_PASSWORD = process.env.INSTRUCTOR_PASSWORD || 'Instrutor@2026';
+// Nome do instrutor padrão dos cursos — usar o mesmo nome faz o painel do
+// instrutor enxergar os cursos associados (vínculo é por nome).
+const INSTRUCTOR_NAME = process.env.INSTRUCTOR_NAME || 'Adriano Aparecido Ribas Ricardo';
+const COMPANY_EMAIL = process.env.COMPANY_EMAIL || 'empresa@falainstrutor.com.br';
+const COMPANY_PASSWORD = process.env.COMPANY_PASSWORD || 'Empresa@2026';
+const STUDENT_EMAIL = process.env.STUDENT_EMAIL || 'aluno@falainstrutor.com.br';
+const STUDENT_PASSWORD = process.env.STUDENT_PASSWORD || 'Aluno@2026';
+
 async function main() {
   // 1) Administrador
   const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
@@ -45,6 +57,72 @@ async function main() {
       isActive: true,
       avatar:
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80',
+    },
+  });
+
+  // 1b) Contas operacionais de acesso (sempre criadas — produção):
+  //     Instrutor, Empresa e Aluno. Apenas login + senha; o Admin segue master.
+  // Instrutor (nome casa com o instrutor padrão -> enxerga os cursos no painel).
+  const instructorHashOp = await bcrypt.hash(INSTRUCTOR_PASSWORD, 10);
+  await prisma.user.upsert({
+    where: { email: INSTRUCTOR_EMAIL },
+    update: { passwordHash: instructorHashOp, role: 'INSTRUCTOR', name: INSTRUCTOR_NAME, isActive: true },
+    create: {
+      id: 'usr-op-instrutor',
+      name: INSTRUCTOR_NAME,
+      cpf: '000.000.000-01',
+      email: INSTRUCTOR_EMAIL,
+      passwordHash: instructorHashOp,
+      role: 'INSTRUCTOR',
+      isActive: true,
+    },
+  });
+
+  // Empresa: usuário COMPANY vinculado a uma empresa (editável no painel admin).
+  await prisma.company.upsert({
+    where: { id: 'comp-fala' },
+    update: {},
+    create: {
+      id: 'comp-fala',
+      name: 'Empresa FalaInstrutor',
+      cnpj: '60.511.651/0001-78',
+      email: COMPANY_EMAIL,
+      phone: '(11) 99625-5102',
+      employeeCount: 1,
+      riskGrade: 3,
+      isActive: true,
+    },
+  });
+  const companyHashOp = await bcrypt.hash(COMPANY_PASSWORD, 10);
+  await prisma.user.upsert({
+    where: { email: COMPANY_EMAIL },
+    update: { passwordHash: companyHashOp, role: 'COMPANY', companyId: 'comp-fala', isActive: true },
+    create: {
+      id: 'usr-op-empresa',
+      name: 'Gestor — Empresa FalaInstrutor',
+      cpf: '000.000.000-02',
+      email: COMPANY_EMAIL,
+      passwordHash: companyHashOp,
+      role: 'COMPANY',
+      companyId: 'comp-fala',
+      isActive: true,
+    },
+  });
+
+  // Aluno.
+  const studentHashOp = await bcrypt.hash(STUDENT_PASSWORD, 10);
+  await prisma.user.upsert({
+    where: { email: STUDENT_EMAIL },
+    update: { passwordHash: studentHashOp, role: 'STUDENT', isActive: true },
+    create: {
+      id: 'usr-op-aluno',
+      name: 'Aluno FalaInstrutor',
+      dob: '2000-01-01',
+      cpf: '000.000.000-03',
+      email: STUDENT_EMAIL,
+      passwordHash: studentHashOp,
+      role: 'STUDENT',
+      isActive: true,
     },
   });
 
