@@ -1,0 +1,28 @@
+name: Deploy para a VPS
+
+# Dispara a cada push no main (deploy automático) e também manualmente.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Evita dois deploys simultâneos; o mais novo cancela o anterior em andamento.
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH (update.sh na VPS)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 20m
+          script: |
+            set -e
+            export SEED_DEMO=false
+            bash /var/www/falainstrutor/deploy/update.sh
