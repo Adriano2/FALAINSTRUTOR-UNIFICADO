@@ -95,6 +95,30 @@ export async function sendWelcomeEmail(user: { name: string; email: string }): P
   await sendEmail(user.email, subject, wrapHtml('Conta criada com sucesso', body));
 }
 
+// Alerta ao aluno de que o certificado de um treinamento está vencendo/vencido,
+// com chamada para a renovação (reciclagem).
+export async function sendExpiryAlert(
+  user: { name: string; email: string },
+  courseName: string,
+  validUntil: string,
+  expired: boolean,
+): Promise<boolean> {
+  const subject = expired
+    ? `Certificado vencido — ${courseName}`
+    : `Seu certificado de ${courseName} está vencendo`;
+  const cta = PUBLIC_URL
+    ? `<br><br><a href="${PUBLIC_URL}" style="background:#1e9b46;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Renovar treinamento</a>`
+    : '';
+  const body =
+    `Olá <strong>${user.name}</strong>,<br><br>` +
+    (expired
+      ? `O seu certificado do treinamento <strong>${courseName}</strong> <span style="color:#e11d48;font-weight:bold">venceu em ${validUntil}</span>. `
+      : `O seu certificado do treinamento <strong>${courseName}</strong> vence em <strong>${validUntil}</strong>. `) +
+    `Para se manter em conformidade com as Normas Regulamentadoras, faça a <strong>reciclagem/renovação</strong>.` +
+    cta;
+  return sendEmail(user.email, subject, wrapHtml(expired ? 'Certificado vencido' : 'Renovação de certificado', body));
+}
+
 // Notifica a equipe comercial sobre um novo lead captado (landing / agente IA).
 // Destinatário: LEADS_NOTIFY_EMAIL (ou ADMIN_EMAIL, ou o EMAIL_FROM).
 export async function sendLeadNotification(lead: {

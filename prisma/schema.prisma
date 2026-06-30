@@ -192,6 +192,9 @@ model Enrollment {
   certificateCode String?  @unique
   enrolledAt      DateTime @default(now())
 
+  // Alerta de vencimento já enviado (evita reenvio constante)
+  expiryNotifiedAt DateTime?
+
   // Rastreamento de tempo (auditoria do treinamento)
   firstAccessAt   DateTime? // primeiro acesso à sala de aula
   watchedSeconds  Int       @default(0) // tempo assistido acumulado, em segundos

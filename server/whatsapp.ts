@@ -89,3 +89,14 @@ export async function sendLeadWhatsApp(lead: {
   const message = linhas.join('\n');
   await Promise.all(recipients().map((to) => sendToNumber(to, message)));
 }
+
+// Envia uma mensagem livre aos números responsáveis (LEADS_NOTIFY_WHATSAPP).
+// Usado, por ex., para o resumo de certificados a vencer.
+export async function sendWhatsAppToResponsibles(message: string): Promise<boolean> {
+  if (!whatsappConfigured()) {
+    console.log('[whatsapp] (não configurado) mensagem não enviada:', message.slice(0, 80));
+    return false;
+  }
+  const results = await Promise.all(recipients().map((to) => sendToNumber(to, message)));
+  return results.some(Boolean);
+}

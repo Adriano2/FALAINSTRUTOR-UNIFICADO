@@ -124,6 +124,22 @@ systemctl restart cron 2>/dev/null || service cron restart
 > VPS e roda `deploy/update.sh`. Requer guardar a chave SSH privada como
 > secret no repositório. O cron acima é mais simples e não expõe a chave.
 
+## 6c. Alertas de vencimento de certificados (cron diário)
+
+Para enviar automaticamente os e-mails de renovação (e o resumo por WhatsApp),
+agende o job uma vez ao dia. Rode uma vez na VPS:
+
+```bash
+printf '30 8 * * * root cd /var/www/falainstrutor && /usr/bin/flock -n /tmp/fi-expiry.lock npx tsx server/jobs/expiry-alerts.ts >> /var/log/falainstrutor-expiry.log 2>&1\n' > /etc/cron.d/falainstrutor-expiry
+chmod 644 /etc/cron.d/falainstrutor-expiry
+systemctl restart cron 2>/dev/null || service cron restart
+```
+
+- Roda todo dia às 08:30. Log: `tail -f /var/log/falainstrutor-expiry.log`
+- Também dá para disparar manualmente no painel: **Vencimentos → Enviar alertas**.
+- Depende de `RESEND_API_KEY`/`EMAIL_FROM` (e-mail) e, opcionalmente, das
+  variáveis `WHATSAPP_*` + `LEADS_NOTIFY_WHATSAPP` (resumo no WhatsApp).
+
 ## 7. Comandos úteis
 
 ```bash

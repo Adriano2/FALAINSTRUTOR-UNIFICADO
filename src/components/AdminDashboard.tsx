@@ -14,7 +14,7 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive, Activity, Presentation
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive, Activity, Presentation, Clock
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
@@ -28,6 +28,7 @@ import PedagogicalMonitor from './admin/PedagogicalMonitor';
 import SlideManager from './admin/SlideManager';
 import MyAccount from './admin/MyAccount';
 import CoursePriceEditor from './admin/CoursePriceEditor';
+import ExpirationsManager from './admin/ExpirationsManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -464,6 +465,7 @@ export default function AdminDashboard({
                   { id: 'instructor-panel', label: 'Painel do Instrutor', icon: GraduationCap },
                   { id: 'enrollments', label: 'Gestão de matrículas', icon: ClipboardList },
                   { id: 'pedagogical', label: 'Gestão Pedagógica', icon: Activity },
+                  { id: 'expirations', label: 'Vencimentos', icon: Clock },
                   { id: 'sales', label: 'Gestão de vendas', icon: DollarSign },
                   { id: 'invoices', label: 'Notas fiscais (NFS-e)', icon: Receipt },
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
@@ -868,6 +870,10 @@ export default function AdminDashboard({
 
           {activeTab === 'profile' && (
             <MyAccount currentUser={currentUser} onSave={onUpdateProfile} />
+          )}
+
+          {activeTab === 'expirations' && (
+            <ExpirationsManager />
           )}
 
           {/* TAB: GESTÃO DE EMPRESAS */}

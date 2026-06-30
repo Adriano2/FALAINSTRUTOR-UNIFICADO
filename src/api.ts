@@ -222,6 +222,20 @@ export function mapApiCourse(c: ApiCourse): Course {
   };
 }
 
+export interface ApiExpiration {
+  enrollmentId: string;
+  studentName: string;
+  studentEmail: string;
+  company: string | null;
+  courseCode: string;
+  courseName: string;
+  certificateCode: string | null;
+  validUntil: string | null;
+  daysLeft: number | null;
+  status: 'valid' | 'expiring' | 'expired';
+  notifiedAt: string | null;
+}
+
 export interface CertificateResult {
   code: string;
   studentName: string;
@@ -524,6 +538,13 @@ export const adminApi = {
   // Atualiza preço/visibilidade do curso (Gestão de Cursos).
   updateCoursePrice(courseId: string, input: { price?: number; validityMonths?: number; isActive?: boolean; isFeatured?: boolean }) {
     return apiFetch(`/admin/courses/${courseId}/price`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  // Vencimentos de certificados + disparo de alertas de renovação.
+  expirations() {
+    return apiFetch<{ expirations: ApiExpiration[] }>('/admin/expirations');
+  },
+  notifyExpirations(daysAhead = 30) {
+    return apiFetch<{ sent: number; candidates: number }>('/admin/expirations/notify', { method: 'POST', body: JSON.stringify({ daysAhead }) });
   },
   saveSlides(courseId: string, slides: { title: string; bullets: string[] }[]) {
     return apiFetch(`/admin/courses/${courseId}/slides`, { method: 'PATCH', body: JSON.stringify({ slides }) });

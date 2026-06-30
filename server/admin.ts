@@ -17,6 +17,7 @@ import { authenticate, authorize, type AuthedRequest } from './auth';
 import { lookupCnpj } from './nr04';
 import { extractPfx } from './icp';
 import { encryptSecret } from './crypto';
+import { listExpirations, runExpiryAlerts } from './expiry';
 
 export const adminRouter = Router();
 
@@ -476,6 +477,19 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
     include: { instructors: true },
   });
   res.json({ course });
+});
+
+// Vencimentos de certificados (todos, com validade calculada).
+adminRouter.get('/expirations', async (_req, res) => {
+  const rows = await listExpirations();
+  res.json({ expirations: rows });
+});
+
+// Dispara os alertas de renovação (e-mail ao aluno + resumo por WhatsApp).
+adminRouter.post('/expirations/notify', async (req, res) => {
+  const days = Number(req.body?.daysAhead) || 30;
+  const result = await runExpiryAlerts(days);
+  res.json(result);
 });
 
 // Atualização de preço/visibilidade do curso (Gestão de Cursos).
