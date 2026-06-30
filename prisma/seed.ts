@@ -19,6 +19,7 @@ import {
   INITIAL_LAYOUT_CONFIG,
   INITIAL_PAYMENT_CONFIG,
   getExamQuestions,
+  GENERIC_EXAM,
   SLIDES_BY_CODE,
 } from '../src/data';
 
@@ -188,18 +189,24 @@ async function main() {
   }
 
   // 2b) Provas no banco (correção autoritativa no servidor).
-  // Preenche examQuestions APENAS quando o curso ainda não tem prova cadastrada,
-  // para NÃO sobrescrever provas editadas no painel admin. Usa a prova específica
-  // do curso quando existe, ou a prova genérica de SST como base.
+  // Preenche examQuestions quando o curso não tem prova OU quando ainda usa a
+  // prova GENÉRICA e já existe uma prova temática para ele. NÃO sobrescreve
+  // provas editadas no painel admin (que não batem com a genérica).
+  const genericFirst = GENERIC_EXAM[0]?.question;
   const coursesNeedingExam = await prisma.course.findMany({ select: { id: true, examQuestions: true } });
   for (const c of coursesNeedingExam) {
-    const current = Array.isArray(c.examQuestions) ? c.examQuestions : [];
-    if (current.length > 0) continue; // preserva prova já cadastrada
-    const questions = getExamQuestions(c.id);
-    await prisma.course.update({
-      where: { id: c.id },
-      data: { examQuestions: questions as unknown as Prisma.InputJsonValue },
-    });
+    const current = (Array.isArray(c.examQuestions) ? c.examQuestions : []) as { question?: string }[];
+    const themed = getExamQuestions(c.id);
+    const themedAvailable = themed.length > 0 && themed[0]?.question !== genericFirst;
+    const isGenericSaved = current.length > 0 && current[0]?.question === genericFirst;
+    // 1) sem prova → preenche (temática se houver, senão genérica)
+    // 2) prova genérica salva + existe temática → faz o upgrade
+    if (current.length === 0 || (isGenericSaved && themedAvailable)) {
+      await prisma.course.update({
+        where: { id: c.id },
+        data: { examQuestions: themed as unknown as Prisma.InputJsonValue },
+      });
+    }
   }
 
   // 2b-2) Slides: preenche o deck a partir de SLIDES_BY_CODE[code] APENAS quando

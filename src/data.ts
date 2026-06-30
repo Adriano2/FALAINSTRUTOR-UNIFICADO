@@ -4,6 +4,7 @@
  */
 
 import { Course, Instructor, User, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission, ExamQuestion } from './types';
+import { GENERATED_EXAMS } from './courseExams';
 
 export const INITIAL_LAYOUT_CONFIG: LayoutConfig = {
   companyName: "FalaInstrutor",
@@ -2487,7 +2488,9 @@ export const GENERIC_EXAM: ExamQuestion[] = [
  * exam/certification flow always works.
  */
 export const getExamQuestions = (courseId: string): ExamQuestion[] => {
-  const specific = RECORD_EXAMS[courseId];
+  // Provas dedicadas (RECORD_EXAMS) têm prioridade; em seguida as provas
+  // temáticas geradas por curso; por fim a prova genérica de SST.
+  const specific = RECORD_EXAMS[courseId] ?? GENERATED_EXAMS[courseId];
   return specific && specific.length > 0 ? specific : GENERIC_EXAM;
 };
 
