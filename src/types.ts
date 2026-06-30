@@ -132,6 +132,18 @@ export interface LayoutConfig {
   certificateBackUrl?: string;
 }
 
+export interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  priceMonthly: number;
+  maxEmployees: number | null;
+  features: string[];
+  isActive: boolean;
+  highlight: boolean;
+  sortOrder: number;
+}
+
 export interface PaymentConfig {
   asaasToken: string;
   asaasEnv?: 'sandbox' | 'production';

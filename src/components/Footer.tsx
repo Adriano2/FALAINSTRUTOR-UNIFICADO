@@ -85,6 +85,11 @@ export default function Footer({ layoutConfig, paymentConfig, onNavigate }: Foot
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate('plans')} className="hover:text-slate-900 transition-colors text-slate-505 font-medium">
+                  Planos para Empresas
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate('validate-certificate')} className="hover:text-slate-900 transition-colors text-slate-505 font-medium flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Validar Certificado
                 </button>

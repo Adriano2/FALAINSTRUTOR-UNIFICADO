@@ -123,7 +123,30 @@ model Company {
   // { enabled, days:[0..6], start:"HH:MM", end:"HH:MM" } (horário de Brasília).
   accessSchedule  Json    @default("{}")
 
+  // Assinatura recorrente (plano corporativo).
+  planId               String?
+  plan                 Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
+  subscriptionStatus   String?   // active | trial | canceled
+  subscriptionRenewsAt DateTime?
+  asaasSubscriptionId  String?
+
   members   User[]
+}
+
+// Plano de assinatura corporativa (recorrência mensal).
+model Plan {
+  id           String   @id @default(cuid())
+  name         String
+  description  String   @default("")
+  priceMonthly Float
+  maxEmployees Int? // limite de colaboradores (null = ilimitado)
+  features     Json     @default("[]") // string[]
+  isActive     Boolean  @default(true)
+  highlight    Boolean  @default(false) // plano em destaque na vitrine
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  companies Company[]
 }
 
 model Course {

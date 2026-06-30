@@ -259,6 +259,31 @@ async function main() {
     });
   }
 
+  // 3d) Planos de assinatura corporativa (recorrência). Cria se não existir;
+  // preserva edições feitas no painel (não sobrescreve no update).
+  const SEED_PLANS = [
+    { id: 'plan-essencial', name: 'Essencial', priceMonthly: 199, maxEmployees: 20, highlight: false, sortOrder: 1,
+      description: 'Ideal para pequenas equipes manterem as NRs em dia.',
+      features: ['Até 20 colaboradores', 'Todos os treinamentos EaD', 'Certificados com validação pública', 'Painel de conformidade', 'Alertas de vencimento'] },
+    { id: 'plan-profissional', name: 'Profissional', priceMonthly: 399, maxEmployees: 50, highlight: true, sortOrder: 2,
+      description: 'Para empresas em crescimento, com gestão completa de SST.',
+      features: ['Até 50 colaboradores', 'Tudo do Essencial', 'Relatório de auditoria (MTE)', 'Restrição de horário de acesso', 'Suporte prioritário'] },
+    { id: 'plan-corporativo', name: 'Corporativo', priceMonthly: 799, maxEmployees: null, highlight: false, sortOrder: 3,
+      description: 'Colaboradores ilimitados e atendimento dedicado.',
+      features: ['Colaboradores ilimitados', 'Tudo do Profissional', 'Gestor de conta dedicado', 'Trilhas por cargo/função', 'Onboarding assistido'] },
+  ];
+  for (const p of SEED_PLANS) {
+    await prisma.plan.upsert({
+      where: { id: p.id },
+      update: {}, // preserva edições do painel
+      create: {
+        id: p.id, name: p.name, description: p.description, priceMonthly: p.priceMonthly,
+        maxEmployees: p.maxEmployees, highlight: p.highlight, sortOrder: p.sortOrder, isActive: true,
+        features: p.features as unknown as Prisma.InputJsonValue,
+      },
+    }).catch(() => {});
+  }
+
   // Dados de demonstração (aluno/empresa/instrutor de exemplo).
   // Em PRODUÇÃO ficam DESLIGADOS por padrão: defina SEED_DEMO=true para criá-los.
   // Quando desligado, o seed também REMOVE quaisquer contas demo já existentes,

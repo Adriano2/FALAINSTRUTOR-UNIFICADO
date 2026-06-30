@@ -10,7 +10,7 @@
 
 import {
   User, Course, Enrollment, SalesTransaction, Coupon, Comment,
-  ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig,
+  ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig, Plan,
 } from './types';
 import { apiUrl } from './config';
 
@@ -464,6 +464,22 @@ export const adminApi = {
   updateUserCredentials(id: string, input: { email?: string; password?: string }) {
     return apiFetch(`/admin/users/${id}/credentials`, { method: 'PATCH', body: JSON.stringify(input) });
   },
+  // Planos de assinatura corporativa.
+  plans() {
+    return apiFetch<{ plans: ApiPlan[] }>('/admin/plans').then((d) => (d.plans ?? []).map(mapApiPlan));
+  },
+  createPlan(input: Partial<Plan>) {
+    return apiFetch('/admin/plans', { method: 'POST', body: JSON.stringify(input) });
+  },
+  updatePlan(id: string, input: Partial<Plan>) {
+    return apiFetch(`/admin/plans/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  deletePlan(id: string) {
+    return apiFetch(`/admin/plans/${id}`, { method: 'DELETE' });
+  },
+  assignCompanyPlan(companyId: string, planId: string | null) {
+    return apiFetch(`/admin/companies/${companyId}/plan`, { method: 'PATCH', body: JSON.stringify({ planId }) });
+  },
   replyComment(id: string, reply: string) {
     return apiFetch(`/admin/comments/${id}/reply`, { method: 'PATCH', body: JSON.stringify({ reply }) });
   },
@@ -745,5 +761,23 @@ export const authApi = {
       body: JSON.stringify(input),
     });
     return mapApiUser(data.user);
+  },
+};
+
+// --- Planos de assinatura corporativa ---
+interface ApiPlan {
+  id: string; name: string; description?: string | null; priceMonthly: number;
+  maxEmployees?: number | null; features?: unknown; isActive: boolean; highlight: boolean; sortOrder: number;
+}
+function mapApiPlan(p: ApiPlan): Plan {
+  return {
+    id: p.id, name: p.name, description: p.description ?? '', priceMonthly: p.priceMonthly,
+    maxEmployees: p.maxEmployees ?? null, features: Array.isArray(p.features) ? (p.features as string[]) : [],
+    isActive: p.isActive, highlight: p.highlight, sortOrder: p.sortOrder,
+  };
+}
+export const plansApi = {
+  list(): Promise<Plan[]> {
+    return apiFetch<{ plans: ApiPlan[] }>('/plans').then((d) => (d.plans ?? []).map(mapApiPlan));
   },
 };

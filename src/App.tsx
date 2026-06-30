@@ -18,6 +18,7 @@ const CompanyDashboard = React.lazy(() => import('./components/CompanyDashboard'
 const InstructorDashboard = React.lazy(() => import('./components/InstructorDashboard'));
 const ProjetoPedagogico = React.lazy(() => import('./components/ProjetoPedagogico'));
 const DivulgacaoLanding = React.lazy(() => import('./components/DivulgacaoLanding'));
+const PlansPage = React.lazy(() => import('./components/PlansPage'));
 
 import { 
   INITIAL_LAYOUT_CONFIG, 
@@ -682,6 +683,10 @@ export default function App() {
           <ProjetoPedagogico courses={courses} onNavigateHome={() => handleNavigate('home')} />
         )}
 
+        {currentScreen === 'plans' && (
+          <PlansPage onNavigate={handleNavigate} whatsappNumber={layoutConfig.whatsappNumber || layoutConfig.phone} />
+        )}
+
         {currentScreen === 'student-dashboard' && currentUser && (
           <StudentDashboard
             currentUser={currentUser}
@@ -959,7 +964,7 @@ export default function App() {
       />
 
       {/* Botão flutuante "Falar no WhatsApp" (telas públicas) */}
-      {['home', 'course-detail', 'cart', 'validate-certificate', 'projeto-pedagogico', 'login', 'register'].includes(currentScreen) && (
+      {['home', 'course-detail', 'cart', 'validate-certificate', 'projeto-pedagogico', 'plans', 'login', 'register'].includes(currentScreen) && (
         <WhatsAppButton number={layoutConfig.whatsappNumber || layoutConfig.phone} />
       )}
 

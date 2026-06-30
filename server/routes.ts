@@ -36,6 +36,12 @@ apiRouter.get('/cnpj/:cnpj', async (req, res) => {
   }
 });
 
+// Planos de assinatura corporativa (públicos, ativos).
+apiRouter.get('/plans', async (_req, res) => {
+  const plans = await prisma.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } });
+  res.json({ plans });
+});
+
 // --- Catálogo público ---
 
 apiRouter.get('/courses', async (_req, res) => {

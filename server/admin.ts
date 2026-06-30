@@ -498,6 +498,70 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
   res.json({ course });
 });
 
+// --- Planos de assinatura corporativa ---
+adminRouter.get('/plans', async (_req, res) => {
+  const plans = await prisma.plan.findMany({ orderBy: { sortOrder: 'asc' } });
+  res.json({ plans });
+});
+
+const planSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().max(400).optional(),
+  priceMonthly: z.number().min(0),
+  maxEmployees: z.number().int().min(1).nullable().optional(),
+  features: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+  highlight: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+adminRouter.post('/plans', async (req, res) => {
+  const parsed = planSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do plano inválidos.' });
+  const d = parsed.data;
+  const plan = await prisma.plan.create({
+    data: {
+      name: d.name, description: d.description ?? '', priceMonthly: d.priceMonthly,
+      maxEmployees: d.maxEmployees ?? null, features: (d.features ?? []) as unknown as Prisma.InputJsonValue,
+      isActive: d.isActive ?? true, highlight: d.highlight ?? false, sortOrder: d.sortOrder ?? 0,
+    },
+  });
+  res.status(201).json({ plan });
+});
+
+adminRouter.patch('/plans/:id', async (req, res) => {
+  const parsed = planSchema.partial().safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do plano inválidos.' });
+  const d = parsed.data;
+  const data: Prisma.PlanUpdateInput = {};
+  if (d.name !== undefined) data.name = d.name;
+  if (d.description !== undefined) data.description = d.description;
+  if (d.priceMonthly !== undefined) data.priceMonthly = d.priceMonthly;
+  if (d.maxEmployees !== undefined) data.maxEmployees = d.maxEmployees;
+  if (d.features !== undefined) data.features = d.features as unknown as Prisma.InputJsonValue;
+  if (d.isActive !== undefined) data.isActive = d.isActive;
+  if (d.highlight !== undefined) data.highlight = d.highlight;
+  if (d.sortOrder !== undefined) data.sortOrder = d.sortOrder;
+  const plan = await prisma.plan.update({ where: { id: req.params.id }, data });
+  res.json({ plan });
+});
+
+adminRouter.delete('/plans/:id', async (req, res) => {
+  await prisma.plan.delete({ where: { id: req.params.id } }).catch(() => {});
+  res.json({ ok: true });
+});
+
+// Atribui (ou remove) um plano a uma empresa.
+adminRouter.patch('/companies/:id/plan', async (req, res) => {
+  const parsed = z.object({ planId: z.string().nullable(), subscriptionStatus: z.string().nullable().optional() }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos.' });
+  const company = await prisma.company.update({
+    where: { id: req.params.id },
+    data: { planId: parsed.data.planId, subscriptionStatus: parsed.data.subscriptionStatus ?? (parsed.data.planId ? 'active' : null) },
+  });
+  res.json({ company });
+});
+
 // Vencimentos de certificados (todos, com validade calculada).
 adminRouter.get('/expirations', async (_req, res) => {
   const rows = await listExpirations();
