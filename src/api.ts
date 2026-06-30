@@ -156,6 +156,9 @@ export interface CompanyDashboardData {
       passed: boolean;
       score: number | null;
       certificateCode: string | null;
+      released?: boolean;
+      validUntil?: string | null;
+      expired?: boolean;
       date: string;
     }[];
   }[];

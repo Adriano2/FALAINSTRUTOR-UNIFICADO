@@ -41,27 +41,43 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
     orderBy: { name: 'asc' },
     include: {
       enrollments: {
-        include: { course: { select: { name: true, code: true, duration: true } } },
+        include: { course: { select: { name: true, code: true, duration: true, validityMonths: true } } },
         orderBy: { startDate: 'desc' },
       },
     },
   });
+
+  // Validade (vencimento) de uma matrícula liberada.
+  const now = Date.now();
+  const validityOf = (releasedAt: Date | null, startDate: Date, validityMonths: number | null) => {
+    const base = releasedAt ?? startDate;
+    if (!validityMonths || validityMonths <= 0) return { validUntil: null as string | null, expired: false };
+    const exp = new Date(base);
+    exp.setMonth(exp.getMonth() + validityMonths);
+    return { validUntil: exp.toISOString(), expired: exp.getTime() < now };
+  };
 
   const employees = members.map((u) => ({
     id: u.id,
     name: u.name,
     email: u.email,
     cpf: u.cpf,
-    enrollments: u.enrollments.map((e) => ({
-      courseName: e.course.name,
-      courseCode: e.course.code,
-      workload: e.course.duration,
-      progress: e.progress,
-      passed: e.passed,
-      score: e.examScore,
-      certificateCode: e.certificateCode,
-      date: e.startDate,
-    })),
+    enrollments: u.enrollments.map((e) => {
+      const v = validityOf(e.releasedAt, e.startDate, e.course.validityMonths ?? null);
+      return {
+        courseName: e.course.name,
+        courseCode: e.course.code,
+        workload: e.course.duration,
+        progress: e.progress,
+        passed: e.passed,
+        score: e.examScore,
+        certificateCode: e.certificateCode,
+        released: e.released,
+        validUntil: v.validUntil,
+        expired: v.expired,
+        date: e.startDate,
+      };
+    }),
   }));
 
   const totalCertificates = employees.reduce(
@@ -78,9 +94,10 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const codeToName = new Map(courses.map((c) => [c.code, c.name]));
   const codeToDuration = new Map(courses.map((c) => [c.code, c.duration]));
 
-  // Conjunto de cursos concluídos (aprovado + certificado) por funcionário.
+  // Conjunto de cursos EM DIA (aprovado + certificado liberado + não vencido)
+  // por funcionário — base da conformidade real perante a fiscalização.
   const completedSets = employees.map(
-    (e) => new Set(e.enrollments.filter((en) => en.passed && en.certificateCode).map((en) => en.courseCode)),
+    (e) => new Set(e.enrollments.filter((en) => en.passed && en.certificateCode && en.released && !en.expired).map((en) => en.courseCode)),
   );
   const compliantCount = completedSets.filter((s) => obligatoryCodes.every((c) => s.has(c))).length;
 

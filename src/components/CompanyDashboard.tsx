@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2, Clock, Save } from 'lucide-react';
+import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2, Clock, Save, AlertTriangle, FileText } from 'lucide-react';
 import { Plus, Trash2 } from 'lucide-react';
 import { companyApi, CompanyDashboardData, AccessSchedule, AccessWindow } from '../api';
 import { CIPA_NR5_BY_GRADE, cipaRequirement } from '../lib/cipa';
@@ -139,6 +139,58 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
     !query.trim() || e.name.toLowerCase().includes(query.toLowerCase()) || e.cpf.includes(query) || e.email.toLowerCase().includes(query.toLowerCase()),
   );
 
+  // Status de conformidade de um funcionário em um treinamento obrigatório.
+  type CKind = 'valid' | 'expiring' | 'expired' | 'progress' | 'missing';
+  const fmtD = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '');
+  const statusFor = (emp: typeof data.employees[number], code: string): { kind: CKind; until?: string } => {
+    const en = emp.enrollments.find((x) => x.courseCode === code);
+    if (!en) return { kind: 'missing' };
+    if (en.passed && en.certificateCode && en.released) {
+      if (en.expired) return { kind: 'expired', until: en.validUntil ?? undefined };
+      if (en.validUntil) {
+        const days = Math.ceil((new Date(en.validUntil).getTime() - Date.now()) / 86_400_000);
+        if (days <= 60) return { kind: 'expiring', until: en.validUntil };
+      }
+      return { kind: 'valid', until: en.validUntil ?? undefined };
+    }
+    return { kind: 'progress' };
+  };
+  const KIND_LABEL: Record<CKind, string> = { valid: 'Em dia', expiring: 'A vencer', expired: 'Vencido', progress: 'Em andamento', missing: 'Não realizado' };
+
+  // Relatório de auditoria (PDF) — conformidade por funcionário × treinamento.
+  const generateAuditPdf = async () => {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    let y = 48;
+    const line = (txt: string, size = 10, bold = false, color: [number, number, number] = [30, 42, 58]) => {
+      doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(...color);
+      const wrapped = doc.splitTextToSize(txt, W - 80);
+      for (const w of wrapped) { if (y > 800) { doc.addPage(); y = 48; } doc.text(w, 40, y); y += size + 5; }
+    };
+    doc.setFillColor(31, 42, 68); doc.rect(0, 0, W, 30, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('FalaInstrutor — Relatório de Conformidade SST', 40, 20);
+    y = 56;
+    line(`Empresa: ${data.company?.name ?? '-'}`, 12, true);
+    line(`CNPJ: ${data.company?.cnpj ?? '-'}   •   Grau de risco (NR-04): ${data.company?.riskGrade ?? '-'}`);
+    line(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}   •   Funcionários: ${data.stats.registeredEmployees}/${data.stats.declaredEmployees}   •   Conformidade: ${data.stats.compliancePct}%`);
+    y += 6;
+    line('Treinamentos obrigatórios: ' + (data.obligatory.map((o) => o.code).join(', ') || '-'), 9, false, [100, 116, 139]);
+    y += 8;
+    for (const emp of data.employees) {
+      if (y > 770) { doc.addPage(); y = 48; }
+      line(`${emp.name}  —  CPF ${emp.cpf}`, 10.5, true);
+      for (const o of data.obligatory) {
+        const s = statusFor(emp, o.code);
+        const extra = (s.kind === 'valid' || s.kind === 'expiring') && s.until ? ` (válido até ${fmtD(s.until)})` : s.kind === 'expired' && s.until ? ` (venceu ${fmtD(s.until)})` : '';
+        line(`   • ${o.code} — ${KIND_LABEL[s.kind]}${extra}`, 9.5, false, s.kind === 'valid' ? [22, 163, 74] : s.kind === 'expired' || s.kind === 'missing' ? [225, 29, 72] : [202, 138, 4]);
+      }
+      y += 4;
+    }
+    line('Observação: baseline conforme grau de risco (NR-04). Não substitui o PGR/análise de riscos da empresa.', 8, false, [100, 116, 139]);
+    doc.save(`conformidade-${(data.company?.name ?? 'empresa').replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 font-sans">
       {/* Cabeçalho da empresa */}
@@ -223,6 +275,58 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
             })}
           </div>
           <p className="text-[10px] text-slate-400 mt-3">Baseline conforme o grau de risco (NR-04). Não substitui a análise de riscos (PGR) da empresa.</p>
+        </div>
+      )}
+
+      {/* Matriz de conformidade (funcionário × treinamento obrigatório) + relatório */}
+      {data.obligatory.length > 0 && employees.length > 0 && (
+        <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="text-xs font-black uppercase text-slate-500">Matriz de conformidade</h3>
+            <button onClick={generateAuditPdf} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded cursor-pointer">
+              <FileText className="w-3.5 h-3.5" /> Relatório de auditoria (PDF)
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px] text-left">
+              <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th className="p-2.5 sticky left-0 bg-slate-50 dark:bg-slate-950">Funcionário</th>
+                  {data.obligatory.map((o) => <th key={o.code} className="p-2.5 text-center whitespace-nowrap">{o.code}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {employees.map((emp) => (
+                  <tr key={emp.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/40">
+                    <td className="p-2.5 font-bold text-slate-800 dark:text-slate-150 sticky left-0 bg-white dark:bg-slate-900 whitespace-nowrap">{emp.name}</td>
+                    {data.obligatory.map((o) => {
+                      const s = statusFor(emp, o.code);
+                      const cls = s.kind === 'valid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                        : s.kind === 'expiring' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                        : s.kind === 'expired' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                        : s.kind === 'progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        : 'bg-slate-100 text-slate-400 dark:bg-slate-800';
+                      const icon = s.kind === 'valid' ? <CheckCircle2 className="w-3 h-3" /> : s.kind === 'expired' ? <AlertTriangle className="w-3 h-3" /> : s.kind === 'expiring' ? <Clock className="w-3 h-3" /> : null;
+                      return (
+                        <td key={o.code} className="p-2 text-center">
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-bold ${cls}`} title={s.until ? `Validade: ${fmtD(s.until)}` : KIND_LABEL[s.kind]}>
+                            {icon}{KIND_LABEL[s.kind]}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2 flex flex-wrap gap-3 text-[10px] text-slate-400 border-t border-slate-100 dark:border-slate-800">
+            <span className="text-emerald-600 font-bold">● Em dia</span>
+            <span className="text-amber-600 font-bold">● A vencer (≤60d)</span>
+            <span className="text-rose-600 font-bold">● Vencido</span>
+            <span className="text-blue-600 font-bold">● Em andamento</span>
+            <span className="font-bold">● Não realizado</span>
+          </div>
         </div>
       )}
 
