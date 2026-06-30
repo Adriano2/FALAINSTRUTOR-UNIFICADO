@@ -64,10 +64,18 @@ apiRouter.get('/job-roles', async (_req, res) => {
 
 // --- Catálogo público ---
 
+// Projeção PÚBLICA do instrutor: NUNCA expõe dados sensíveis (CPF, CBO, e o
+// material/assinatura do certificado digital cifrado) no catálogo anônimo.
+const publicInstructorInclude = {
+  instructors: {
+    select: { id: true, name: true, formation: true, mte: true, crea: true, crq: true, signatureUrl: true, icpEnabled: true },
+  },
+} as const;
+
 apiRouter.get('/courses', async (_req, res) => {
   const courses = await prisma.course.findMany({
     where: { isActive: true },
-    include: { instructors: true },
+    include: publicInstructorInclude,
     orderBy: { code: 'asc' },
   });
   res.json({ courses });
@@ -76,7 +84,7 @@ apiRouter.get('/courses', async (_req, res) => {
 apiRouter.get('/courses/:id', async (req, res) => {
   const course = await prisma.course.findUnique({
     where: { id: req.params.id },
-    include: { instructors: true },
+    include: publicInstructorInclude,
   });
   if (!course) return res.status(404).json({ error: 'Curso não encontrado.' });
   res.json({ course });

@@ -136,9 +136,16 @@ async function fulfillSubscriptionPayment(subscriptionId: string, dueDateISO?: s
   const company = await prisma.company.findFirst({ where: { asaasSubscriptionId: subscriptionId } });
   if (!company) return;
   // Próxima renovação: vencimento do ciclo + 1 mês (ou hoje + 1 mês).
+  // Fixa o dia 1 antes de avançar o mês para não "pular" meses curtos
+  // (ex.: 31/01 + 1 mês não deve virar 03/03).
   const base = dueDateISO ? new Date(dueDateISO) : new Date();
+  const day = base.getDate();
   const renews = new Date(base);
+  renews.setDate(1);
   renews.setMonth(renews.getMonth() + 1);
+  // Reaplica o dia original, limitado ao último dia do mês de destino.
+  const lastDay = new Date(renews.getFullYear(), renews.getMonth() + 1, 0).getDate();
+  renews.setDate(Math.min(day, lastDay));
   await prisma.company.update({
     where: { id: company.id },
     data: { subscriptionStatus: 'active', subscriptionRenewsAt: renews },

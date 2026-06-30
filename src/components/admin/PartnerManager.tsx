@@ -19,9 +19,9 @@ const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
 // administrador master (o endpoint devolve 403 aos demais), permanecendo
 // oculto para os outros administradores.
 function PartnerSalesReport() {
-  type Row = { slug: string; name: string; orders: number; gross: number; discount: number };
+  type Row = { slug: string; name: string; orders: number; gross: number; discount: number; net: number };
   const [rows, setRows] = React.useState<Row[]>([]);
-  const [totals, setTotals] = React.useState<{ orders: number; gross: number; discount: number } | null>(null);
+  const [totals, setTotals] = React.useState<{ orders: number; gross: number; discount: number; net: number } | null>(null);
   const [allowed, setAllowed] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [sending, setSending] = React.useState(false);
@@ -63,15 +63,16 @@ function PartnerSalesReport() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="text-slate-400 uppercase text-[10px]">
-              <tr><th className="py-2">Parceiro</th><th className="py-2 text-center">Pedidos</th><th className="py-2 text-right">Bruto</th><th className="py-2 text-right">Descontos</th></tr>
+              <tr><th className="py-2">Parceiro</th><th className="py-2 text-center">Pedidos</th><th className="py-2 text-right">Bruto</th><th className="py-2 text-right">Descontos</th><th className="py-2 text-right">Líquido</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {rows.map((r) => (
                 <tr key={r.slug || '__direct__'}>
                   <td className="py-2 font-semibold text-slate-700 dark:text-slate-200">{r.name}</td>
                   <td className="py-2 text-center">{r.orders}</td>
-                  <td className="py-2 text-right font-bold text-emerald-600">{brl(r.gross)}</td>
+                  <td className="py-2 text-right text-slate-500">{brl(r.gross)}</td>
                   <td className="py-2 text-right text-slate-400">{brl(r.discount)}</td>
+                  <td className="py-2 text-right font-bold text-emerald-600">{brl(r.net)}</td>
                 </tr>
               ))}
             </tbody>
@@ -82,6 +83,7 @@ function PartnerSalesReport() {
                   <td className="py-2 text-center">{totals.orders}</td>
                   <td className="py-2 text-right">{brl(totals.gross)}</td>
                   <td className="py-2 text-right">{brl(totals.discount)}</td>
+                  <td className="py-2 text-right">{brl(totals.net)}</td>
                 </tr>
               </tfoot>
             )}

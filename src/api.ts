@@ -522,7 +522,7 @@ export const adminApi = {
   },
   // Relatório OCULTO de vendas por parceiro (somente administrador master).
   partnerSales() {
-    return apiFetch<{ rows: { slug: string; name: string; orders: number; gross: number; discount: number }[]; totals: { orders: number; gross: number; discount: number } }>('/admin/partner-sales');
+    return apiFetch<{ rows: { slug: string; name: string; orders: number; gross: number; discount: number; net: number }[]; totals: { orders: number; gross: number; discount: number; net: number } }>('/admin/partner-sales');
   },
   sendPartnerSales() {
     return apiFetch<{ ok: boolean; sentTo: string | null }>('/admin/partner-sales/send', { method: 'POST' });

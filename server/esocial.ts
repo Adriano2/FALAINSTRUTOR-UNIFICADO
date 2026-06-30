@@ -57,7 +57,14 @@ export function resolveCodTreina(courseCode: string, configured: string | null):
 }
 
 const onlyDigits = (s: string | null | undefined) => (s ?? '').replace(/\D/g, '');
-const ymd = (d: Date) => d.toISOString().slice(0, 10); // AAAA-MM-DD
+// Data-calendário (AAAA-MM-DD) no fuso de Brasília — evita o "pula um dia"
+// quando releasedAt cai à noite (UTC do dia seguinte).
+const ymd = (d: Date) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(d);
+  return parts; // en-CA já formata como AAAA-MM-DD
+};
 
 export interface S2245Record {
   enrollmentId: string;
@@ -108,7 +115,7 @@ export async function buildS2245Records(
       course: {
         select: {
           code: true, name: true, duration: true, esocialCode: true,
-          instructors: { select: { name: true, cpf: true, codCBO: true, formation: true, crea: true, crq: true }, take: 1 },
+          instructors: { select: { name: true, cpf: true, codCBO: true, formation: true, crea: true, crq: true }, orderBy: { name: 'asc' }, take: 1 },
         },
       },
     },

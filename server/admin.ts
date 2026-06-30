@@ -616,21 +616,23 @@ async function buildPartnerSales() {
   const partners = await prisma.partner.findMany({ select: { slug: true, name: true } });
   const nameBySlug = new Map(partners.map((p) => [p.slug, p.name]));
 
-  const agg = new Map<string, { slug: string; name: string; orders: number; gross: number; discount: number }>();
+  // Order.total já é LÍQUIDO (subtotal − desconto). Bruto = total + desconto.
+  const agg = new Map<string, { slug: string; name: string; orders: number; gross: number; discount: number; net: number }>();
   for (const o of orders) {
     const slug = o.partnerSlug ?? '';
     const key = slug || '__direct__';
     const name = slug ? (nameBySlug.get(slug) ?? slug) : 'Venda direta (FalaInstrutor)';
-    const cur = agg.get(key) ?? { slug, name, orders: 0, gross: 0, discount: 0 };
+    const cur = agg.get(key) ?? { slug, name, orders: 0, gross: 0, discount: 0, net: 0 };
     cur.orders += 1;
-    cur.gross += o.total;
+    cur.gross += o.total + o.discount;
     cur.discount += o.discount;
+    cur.net += o.total;
     agg.set(key, cur);
   }
-  const rows = [...agg.values()].sort((a, b) => b.gross - a.gross);
+  const rows = [...agg.values()].sort((a, b) => b.net - a.net);
   const totals = rows.reduce(
-    (acc, r) => ({ orders: acc.orders + r.orders, gross: acc.gross + r.gross, discount: acc.discount + r.discount }),
-    { orders: 0, gross: 0, discount: 0 },
+    (acc, r) => ({ orders: acc.orders + r.orders, gross: acc.gross + r.gross, discount: acc.discount + r.discount, net: acc.net + r.net }),
+    { orders: 0, gross: 0, discount: 0, net: 0 },
   );
   return { rows, totals };
 }
@@ -647,15 +649,15 @@ adminRouter.post('/partner-sales/send', async (req: AuthedRequest, res: Response
   const { rows, totals } = await buildPartnerSales();
   const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const trs = rows
-    .map((r) => `<tr><td style="padding:6px 10px">${r.name}</td><td style="padding:6px 10px;text-align:center">${r.orders}</td><td style="padding:6px 10px;text-align:right">${brl(r.gross)}</td><td style="padding:6px 10px;text-align:right">${brl(r.discount)}</td></tr>`)
+    .map((r) => `<tr><td style="padding:6px 10px">${r.name}</td><td style="padding:6px 10px;text-align:center">${r.orders}</td><td style="padding:6px 10px;text-align:right">${brl(r.gross)}</td><td style="padding:6px 10px;text-align:right">${brl(r.discount)}</td><td style="padding:6px 10px;text-align:right">${brl(r.net)}</td></tr>`)
     .join('');
   const html = `
     <h2 style="font-family:Arial">Relatório confidencial — Vendas por parceiro</h2>
     <p style="font-family:Arial;color:#475569">Documento interno do administrador master. Não compartilhar.</p>
     <table style="border-collapse:collapse;font-family:Arial;font-size:13px;border:1px solid #e2e8f0">
-      <thead><tr style="background:#1f2a44;color:#fff"><th style="padding:6px 10px;text-align:left">Parceiro</th><th style="padding:6px 10px">Pedidos</th><th style="padding:6px 10px">Bruto</th><th style="padding:6px 10px">Descontos</th></tr></thead>
-      <tbody>${trs || '<tr><td colspan="4" style="padding:10px">Sem vendas pagas.</td></tr>'}</tbody>
-      <tfoot><tr style="font-weight:bold;border-top:2px solid #1f2a44"><td style="padding:6px 10px">TOTAL</td><td style="padding:6px 10px;text-align:center">${totals.orders}</td><td style="padding:6px 10px;text-align:right">${brl(totals.gross)}</td><td style="padding:6px 10px;text-align:right">${brl(totals.discount)}</td></tr></tfoot>
+      <thead><tr style="background:#1f2a44;color:#fff"><th style="padding:6px 10px;text-align:left">Parceiro</th><th style="padding:6px 10px">Pedidos</th><th style="padding:6px 10px">Bruto</th><th style="padding:6px 10px">Descontos</th><th style="padding:6px 10px">Líquido</th></tr></thead>
+      <tbody>${trs || '<tr><td colspan="5" style="padding:10px">Sem vendas pagas.</td></tr>'}</tbody>
+      <tfoot><tr style="font-weight:bold;border-top:2px solid #1f2a44"><td style="padding:6px 10px">TOTAL</td><td style="padding:6px 10px;text-align:center">${totals.orders}</td><td style="padding:6px 10px;text-align:right">${brl(totals.gross)}</td><td style="padding:6px 10px;text-align:right">${brl(totals.discount)}</td><td style="padding:6px 10px;text-align:right">${brl(totals.net)}</td></tr></tfoot>
     </table>`;
   const ok = await sendEmail(MASTER_ADMIN_EMAIL, 'FalaInstrutor — Relatório confidencial de vendas por parceiro', html);
   res.json({ ok, sentTo: ok ? MASTER_ADMIN_EMAIL : null });
