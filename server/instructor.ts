@@ -133,7 +133,7 @@ instructorRouter.patch('/courses/:id/slides', async (req: AuthedRequest, res: Re
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
   if (!user || !canUsePanel(user.role)) return res.status(403).json({ error: 'Acesso restrito ao instrutor.' });
   const parsed = z
-    .object({ slides: z.array(z.object({ title: z.string().min(1), bullets: z.array(z.string().min(1)) })) })
+    .object({ slides: z.array(z.object({ title: z.string().min(1), bullets: z.array(z.string().min(1)), images: z.array(z.string().min(1)).optional() })) })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Slides inválidos. Cada slide precisa de título e ao menos um tópico.' });
   const mine = await scopedCourseIds(user);

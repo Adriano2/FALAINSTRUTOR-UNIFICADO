@@ -10,12 +10,39 @@
  */
 
 import React from 'react';
-import { Presentation, Plus, Trash2, ChevronUp, ChevronDown, Save, Loader2, Download, Check } from 'lucide-react';
+import { Presentation, Plus, Trash2, ChevronUp, ChevronDown, Save, Loader2, Download, Check, ImagePlus, X } from 'lucide-react';
 import { Course } from '../../types';
 import { adminApi } from '../../api';
 import { SLIDES_BY_CODE } from '../../data';
 
-type Slide = { title: string; bullets: string[] };
+type Slide = { title: string; bullets: string[]; images?: string[] };
+
+// Lê uma imagem, reduz para no máx. 1280px de largura (JPEG comprimido) e
+// devolve um data URL leve para salvar junto do slide.
+function readSlideImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Falha ao ler a imagem.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Imagem inválida.'));
+      img.onload = () => {
+        const maxW = 1280;
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Falha ao processar a imagem.'));
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 interface SlideManagerProps {
   courses: Course[];
@@ -42,7 +69,20 @@ export default function SlideManager({ courses, onSaved, onSave }: SlideManagerP
   }, [courseId, courses]);
 
   const update = (i: number, patch: Partial<Slide>) => setSlides((p) => p.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
-  const addSlide = () => setSlides((p) => [...p, { title: 'Novo slide', bullets: ['Tópico 1'] }]);
+  const addSlide = () => setSlides((p) => [...p, { title: 'Novo slide', bullets: ['Tópico 1'], images: [] }]);
+
+  const addImages = async (i: number, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const imgs = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const urls: string[] = [];
+    for (const f of imgs) {
+      if (f.size > 8 * 1024 * 1024) { alert(`"${f.name}" é grande demais (máx. 8 MB).`); continue; }
+      try { urls.push(await readSlideImage(f)); } catch { /* ignora a que falhar */ }
+    }
+    if (urls.length) setSlides((p) => p.map((s, idx) => (idx === i ? { ...s, images: [...(s.images || []), ...urls] } : s)));
+  };
+  const removeImage = (i: number, imgIdx: number) =>
+    setSlides((p) => p.map((s, idx) => (idx === i ? { ...s, images: (s.images || []).filter((_, k) => k !== imgIdx) } : s)));
   const removeSlide = (i: number) => setSlides((p) => p.filter((_, idx) => idx !== i));
   const move = (i: number, dir: -1 | 1) => setSlides((p) => {
     const j = i + dir;
@@ -63,11 +103,11 @@ export default function SlideManager({ courses, onSaved, onSave }: SlideManagerP
     if (!courseId) return;
     // Normaliza e valida.
     const clean = slides
-      .map((s) => ({ title: s.title.trim(), bullets: s.bullets.map((b) => b.trim()).filter(Boolean) }))
-      .filter((s) => s.title || s.bullets.length > 0);
+      .map((s) => ({ title: s.title.trim(), bullets: s.bullets.map((b) => b.trim()).filter(Boolean), images: (s.images || []).filter(Boolean) }))
+      .filter((s) => s.title || s.bullets.length > 0 || s.images.length > 0);
     for (let i = 0; i < clean.length; i++) {
       if (!clean[i].title) { alert(`O slide ${i + 1} está sem título.`); return; }
-      if (clean[i].bullets.length === 0) { alert(`O slide ${i + 1} (“${clean[i].title}”) está sem tópicos.`); return; }
+      if (clean[i].bullets.length === 0 && clean[i].images.length === 0) { alert(`O slide ${i + 1} (“${clean[i].title}”) precisa de ao menos um tópico ou uma imagem.`); return; }
     }
     setSaving(true);
     try {
@@ -131,6 +171,31 @@ export default function SlideManager({ courses, onSaved, onSave }: SlideManagerP
                 rows={Math.max(3, s.bullets.length + 1)}
                 className={`${inputCls} resize-y leading-relaxed`}
               />
+            </div>
+
+            {/* Imagens do slide (uma ou mais) */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Imagens do slide</label>
+              <div className="flex flex-wrap gap-2">
+                {(s.images || []).map((src, imgIdx) => (
+                  <div key={imgIdx} className="relative w-24 h-16 rounded border border-slate-200 dark:border-slate-700 overflow-hidden group">
+                    <img src={src} alt={`Imagem ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removeImage(i, imgIdx)}
+                      className="absolute top-0.5 right-0.5 p-0.5 rounded bg-black/60 text-white opacity-0 group-hover:opacity-100 transition"
+                      title="Remover imagem"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <label className="w-24 h-16 rounded border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center gap-0.5 text-slate-400 hover:border-blue-400 hover:text-blue-500 cursor-pointer text-[10px] font-bold">
+                  <ImagePlus className="w-4 h-4" />
+                  Adicionar
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { addImages(i, e.target.files); e.target.value = ''; }} />
+                </label>
+              </div>
+              <p className="text-[10px] text-slate-400">Pode enviar várias. São reduzidas automaticamente. Aparecem para o aluno na apresentação.</p>
             </div>
           </div>
         ))}

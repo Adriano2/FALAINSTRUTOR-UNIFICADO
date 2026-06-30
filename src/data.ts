@@ -519,6 +519,7 @@ CONTEUDO_PROGRAMATICO["LEI LUCAS 10H"] = CONTEUDO_PROGRAMATICO["LEI LUCAS 4H"];
 export interface TrainingSlide {
   title: string;
   bullets: string[];
+  images?: string[]; // imagens do slide (data URL ou URL), enviadas no Gerenciador de Slides
 }
 
 export const SLIDES_BY_CODE: Record<string, TrainingSlide[]> = {

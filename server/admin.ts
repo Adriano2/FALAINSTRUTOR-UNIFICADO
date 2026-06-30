@@ -539,6 +539,7 @@ adminRouter.patch('/courses/:id/slides', async (req, res) => {
         z.object({
           title: z.string().min(1),
           bullets: z.array(z.string().min(1)),
+          images: z.array(z.string().min(1)).optional(),
         }),
       ),
     })

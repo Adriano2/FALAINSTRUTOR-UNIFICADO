@@ -656,6 +656,13 @@ export default function StudentDashboard({
                                           </li>
                                         ))}
                                       </ul>
+                                      {Array.isArray(slide.images) && slide.images.length > 0 && (
+                                        <div className={`mt-4 grid gap-3 ${slide.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                          {slide.images.map((src, ii) => (
+                                            <img key={ii} src={src} alt={`Ilustração ${ii + 1}`} className="w-full rounded-lg border border-slate-200 object-contain max-h-64 bg-white" />
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                     {/* Rodapé: marca + navegação + número do slide */}
                                     <div className="shrink-0 border-t border-slate-200 px-4 sm:px-10 py-2 flex items-center justify-between select-none">

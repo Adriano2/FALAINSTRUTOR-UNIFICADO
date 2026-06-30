@@ -48,7 +48,7 @@ export interface Course {
   moduleVideos?: string[]; // link de vídeo por módulo (alinhado a modules)
   documents?: { name: string; url: string }[]; // materiais de apoio
   examQuestions?: ExamQuestion[]; // prova do curso (editável no painel admin)
-  slides?: { title: string; bullets: string[] }[]; // deck de slides (editável no admin)
+  slides?: { title: string; bullets: string[]; images?: string[] }[]; // deck de slides (editável no admin)
 }
 
 export interface Enrollment {
