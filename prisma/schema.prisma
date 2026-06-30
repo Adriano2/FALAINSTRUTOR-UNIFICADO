@@ -95,6 +95,8 @@ model User {
   asaasCustomerId String?
   company      Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
   companyId    String?
+  jobRole      JobRole? @relation(fields: [jobRoleId], references: [id], onDelete: SetNull)
+  jobRoleId    String?
 
   enrollments  Enrollment[]
   transactions Transaction[]
@@ -131,6 +133,18 @@ model Company {
   asaasSubscriptionId  String?
 
   members   User[]
+}
+
+// Trilha por cargo/função: lista de treinamentos (NRs) obrigatórios por cargo.
+model JobRole {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  courseCodes Json     @default("[]") // string[] de códigos (ex.: ["NR 35","NR 06"])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  users User[]
 }
 
 // Parceiro white-label: marca própria aplicada por subdomínio

@@ -284,6 +284,23 @@ async function main() {
     }).catch(() => {});
   }
 
+  // 3e) Trilhas por cargo/função (templates). Cria se não existir.
+  const SEED_JOBROLES = [
+    { id: 'role-eletricista', name: 'Eletricista', courseCodes: ['NR 10', 'NR 35', 'NR 06'], description: 'Atividades em instalações e serviços com eletricidade.' },
+    { id: 'role-empilhadeira', name: 'Operador de Empilhadeira', courseCodes: ['NR 11', 'NR 06'], description: 'Movimentação e transporte de materiais.' },
+    { id: 'role-altura', name: 'Trabalho em Altura', courseCodes: ['NR 35', 'NR 06'], description: 'Atividades acima de 2 metros.' },
+    { id: 'role-confinado', name: 'Espaço Confinado', courseCodes: ['NR 33', 'NR 06'], description: 'Entrada e trabalho em espaços confinados.' },
+    { id: 'role-construcao', name: 'Construção Civil', courseCodes: ['NR 18', 'NR 35', 'NR 06'], description: 'Obras e canteiros.' },
+    { id: 'role-cipa', name: 'Membro da CIPA', courseCodes: ['NR 05', 'NR 06'], description: 'Comissão Interna de Prevenção de Acidentes.' },
+  ];
+  for (const r of SEED_JOBROLES) {
+    await prisma.jobRole.upsert({
+      where: { id: r.id },
+      update: {},
+      create: { id: r.id, name: r.name, description: r.description, isActive: true, courseCodes: r.courseCodes as unknown as Prisma.InputJsonValue },
+    }).catch(() => {});
+  }
+
   // Dados de demonstração (aluno/empresa/instrutor de exemplo).
   // Em PRODUÇÃO ficam DESLIGADOS por padrão: defina SEED_DEMO=true para criá-los.
   // Quando desligado, o seed também REMOVE quaisquer contas demo já existentes,

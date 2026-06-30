@@ -40,12 +40,24 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
     where: { companyId, role: 'STUDENT' },
     orderBy: { name: 'asc' },
     include: {
+      jobRole: true,
       enrollments: {
         include: { course: { select: { name: true, code: true, duration: true, validityMonths: true } } },
         orderBy: { startDate: 'desc' },
       },
     },
   });
+
+  // Trilhas (cargos/funções) ativas, para montar o plano de treinamento
+  // obrigatório de cada funcionário conforme a função que ocupa.
+  const jobRoles = await prisma.jobRole.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+  const trilhaCodes = new Set<string>();
+  for (const r of jobRoles) for (const c of (r.courseCodes as unknown as string[]) ?? []) trilhaCodes.add(c);
+  const trilhaCourses = await prisma.course.findMany({
+    where: { code: { in: [...trilhaCodes] } },
+    select: { code: true, name: true },
+  });
+  const trilhaCodeToName = new Map(trilhaCourses.map((c) => [c.code, c.name]));
 
   // Validade (vencimento) de uma matrícula liberada.
   const now = Date.now();
@@ -57,11 +69,37 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
     return { validUntil: exp.toISOString(), expired: exp.getTime() < now };
   };
 
-  const employees = members.map((u) => ({
+  const employees = members.map((u) => {
+    // Conjunto de cursos do funcionário que estão EM DIA (aprovado +
+    // certificado liberado + dentro da validade).
+    const okCodes = new Set(
+      u.enrollments
+        .filter((e) => {
+          const v = validityOf(e.releasedAt, e.startDate, e.course.validityMonths ?? null);
+          return e.passed && e.certificateCode && e.released && !v.expired;
+        })
+        .map((e) => e.course.code),
+    );
+    const roleCodes = ((u.jobRole?.courseCodes as unknown as string[]) ?? []).filter(Boolean);
+    const trilha = u.jobRole
+      ? {
+          roleId: u.jobRole.id,
+          roleName: u.jobRole.name,
+          items: roleCodes.map((code) => ({
+            code,
+            name: trilhaCodeToName.get(code) ?? code,
+            done: okCodes.has(code),
+          })),
+        }
+      : null;
+    return {
     id: u.id,
     name: u.name,
     email: u.email,
     cpf: u.cpf,
+    jobRoleId: u.jobRoleId ?? null,
+    jobRoleName: u.jobRole?.name ?? null,
+    trilha,
     enrollments: u.enrollments.map((e) => {
       const v = validityOf(e.releasedAt, e.startDate, e.course.validityMonths ?? null);
       return {
@@ -78,7 +116,8 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
         date: e.startDate,
       };
     }),
-  }));
+    };
+  });
 
   const totalCertificates = employees.reduce(
     (acc, e) => acc + e.enrollments.filter((en) => en.passed && en.certificateCode).length,
@@ -121,6 +160,12 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
       : null,
     employees,
     obligatory,
+    jobRoles: jobRoles.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      courseCodes: ((r.courseCodes as unknown as string[]) ?? []).filter(Boolean),
+    })),
     stats: {
       declaredEmployees: declaredTotal,
       registeredEmployees: employees.length,
@@ -161,4 +206,23 @@ companyRouter.patch('/access-schedule', async (req: AuthedRequest, res: Response
     data: { accessSchedule: parsed.data as unknown as Prisma.InputJsonValue },
   });
   res.json({ accessSchedule: company.accessSchedule });
+});
+
+// Atribui (ou remove) a trilha de cargo/função de um funcionário da empresa.
+companyRouter.patch('/employees/:id/job-role', async (req: AuthedRequest, res: Response) => {
+  const companyId = await requireCompany(req, res);
+  if (!companyId) return;
+  const parsed = z.object({ jobRoleId: z.string().nullable() }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Cargo inválido.' });
+
+  const employee = await prisma.user.findFirst({ where: { id: req.params.id, companyId, role: 'STUDENT' } });
+  if (!employee) return res.status(404).json({ error: 'Funcionário não encontrado.' });
+
+  if (parsed.data.jobRoleId) {
+    const role = await prisma.jobRole.findFirst({ where: { id: parsed.data.jobRoleId, isActive: true } });
+    if (!role) return res.status(404).json({ error: 'Cargo não encontrado.' });
+  }
+
+  await prisma.user.update({ where: { id: employee.id }, data: { jobRoleId: parsed.data.jobRoleId } });
+  res.json({ ok: true });
 });

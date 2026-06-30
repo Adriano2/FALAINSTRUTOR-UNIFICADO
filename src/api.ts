@@ -10,7 +10,7 @@
 
 import {
   User, Course, Enrollment, SalesTransaction, Coupon, Comment,
-  ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig, Plan, Partner,
+  ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig, Plan, Partner, JobRole,
 } from './types';
 import { apiUrl } from './config';
 
@@ -148,6 +148,9 @@ export interface CompanyDashboardData {
     name: string;
     email: string;
     cpf: string;
+    jobRoleId?: string | null;
+    jobRoleName?: string | null;
+    trilha?: { roleId: string; roleName: string; items: { code: string; name: string; done: boolean }[] } | null;
     enrollments: {
       courseName: string;
       courseCode: string;
@@ -163,6 +166,7 @@ export interface CompanyDashboardData {
     }[];
   }[];
   obligatory: { code: string; name: string; completed: number; workload: number }[];
+  jobRoles?: { id: string; name: string; description: string; courseCodes: string[] }[];
   stats: { declaredEmployees: number; registeredEmployees: number; certificates: number; compliant: number; compliancePct: number };
 }
 
@@ -493,6 +497,19 @@ export const adminApi = {
   deletePartner(id: string) {
     return apiFetch(`/admin/partners/${id}`, { method: 'DELETE' });
   },
+  // Trilhas por cargo/função.
+  jobRoles() {
+    return apiFetch<{ jobRoles: JobRole[] }>('/admin/job-roles').then((d) => d.jobRoles ?? []);
+  },
+  createJobRole(input: { name: string; description?: string; courseCodes?: string[]; isActive?: boolean }) {
+    return apiFetch('/admin/job-roles', { method: 'POST', body: JSON.stringify(input) });
+  },
+  updateJobRole(id: string, input: { name?: string; description?: string; courseCodes?: string[]; isActive?: boolean }) {
+    return apiFetch(`/admin/job-roles/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  deleteJobRole(id: string) {
+    return apiFetch(`/admin/job-roles/${id}`, { method: 'DELETE' });
+  },
   replyComment(id: string, reply: string) {
     return apiFetch(`/admin/comments/${id}/reply`, { method: 'PATCH', body: JSON.stringify({ reply }) });
   },
@@ -626,6 +643,10 @@ export const companyApi = {
       method: 'PATCH',
       body: JSON.stringify(schedule),
     });
+  },
+  // Atribui (ou remove) a trilha de cargo de um funcionário.
+  assignJobRole(employeeId: string, jobRoleId: string | null) {
+    return apiFetch(`/company/employees/${employeeId}/job-role`, { method: 'PATCH', body: JSON.stringify({ jobRoleId }) });
   },
 };
 

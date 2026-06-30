@@ -57,6 +57,11 @@ apiRouter.get('/plans', async (_req, res) => {
   res.json({ plans });
 });
 
+apiRouter.get('/job-roles', async (_req, res) => {
+  const jobRoles = await prisma.jobRole.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+  res.json({ jobRoles });
+});
+
 // --- Catálogo público ---
 
 apiRouter.get('/courses', async (_req, res) => {

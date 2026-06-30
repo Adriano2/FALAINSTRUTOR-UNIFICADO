@@ -541,6 +541,43 @@ adminRouter.delete('/partners/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+// --- Trilhas por cargo/função ---
+adminRouter.get('/job-roles', async (_req, res) => {
+  const roles = await prisma.jobRole.findMany({ orderBy: { name: 'asc' } });
+  res.json({ jobRoles: roles });
+});
+const jobRoleSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().max(300).optional(),
+  courseCodes: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+});
+adminRouter.post('/job-roles', async (req, res) => {
+  const parsed = jobRoleSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do cargo inválidos.' });
+  const d = parsed.data;
+  const role = await prisma.jobRole.create({
+    data: { name: d.name, description: d.description ?? '', isActive: d.isActive ?? true, courseCodes: (d.courseCodes ?? []) as unknown as Prisma.InputJsonValue },
+  });
+  res.status(201).json({ jobRole: role });
+});
+adminRouter.patch('/job-roles/:id', async (req, res) => {
+  const parsed = jobRoleSchema.partial().safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do cargo inválidos.' });
+  const d = parsed.data;
+  const data: Prisma.JobRoleUpdateInput = {};
+  if (d.name !== undefined) data.name = d.name;
+  if (d.description !== undefined) data.description = d.description;
+  if (d.isActive !== undefined) data.isActive = d.isActive;
+  if (d.courseCodes !== undefined) data.courseCodes = d.courseCodes as unknown as Prisma.InputJsonValue;
+  const role = await prisma.jobRole.update({ where: { id: req.params.id }, data });
+  res.json({ jobRole: role });
+});
+adminRouter.delete('/job-roles/:id', async (req, res) => {
+  await prisma.jobRole.delete({ where: { id: req.params.id } }).catch(() => {});
+  res.json({ ok: true });
+});
+
 // --- Planos de assinatura corporativa ---
 adminRouter.get('/plans', async (_req, res) => {
   const plans = await prisma.plan.findMany({ orderBy: { sortOrder: 'asc' } });

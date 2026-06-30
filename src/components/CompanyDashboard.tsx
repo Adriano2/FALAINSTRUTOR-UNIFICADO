@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2, Clock, Save, AlertTriangle, FileText } from 'lucide-react';
+import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2, Clock, Save, AlertTriangle, FileText, Route, Check } from 'lucide-react';
 import { Plus, Trash2 } from 'lucide-react';
 import { companyApi, CompanyDashboardData, AccessSchedule, AccessWindow } from '../api';
 import { CIPA_NR5_BY_GRADE, cipaRequirement } from '../lib/cipa';
@@ -119,14 +119,30 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
   const [error, setError] = React.useState('');
   const [openId, setOpenId] = React.useState<string | null>(null);
   const [query, setQuery] = React.useState('');
+  const [assigningId, setAssigningId] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    companyApi
+  const reload = React.useCallback(() => {
+    return companyApi
       .getDashboard()
       .then(setData)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Não foi possível carregar o painel.'))
-      .finally(() => setLoading(false));
+      .catch((e) => setError(e instanceof Error ? e.message : 'Não foi possível carregar o painel.'));
   }, []);
+
+  React.useEffect(() => {
+    reload().finally(() => setLoading(false));
+  }, [reload]);
+
+  const assignRole = async (employeeId: string, jobRoleId: string | null) => {
+    setAssigningId(employeeId);
+    try {
+      await companyApi.assignJobRole(employeeId, jobRoleId);
+      await reload();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Falha ao atribuir cargo.');
+    } finally {
+      setAssigningId(null);
+    }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center py-32 text-slate-400 text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando painel...</div>;
@@ -419,6 +435,57 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
 
                 {open && (
                   <div className="px-4 pb-4 border-t border-slate-100 dark:border-slate-800">
+                    {/* Trilha por cargo/função */}
+                    <div className="mt-3 mb-2 rounded-lg bg-slate-50 dark:bg-slate-850/40 border border-slate-200 dark:border-slate-800 p-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Route className="w-4 h-4 text-blue-600" />
+                        <span className="text-[11px] font-black uppercase text-slate-500">Cargo / função</span>
+                        <select
+                          value={emp.jobRoleId ?? ''}
+                          disabled={assigningId === emp.id}
+                          onChange={(e) => assignRole(emp.id, e.target.value || null)}
+                          className="text-xs p-1.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white disabled:opacity-60"
+                        >
+                          <option value="">Sem cargo definido</option>
+                          {(data.jobRoles ?? []).map((r) => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                        {assigningId === emp.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />}
+                      </div>
+                      {emp.trilha && emp.trilha.items.length > 0 ? (
+                        <div className="mt-2">
+                          {(() => {
+                            const doneCount = emp.trilha!.items.filter((it) => it.done).length;
+                            const total = emp.trilha!.items.length;
+                            const pct = Math.round((doneCount / total) * 100);
+                            return (
+                              <>
+                                <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                                  <span className="font-bold">Trilha: {emp.trilha!.roleName}</span>
+                                  <span>{doneCount}/{total} em dia ({pct}%)</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {emp.trilha!.items.map((it) => (
+                                    <span
+                                      key={it.code}
+                                      title={it.name}
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${it.done ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}
+                                    >
+                                      {it.done ? <Check className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />} {it.code}
+                                    </span>
+                                  ))}
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ) : emp.jobRoleId ? (
+                        <p className="mt-2 text-[11px] text-slate-400">Este cargo não tem treinamentos cadastrados na trilha.</p>
+                      ) : (
+                        <p className="mt-2 text-[11px] text-slate-400">Defina um cargo para acompanhar a trilha de treinamentos obrigatórios.</p>
+                      )}
+                    </div>
                     {certs.length === 0 ? (
                       <p className="text-xs text-slate-400 py-3">Nenhum certificado emitido ainda.</p>
                     ) : (

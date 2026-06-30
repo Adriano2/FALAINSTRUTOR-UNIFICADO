@@ -158,6 +158,14 @@ export interface Partner {
   isActive?: boolean;
 }
 
+export interface JobRole {
+  id: string;
+  name: string;
+  description: string;
+  courseCodes: string[];
+  isActive: boolean;
+}
+
 export interface PaymentConfig {
   asaasToken: string;
   asaasEnv?: 'sandbox' | 'production';

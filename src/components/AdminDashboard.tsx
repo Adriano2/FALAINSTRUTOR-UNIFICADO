@@ -14,7 +14,7 @@ import {
   BarChart, Users, BookOpen, DollarSign, Award, Tag, Settings, MessageSquare,
   Mail, ShieldCheck, ClipboardList, BookOpenCheck, Sliders, Download, Plus,
   Trash2, ToggleLeft, ToggleRight, Check, X, FileText, CheckCircle2, AlertTriangle, Key,
-  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive, Activity, Presentation, Clock
+  Newspaper, Package, Building2, Layout, GraduationCap, Receipt, Video, Link2, HeartPulse, Megaphone, FolderArchive, Activity, Presentation, Clock, Route
 } from 'lucide-react';
 import ContentManager from './admin/ContentManager';
 import InstructorManager from './admin/InstructorManager';
@@ -31,6 +31,7 @@ import CoursePriceEditor from './admin/CoursePriceEditor';
 import ExpirationsManager from './admin/ExpirationsManager';
 import PlanManager from './admin/PlanManager';
 import PartnerManager from './admin/PartnerManager';
+import JobRoleManager from './admin/JobRoleManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -496,6 +497,7 @@ export default function AdminDashboard({
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
                   { id: 'companies', label: 'Gestão de empresas', icon: Building2 },
                   { id: 'plans', label: 'Planos (assinatura)', icon: Tag },
+                  { id: 'job-roles', label: 'Trilhas por cargo', icon: Route },
                   { id: 'partners', label: 'Parceiros (white-label)', icon: Building2 },
                   { id: 'leads', label: 'Captação de leads', icon: Megaphone },
                   { id: 'files', label: 'Arquivos', icon: FolderArchive },
@@ -905,6 +907,10 @@ export default function AdminDashboard({
 
           {activeTab === 'plans' && (
             <PlanManager />
+          )}
+
+          {activeTab === 'job-roles' && (
+            <JobRoleManager courses={courses} />
           )}
 
           {activeTab === 'partners' && (
