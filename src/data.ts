@@ -1768,6 +1768,15 @@ export const SEED_COUPONS: Coupon[] = [
     type: "percentage",
     isActive: true,
     associatedProducts: ["course-nr10", "course-nr11", "course-nr345", "course-nr35", "course-dirdef-16", "course-loto"]
+  },
+  {
+    id: "cup-bemvindo10",
+    code: "BEMVINDO10",
+    description: "10% de desconto na sua primeira compra (boas-vindas)",
+    value: 10,
+    type: "percentage",
+    isActive: true,
+    associatedProducts: [] // vazio = vale para todos os treinamentos
   }
 ];
 

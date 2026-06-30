@@ -92,8 +92,10 @@ async function computeTotal(courseIds: string[], couponCode?: string) {
   if (couponCode) {
     const coupon = await prisma.coupon.findFirst({ where: { code: couponCode.toUpperCase(), isActive: true } });
     if (coupon) {
+      // associatedProducts vazio => cupom vale para TODOS os cursos.
+      const allCourses = coupon.associatedProducts.length === 0;
       const eligible = courses
-        .filter((c) => coupon.associatedProducts.includes(c.id))
+        .filter((c) => allCourses || coupon.associatedProducts.includes(c.id))
         .reduce((acc, c) => acc + c.price, 0);
       discount = coupon.type === 'PERCENTAGE' ? (eligible * coupon.value) / 100 : Math.min(eligible, coupon.value);
     }

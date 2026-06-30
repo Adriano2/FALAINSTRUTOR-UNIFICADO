@@ -91,7 +91,8 @@ export async function sendWelcomeEmail(user: { name: string; email: string }): P
     ? applyVars(tpl.body, vars).replace(/\n/g, '<br>')
     : `Olá <strong>${user.name}</strong>,<br><br>Sua conta foi criada com sucesso na plataforma FalaInstrutor. ` +
       `Você já pode acessar seus treinamentos de Segurança e Saúde no Trabalho.` +
-      (PUBLIC_URL ? `<br><br><a href="${PUBLIC_URL}" style="color:#1e9b46;font-weight:bold">Acessar a plataforma</a>` : '');
+      `<br><br>🎁 <strong>Presente de boas-vindas:</strong> use o cupom <strong style="color:#1e9b46">BEMVINDO10</strong> e ganhe <strong>10% de desconto</strong> na sua primeira compra.` +
+      (PUBLIC_URL ? `<br><br><a href="${PUBLIC_URL}" style="background:#1e9b46;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Acessar a plataforma</a>` : '');
   await sendEmail(user.email, subject, wrapHtml('Conta criada com sucesso', body));
 }
 

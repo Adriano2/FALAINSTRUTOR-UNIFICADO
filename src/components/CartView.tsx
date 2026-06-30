@@ -43,9 +43,11 @@ export default function CartView({
   const discount = React.useMemo(() => {
     if (!activeCoupon) return 0;
     
-    // Sum prices of products that match coupon restrictions
+    // Sum prices of products that match coupon restrictions.
+    // Lista vazia => o cupom vale para todos os cursos.
+    const allCourses = activeCoupon.associatedProducts.length === 0;
     const eligibleTotal = cartItems
-      .filter((item) => activeCoupon.associatedProducts.includes(item.id))
+      .filter((item) => allCourses || activeCoupon.associatedProducts.includes(item.id))
       .reduce((acc, item) => acc + item.price, 0);
     
     if (activeCoupon.type === 'percentage') {
@@ -63,8 +65,8 @@ export default function CartView({
     
     const matched = coupons.find((cp) => cp.code.toUpperCase() === couponCode.trim().toUpperCase() && cp.isActive);
     if (matched) {
-      // Check if coupon belongs to any items inside current cart
-      const hasAssociated = cartItems.some((item) => matched.associatedProducts.includes(item.id));
+      // Lista vazia => vale para todos; senão, exige um item associado no carrinho.
+      const hasAssociated = matched.associatedProducts.length === 0 || cartItems.some((item) => matched.associatedProducts.includes(item.id));
       if (hasAssociated) {
         setActiveCoupon(matched);
         setCouponCode('');

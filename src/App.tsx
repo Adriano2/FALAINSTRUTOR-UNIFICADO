@@ -973,6 +973,11 @@ export default function App() {
                 <li className="flex items-start gap-2"><span className="text-emerald-500 mt-0.5">✓</span> Estudar em <strong>EaD</strong> com acesso imediato;</li>
                 <li className="flex items-start gap-2"><span className="text-emerald-500 mt-0.5">✓</span> Emitir o <strong>certificado válido</strong> com QR de autenticidade ao concluir.</li>
               </ul>
+              <div className="rounded-xl border-2 border-dashed border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-center">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">🎁 Presente de boas-vindas</p>
+                <p className="text-sm text-slate-700 dark:text-slate-200 mt-0.5"><strong>10% de desconto</strong> na sua primeira compra com o cupom:</p>
+                <p className="mt-1 text-lg font-black tracking-widest text-emerald-700 dark:text-emerald-300 select-all">BEMVINDO10</p>
+              </div>
               <p className="text-[12px] text-slate-400">Enviamos também um e-mail de boas-vindas para você. 📧</p>
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 <button
