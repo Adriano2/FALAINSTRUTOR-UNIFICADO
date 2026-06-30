@@ -374,6 +374,18 @@ apiRouter.get('/certificates/:code', async (req, res) => {
     };
   }
 
+  // Validade do certificado: base (liberação ou início) + validade do curso.
+  const validityMonths = enrollment.course.validityMonths ?? null;
+  const validBase = enrollment.releasedAt ?? enrollment.startDate;
+  let validUntil: string | null = null;
+  let expired = false;
+  if (validBase && validityMonths && validityMonths > 0) {
+    const exp = new Date(validBase);
+    exp.setMonth(exp.getMonth() + validityMonths);
+    validUntil = exp.toISOString();
+    expired = exp.getTime() < Date.now();
+  }
+
   res.json({
     valid: true,
     certificate: {
@@ -385,6 +397,9 @@ apiRouter.get('/certificates/:code', async (req, res) => {
       courseCode: enrollment.course.code,
       workload: enrollment.course.duration,
       completionDate: enrollment.startDate,
+      validityMonths,
+      validUntil,
+      expired,
       instructor: instructor?.name ?? 'Instrutor Qualificado',
       instructorFormation: instructor?.formation ?? 'Engenheiro de Segurança / Civil',
       instructorMte: instructor?.mte ?? null,

@@ -220,9 +220,16 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
                 </div>
               </div>
 
+              {/* Aviso de validade vencida (certificado autêntico, porém expirado) */}
+              {matchedCertificate.expired && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold">
+                  ⚠ Certificado autêntico, porém com a <span className="underline">validade vencida</span>. Requer reciclagem/renovação do treinamento.
+                </div>
+              )}
+
               {/* Dossier details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs sm:text-sm">
-                
+
                 {/* Outliner student details */}
                 <div className="space-y-3.5">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Identificação do Profissional</h3>
@@ -264,6 +271,16 @@ export default function ValidationView({ initialCode }: ValidationViewProps) {
                       <span className="text-slate-500 dark:text-slate-400 pr-1 select-none">Conclusão:</span>
                       <strong className="text-slate-900 dark:text-white">{matchedCertificate.completionDate}</strong>
                     </div>
+                    {matchedCertificate.validUntil && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-slate-450 shrink-0" />
+                        <span className="text-slate-500 dark:text-slate-400 pr-1 select-none">Validade:</span>
+                        <strong className={matchedCertificate.expired ? 'text-rose-600' : 'text-slate-900 dark:text-white'}>
+                          {new Date(matchedCertificate.validUntil).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                          {matchedCertificate.expired ? ' · VENCIDO' : ''}
+                        </strong>
+                      </div>
+                    )}
                   </div>
                 </div>
 

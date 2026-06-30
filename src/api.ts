@@ -231,6 +231,9 @@ export interface CertificateResult {
   courseCode: string;
   workload: number;
   completionDate: string;
+  validityMonths?: number | null;
+  validUntil?: string | null; // ISO; nulo se o curso não tem validade definida
+  expired?: boolean;
   instructor: string;
   instructorFormation: string;
   instructorMte?: string | null;
