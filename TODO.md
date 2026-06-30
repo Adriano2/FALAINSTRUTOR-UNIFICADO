@@ -24,6 +24,26 @@ Itens a fazer (produção, app.asaas.com):
    e teste do token contra o Asaas → `producao: 200`.
 5. Compra-teste de **R$ 1,00** via PIX → confirmar matrícula automática.
 
+## 🏛️ eSocial S-2245 — Fase 2 (transmissão direta) e validação do leiaute
+
+**Status (Fase 1 — FEITO):** captura de `codTreina`/flag eSocial por curso
+(Gestão de Cursos), CPF/registro do responsável no instrutor, de-para
+NR→codTreina (`server/esocial.ts`), e **exportação no painel da empresa**
+(`/company/esocial/s2245`): tabela com pendências + download **CSV** e **XML
+rascunho** (um evento por trabalhador). Quem transmite é o empregador.
+
+**Pendências/Fase 2:**
+1. **Validar o XML contra o XSD vigente** do eSocial (namespace/versão/tags do
+   grupo `treiCap`/`responsavel`) antes de qualquer transmissão — o XML atual é
+   RASCUNHO. Conferir também a **simplificação do SST**: o S-2245 pode ser
+   excluído e migrar p/ **S-2200/S-2206** (Tabela 29 → 28). O motor de dados em
+   `server/esocial.ts` já está desacoplado do leiaute.
+2. Conferir o **de-para `DEFAULT_CODTREINA`** com a tabela oficial vigente.
+3. **Transmissão direta** (opcional): cliente SOAP dos webservices (envio de
+   lote → consulta), assinatura **XMLDSig** com o e-CNPJ do empregador
+   (procuração eletrônica) — reaproveitar `server/icp.ts`. Homologar em
+   **Produção Restrita** antes de produção.
+
 ## 🧾 Integração de emissão de NFS-e (Nota Fiscal de Serviço)
 
 **Status:** base de gerenciamento já implementada (cadastro manual, status

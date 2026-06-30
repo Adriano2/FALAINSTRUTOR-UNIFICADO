@@ -345,6 +345,7 @@ const instructorSchema = z.object({
   name: z.string().min(2),
   formation: z.string().min(2),
   mte: z.string().optional(),
+  cpf: z.string().optional(),
   crea: z.string().optional(),
   crq: z.string().optional(),
   signatureUrl: z.string().optional(),
@@ -353,7 +354,7 @@ const instructorSchema = z.object({
 
 // Seleção segura do instrutor (NUNCA inclui o .pfx nem a senha cifrados).
 const instructorSelect = {
-  id: true, name: true, formation: true, mte: true, crea: true, crq: true,
+  id: true, name: true, formation: true, mte: true, cpf: true, crea: true, crq: true,
   signatureUrl: true, icpEnabled: true,
   digitalCertHolder: true, digitalCertIssuer: true, digitalCertSerial: true, digitalCertValidUntil: true,
   digitalCertPfx: true, // usado só para derivar o flag; removido no mapeamento
@@ -460,6 +461,17 @@ adminRouter.post('/instructors/login', async (req, res) => {
     data: { name: parsed.data.name, email: parsed.data.email.toLowerCase(), cpf: parsed.data.cpf, passwordHash, role: 'INSTRUCTOR' },
   });
   res.status(201).json({ instructor: { id: u.id, name: u.name, email: u.email } });
+});
+
+// Atualiza dados cadastrais do instrutor (inclui CPF/registro para o eSocial).
+adminRouter.patch('/instructors/:id', async (req, res) => {
+  const parsed = instructorSchema.partial().safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados do instrutor inválidos.' });
+  await prisma.instructor.update({
+    where: { id: req.params.id },
+    data: parsed.data as Prisma.InstructorUpdateInput,
+  }).catch(() => {});
+  res.json({ instructors: await listInstructorsSafe() });
 });
 
 // Remove a associação de um instrutor a um treinamento.
@@ -733,6 +745,8 @@ adminRouter.patch('/courses/:id/price', async (req, res) => {
       validityMonths: z.number().int().min(1).max(120).optional(),
       isActive: z.boolean().optional(),
       isFeatured: z.boolean().optional(),
+      esocialEnabled: z.boolean().optional(),
+      esocialCode: z.string().max(20).optional(),
     })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valores inválidos.' });
@@ -741,6 +755,8 @@ adminRouter.patch('/courses/:id/price', async (req, res) => {
   if (parsed.data.validityMonths !== undefined) data.validityMonths = parsed.data.validityMonths;
   if (parsed.data.isActive !== undefined) data.isActive = parsed.data.isActive;
   if (parsed.data.isFeatured !== undefined) data.isFeatured = parsed.data.isFeatured;
+  if (parsed.data.esocialEnabled !== undefined) data.esocialEnabled = parsed.data.esocialEnabled;
+  if (parsed.data.esocialCode !== undefined) data.esocialCode = parsed.data.esocialCode.trim() || null;
   if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada para atualizar.' });
   const course = await prisma.course.update({
     where: { id: req.params.id },

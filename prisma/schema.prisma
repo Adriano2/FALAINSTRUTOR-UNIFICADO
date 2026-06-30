@@ -199,6 +199,8 @@ model Course {
   documents        Json    @default("[]") // materiais de apoio: [{ name, url }]
   examQuestions    Json    @default("[]") // prova do curso: [{ question, options[], correctIndex }]
   slides           Json    @default("[]") // deck de slides do treinamento: [{ title, bullets[] }]
+  esocialEnabled   Boolean @default(false) // curso elegível ao evento eSocial S-2245
+  esocialCode      String? // codTreina (Tabela 29/28 do eSocial) p/ este treinamento
 
   instructors     Instructor[]
   enrollments     Enrollment[]
@@ -211,6 +213,7 @@ model Instructor {
   name         String
   formation    String
   mte          String?
+  cpf          String? // CPF do responsável (exigido no bloco "responsável" do S-2245)
   crea         String? // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
   crq          String? // Registro CRQ (Conselho Regional de Química), opcional
   signatureUrl String? // imagem da assinatura (scan), opcional

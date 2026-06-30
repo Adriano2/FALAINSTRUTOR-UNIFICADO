@@ -84,11 +84,14 @@ interface ApiCourse {
   documents: { name: string; url: string }[] | null;
   examQuestions: { question: string; options: string[]; correctIndex: number }[] | null;
   slides: { title: string; bullets: string[] }[] | null;
+  esocialEnabled?: boolean;
+  esocialCode?: string | null;
   instructors: {
     id: string;
     name: string;
     formation: string;
     mte: string | null;
+    cpf?: string | null;
     crea: string | null;
     crq: string | null;
     signatureUrl: string | null;
@@ -102,6 +105,7 @@ export interface ApiInstructor {
   name: string;
   formation: string;
   mte: string | null;
+  cpf?: string | null;
   crea: string | null;
   crq: string | null;
   signatureUrl: string | null;
@@ -216,11 +220,14 @@ export function mapApiCourse(c: ApiCourse): Course {
     documents: Array.isArray(c.documents) ? c.documents : [],
     examQuestions: Array.isArray(c.examQuestions) ? c.examQuestions : [],
     slides: Array.isArray(c.slides) ? c.slides : [],
+    esocialEnabled: Boolean(c.esocialEnabled),
+    esocialCode: c.esocialCode ?? undefined,
     instructors: (c.instructors ?? []).map((i) => ({
       id: i.id,
       name: i.name,
       formation: i.formation,
       mte: i.mte ?? undefined,
+      cpf: i.cpf ?? undefined,
       crea: i.crea ?? undefined,
       crq: i.crq ?? undefined,
       signatureUrl: i.signatureUrl ?? undefined,
@@ -548,14 +555,17 @@ export const adminApi = {
   assignUserCompany(userId: string, companyId: string | null) {
     return apiFetch(`/admin/users/${userId}/company`, { method: 'PATCH', body: JSON.stringify({ companyId }) });
   },
-  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) {
+  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; cpf?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) {
     return apiFetch(`/admin/courses/${courseId}/instructors`, { method: 'POST', body: JSON.stringify(input) });
   },
   listInstructors() {
     return apiFetch<{ instructors: ApiInstructor[] }>(`/admin/instructors`);
   },
-  createInstructor(input: { name: string; formation: string; mte?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean; courseIds: string[] }) {
+  createInstructor(input: { name: string; formation: string; mte?: string; cpf?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean; courseIds: string[] }) {
     return apiFetch(`/admin/instructors`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  updateInstructor(id: string, input: { name?: string; formation?: string; mte?: string; cpf?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled?: boolean }) {
+    return apiFetch<{ instructors: ApiInstructor[] }>(`/admin/instructors/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   deleteInstructor(id: string) {
     return apiFetch(`/admin/instructors/${id}`, { method: 'DELETE' });
@@ -596,7 +606,7 @@ export const adminApi = {
     return apiFetch(`/admin/courses/${courseId}/exam`, { method: 'PATCH', body: JSON.stringify({ questions }) });
   },
   // Atualiza preço/visibilidade do curso (Gestão de Cursos).
-  updateCoursePrice(courseId: string, input: { price?: number; validityMonths?: number; isActive?: boolean; isFeatured?: boolean }) {
+  updateCoursePrice(courseId: string, input: { price?: number; validityMonths?: number; isActive?: boolean; isFeatured?: boolean; esocialEnabled?: boolean; esocialCode?: string }) {
     return apiFetch(`/admin/courses/${courseId}/price`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   // Vencimentos de certificados + disparo de alertas de renovação.
@@ -655,7 +665,49 @@ export const companyApi = {
   assignJobRole(employeeId: string, jobRoleId: string | null) {
     return apiFetch(`/company/employees/${employeeId}/job-role`, { method: 'PATCH', body: JSON.stringify({ jobRoleId }) });
   },
+  // eSocial S-2245: leitura dos treinamentos concluídos (com pendências).
+  esocialS2245(from?: string, to?: string) {
+    const qs = new URLSearchParams();
+    if (from) qs.set('from', from);
+    if (to) qs.set('to', to);
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return apiFetch<EsocialS2245Data>(`/company/esocial/s2245${suffix}`);
+  },
+  // Baixa o export (XML rascunho ou CSV) como Blob, autenticado por header.
+  async esocialS2245Download(format: 'xml' | 'csv', from?: string, to?: string): Promise<Blob> {
+    const qs = new URLSearchParams({ format });
+    if (from) qs.set('from', from);
+    if (to) qs.set('to', to);
+    const token = getToken();
+    const res = await fetch(apiUrl(`/company/esocial/s2245/export?${qs}`), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Falha ao gerar o arquivo.');
+    return res.blob();
+  },
 };
+
+export interface EsocialS2245Record {
+  enrollmentId: string;
+  cpfTrab: string;
+  nmTrab: string;
+  cnpjEmpregador: string;
+  courseCode: string;
+  courseName: string;
+  codTreina: string | null;
+  cargaHor: number;
+  dtTreina: string;
+  respCpf: string;
+  respNome: string;
+  respFormacao: string;
+  respRegConselho: string;
+  certificateCode: string | null;
+  pendencias: string[];
+}
+export interface EsocialS2245Data {
+  company: { name: string; cnpj: string };
+  records: EsocialS2245Record[];
+}
 
 // Painel do instrutor (role 'instructor').
 export const instructorApi = {

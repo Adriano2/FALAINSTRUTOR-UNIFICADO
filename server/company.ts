@@ -15,6 +15,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
 import { obligatoryTrainings, workloadForRisk } from './nr04';
+import { buildS2245Records, generateS2245Xml, recordsToCsv } from './esocial';
 
 export const companyRouter = Router();
 
@@ -225,4 +226,48 @@ companyRouter.patch('/employees/:id/job-role', async (req: AuthedRequest, res: R
 
   await prisma.user.update({ where: { id: employee.id }, data: { jobRoleId: parsed.data.jobRoleId } });
   res.json({ ok: true });
+});
+
+// --- eSocial S-2245: leitura dos treinamentos concluídos (para a empresa
+// importar/transmitir). Retorna os registros estruturados + pendências. ---
+companyRouter.get('/esocial/s2245', async (req: AuthedRequest, res: Response) => {
+  const companyId = await requireCompany(req, res);
+  if (!companyId) return;
+  const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+  const to = typeof req.query.to === 'string' ? req.query.to : undefined;
+  const { company, records } = await buildS2245Records(companyId, from, to);
+  res.json({ company, records });
+});
+
+// Download do XML (rascunho, um evento por trabalhador) ou CSV do período.
+companyRouter.get('/esocial/s2245/export', async (req: AuthedRequest, res: Response) => {
+  const companyId = await requireCompany(req, res);
+  if (!companyId) return;
+  const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+  const to = typeof req.query.to === 'string' ? req.query.to : undefined;
+  const format = req.query.format === 'csv' ? 'csv' : 'xml';
+  const { company, records } = await buildS2245Records(companyId, from, to);
+
+  if (format === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="s2245.csv"');
+    // BOM p/ acentuação correta no Excel.
+    return res.send('﻿' + recordsToCsv(records));
+  }
+
+  // Agrupa por trabalhador (um evento S-2245 por CPF), só os transmissíveis.
+  const ok = records.filter((r) => r.pendencias.length === 0);
+  const byCpf = new Map<string, typeof ok>();
+  for (const r of ok) {
+    const arr = byCpf.get(r.cpfTrab) ?? [];
+    arr.push(r);
+    byCpf.set(r.cpfTrab, arr);
+  }
+  const events = [...byCpf.entries()].map(([cpf, list]) =>
+    generateS2245Xml(company.cnpj, cpf, list[0].nmTrab, list),
+  );
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<!-- ${events.length} evento(s) S-2245 (rascunho). ${records.length - ok.length} registro(s) com pendência foram omitidos. -->\n<eventos>\n${events.join('\n')}\n</eventos>`;
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="s2245-rascunho.xml"');
+  res.send(xml);
 });

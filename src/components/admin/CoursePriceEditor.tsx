@@ -22,6 +22,8 @@ export default function CoursePriceEditor({ course, onSaved }: CoursePriceEditor
   // Mantém como texto para o usuário digitar com vírgula/ponto livremente.
   const [value, setValue] = React.useState(String(course.price ?? 0).replace('.', ','));
   const [validity, setValidity] = React.useState(String(course.validityMonths ?? 12));
+  const [esocial, setEsocial] = React.useState(Boolean(course.esocialEnabled));
+  const [esocialCode, setEsocialCode] = React.useState(course.esocialCode ?? '');
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -29,13 +31,17 @@ export default function CoursePriceEditor({ course, onSaved }: CoursePriceEditor
   React.useEffect(() => {
     setValue(String(course.price ?? 0).replace('.', ','));
     setValidity(String(course.validityMonths ?? 12));
-  }, [course.price, course.validityMonths]);
+    setEsocial(Boolean(course.esocialEnabled));
+    setEsocialCode(course.esocialCode ?? '');
+  }, [course.price, course.validityMonths, course.esocialEnabled, course.esocialCode]);
 
   const parsed = Number(value.replace(/\./g, '').replace(',', '.'));
   const validityNum = parseInt(validity, 10);
   const changed =
     (!Number.isNaN(parsed) && parsed !== (course.price ?? 0)) ||
-    (!Number.isNaN(validityNum) && validityNum !== (course.validityMonths ?? 12));
+    (!Number.isNaN(validityNum) && validityNum !== (course.validityMonths ?? 12)) ||
+    esocial !== Boolean(course.esocialEnabled) ||
+    esocialCode !== (course.esocialCode ?? '');
 
   const save = async () => {
     setError('');
@@ -43,7 +49,7 @@ export default function CoursePriceEditor({ course, onSaved }: CoursePriceEditor
     if (Number.isNaN(validityNum) || validityNum < 1) { setError('Validade inválida.'); return; }
     setSaving(true);
     try {
-      await adminApi.updateCoursePrice(course.id, { price: Number(parsed.toFixed(2)), validityMonths: validityNum });
+      await adminApi.updateCoursePrice(course.id, { price: Number(parsed.toFixed(2)), validityMonths: validityNum, esocialEnabled: esocial, esocialCode: esocialCode.trim() });
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
       onSaved?.();
@@ -94,6 +100,23 @@ export default function CoursePriceEditor({ course, onSaved }: CoursePriceEditor
           className="w-14 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-1 text-[12px] font-bold text-slate-900 dark:text-white focus:outline-none"
         />
         <span className="text-[10px] text-slate-400">renovação do certificado</span>
+      </div>
+      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input type="checkbox" checked={esocial} onChange={(e) => setEsocial(e.target.checked)} />
+          <span className="text-[10px] font-bold text-slate-400 uppercase">Curso eSocial (S-2245)</span>
+        </label>
+        {esocial && (
+          <>
+            <span className="text-[10px] text-slate-400">codTreina</span>
+            <input
+              value={esocialCode}
+              onChange={(e) => setEsocialCode(e.target.value)}
+              placeholder="auto (NR)"
+              className="w-20 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-1 text-[12px] font-bold text-slate-900 dark:text-white focus:outline-none"
+            />
+          </>
+        )}
       </div>
       {error && <p className="text-[10px] text-red-500 font-semibold mt-1">{error}</p>}
     </div>

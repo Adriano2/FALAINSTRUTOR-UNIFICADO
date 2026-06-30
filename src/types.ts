@@ -23,6 +23,7 @@ export interface Instructor {
   name: string;
   formation: string;
   mte?: string; // Registro MTE do instrutor (ex.: "0124684/SP")
+  cpf?: string; // CPF do responsável (eSocial S-2245)
   crea?: string; // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
   crq?: string; // Registro CRQ (Conselho Regional de Química), opcional
   signatureUrl?: string; // imagem da assinatura (scan), opcional
@@ -49,6 +50,8 @@ export interface Course {
   documents?: { name: string; url: string }[]; // materiais de apoio
   examQuestions?: ExamQuestion[]; // prova do curso (editável no painel admin)
   slides?: { title: string; bullets: string[]; images?: string[] }[]; // deck de slides (editável no admin)
+  esocialEnabled?: boolean; // curso elegível ao evento eSocial S-2245
+  esocialCode?: string; // codTreina (Tabela 29/28 do eSocial)
 }
 
 export interface Enrollment {

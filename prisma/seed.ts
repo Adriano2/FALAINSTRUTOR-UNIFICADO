@@ -166,6 +166,8 @@ async function main() {
         manualActivities: c.manualActivities,
         modality: c.modality ?? 'EaD',
         validityMonths: VALIDITY_BY_CODE[c.code] ?? 12,
+        // Cursos de NR já entram elegíveis ao eSocial S-2245 (admin pode alterar).
+        esocialEnabled: /^NR\d/i.test(c.code),
         instructors: {
           create: c.instructors.map((i) => ({
             name: i.name,

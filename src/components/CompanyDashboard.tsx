@@ -12,6 +12,7 @@
 import React from 'react';
 import { Building2, Users, Award, Loader2, ChevronDown, ChevronRight, ShieldCheck, Download, CheckCircle2, Clock, Save, AlertTriangle, FileText, Route, Check } from 'lucide-react';
 import { Plus, Trash2 } from 'lucide-react';
+import EsocialS2245Panel from './EsocialS2245Panel';
 import { companyApi, CompanyDashboardData, AccessSchedule, AccessWindow } from '../api';
 import { CIPA_NR5_BY_GRADE, cipaRequirement } from '../lib/cipa';
 
@@ -530,6 +531,8 @@ export default function CompanyDashboard({ onValidateCertificate }: CompanyDashb
       <p className="mt-6 text-[11px] text-slate-400 flex items-center gap-1">
         <Download className="w-3.5 h-3.5" /> Para baixar um certificado em PDF, clique em "Ver / validar" e use a opção de download na validação.
       </p>
+
+      <EsocialS2245Panel />
     </div>
   );
 }
