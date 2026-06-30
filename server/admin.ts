@@ -346,6 +346,7 @@ const instructorSchema = z.object({
   formation: z.string().min(2),
   mte: z.string().optional(),
   cpf: z.string().optional(),
+  codCBO: z.string().optional(),
   crea: z.string().optional(),
   crq: z.string().optional(),
   signatureUrl: z.string().optional(),
@@ -354,7 +355,7 @@ const instructorSchema = z.object({
 
 // Seleção segura do instrutor (NUNCA inclui o .pfx nem a senha cifrados).
 const instructorSelect = {
-  id: true, name: true, formation: true, mte: true, cpf: true, crea: true, crq: true,
+  id: true, name: true, formation: true, mte: true, cpf: true, codCBO: true, crea: true, crq: true,
   signatureUrl: true, icpEnabled: true,
   digitalCertHolder: true, digitalCertIssuer: true, digitalCertSerial: true, digitalCertValidUntil: true,
   digitalCertPfx: true, // usado só para derivar o flag; removido no mapeamento

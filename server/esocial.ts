@@ -8,21 +8,28 @@
  *
  * IMPORTANTE: quem transmite o evento ao eSocial é o EMPREGADOR (com o e-CNPJ
  * dele), não a escola. Esta camada apenas GERA os dados do evento (registros +
- * XML rascunho + relatório) para a empresa importar/transmitir no sistema de
- * folha/eSocial dela. O motor de dados é desacoplado do leiaute: o XML é gerado
- * a partir dos registros estruturados, então adaptar à versão vigente do
- * leiaute (S-1.x) é trivial.
+ * XML + relatório) para a empresa importar/transmitir no sistema de
+ * folha/eSocial dela. Quem assina e envia é o empregador.
  *
- * O leiaute do eSocial SST está em simplificação (o S-2245 pode migrar para
- * S-2200/S-2206 e a Tabela 29 para a 28). Por isso o XML aqui é marcado como
- * RASCUNHO e deve ser validado contra o XSD vigente antes da transmissão.
+ * LEIAUTE-ALVO: v02_05_00 — namespace
+ *   http://www.esocial.gov.br/schema/evt/evtTreiCap/v02_05_00
+ * O XML aqui é validado tag-a-tag contra o XSD oficial do evtTreiCap
+ * (v02_05_00), mas NÃO é assinado: o elemento <Signature> (ds:Signature) é
+ * OBRIGATÓRIO e deve ser anexado pelo empregador na transmissão. Por isso o
+ * arquivo é um RASCUNHO pronto-para-assinar.
+ *
+ * OBS: o S-2245 foi DESCONTINUADO no leiaute simplificado (S-1.3); v02_05_00 é
+ * a versão mais recente em que o evtTreiCap existe. Confirme com o receptor
+ * eSocial do empregador qual leiaute ele ainda aceita para o S-2245.
  */
 
 import { prisma } from './db';
 
-// De-para padrão NR (código do curso) → codTreina (Tabela 29 do eSocial).
-// Valores de referência, EDITÁVEIS por curso no painel (Course.esocialCode).
-// Devem ser conferidos contra a tabela vigente do eSocial antes de transmitir.
+export const ESOCIAL_NS = 'http://www.esocial.gov.br/schema/evt/evtTreiCap/v02_05_00';
+
+// De-para padrão NR (código do curso) → codTreiCap (Tabela 29 do eSocial).
+// ATENÇÃO: valores de REFERÊNCIA (4 dígitos). Conferir contra a Tabela 29
+// vigente antes de transmitir — são editáveis por curso (Course.esocialCode).
 export const DEFAULT_CODTREINA: Record<string, string> = {
   'NR06': '0506', // EPI
   'NR05': '0505', // CIPA
@@ -34,7 +41,11 @@ export const DEFAULT_CODTREINA: Record<string, string> = {
   'NR35': '0535', // Trabalho em altura
 };
 
-// Resolve o codTreina de um curso: o configurado vence; senão tenta o de-para
+// CBO padrão quando o responsável não tem CBO cadastrado (Técnico de Segurança
+// do Trabalho). NÃO é usado no XML: a falta de CBO vira pendência (bloqueia).
+export const DEFAULT_CBO_HINT = '351505';
+
+// Resolve o codTreiCap de um curso: o configurado vence; senão tenta o de-para
 // pelo prefixo do código (ex.: "NR35 4H" → "NR35").
 export function resolveCodTreina(courseCode: string, configured: string | null): string | null {
   if (configured && configured.trim()) return configured.trim();
@@ -58,16 +69,16 @@ export interface S2245Record {
   // Treinamento
   courseCode: string;
   courseName: string;
-  codTreina: string | null; // null = sem mapeamento → pendência
-  cargaHor: number; // horas
-  dtTreina: string; // data de conclusão (AAAA-MM-DD)
-  // Responsável técnico (instrutor)
-  respCpf: string;
-  respNome: string;
-  respFormacao: string;
-  respRegConselho: string; // CREA/CRQ ou outro registro
+  codTreiCap: string | null; // null = sem mapeamento → pendência
+  durTreiCap: number; // carga horária (horas)
+  dtTreiCap: string; // data de conclusão (AAAA-MM-DD)
+  // Responsável técnico (ideProfResp)
+  cpfProf: string; // opcional no leiaute
+  nmProf: string;
+  formProf: string;
+  codCBO: string;
   certificateCode: string | null;
-  // Pendências que impedem a transmissão
+  // Pendências que impedem a transmissão (XML conformante)
   pendencias: string[];
 }
 
@@ -97,7 +108,7 @@ export async function buildS2245Records(
       course: {
         select: {
           code: true, name: true, duration: true, esocialCode: true,
-          instructors: { select: { name: true, cpf: true, formation: true, crea: true, crq: true }, take: 1 },
+          instructors: { select: { name: true, cpf: true, codCBO: true, formation: true, crea: true, crq: true }, take: 1 },
         },
       },
     },
@@ -107,16 +118,23 @@ export async function buildS2245Records(
   const cnpjEmpregador = onlyDigits(company?.cnpj);
   const records: S2245Record[] = enrollments.map((e) => {
     const resp = e.course.instructors[0];
-    const codTreina = resolveCodTreina(e.course.code, e.course.esocialCode ?? null);
-    const respCpf = onlyDigits(resp?.cpf);
+    const codTreiCap = resolveCodTreina(e.course.code, e.course.esocialCode ?? null);
+    const cpfProf = onlyDigits(resp?.cpf);
+    const codCBO = onlyDigits(resp?.codCBO);
     const reg = resp?.crea || resp?.crq || '';
+    // formProf inclui a formação + registro de conselho (2–255 chars).
+    const formProf = [resp?.formation ?? '', reg].filter(Boolean).join(' - ');
     const dt = e.releasedAt ?? e.startDate;
 
     const pendencias: string[] = [];
-    if (!cnpjEmpregador || cnpjEmpregador.length !== 14) pendencias.push('CNPJ do empregador ausente/ inválido.');
-    if (onlyDigits(e.user.cpf).length !== 11) pendencias.push('CPF do trabalhador ausente/ inválido.');
-    if (!codTreina) pendencias.push('Curso sem codTreina (Tabela 29) configurado.');
-    if (respCpf.length !== 11) pendencias.push('CPF do responsável técnico (instrutor) ausente.');
+    if (cnpjEmpregador.length !== 14) pendencias.push('CNPJ do empregador ausente/inválido.');
+    if (onlyDigits(e.user.cpf).length !== 11) pendencias.push('CPF do trabalhador ausente/inválido.');
+    if (!codTreiCap) pendencias.push('Curso sem codTreiCap (Tabela 29) configurado.');
+    if (!resp || !resp.name) pendencias.push('Treinamento sem responsável técnico (instrutor).');
+    if (formProf.length < 2) pendencias.push('Formação do responsável ausente.');
+    if (codCBO.length !== 6) pendencias.push(`CBO do responsável ausente/inválido (6 dígitos). Cadastre no instrutor (sugestão: ${DEFAULT_CBO_HINT}).`);
+    // cpfProf é OPCIONAL no leiaute: só vira pendência se preenchido e inválido.
+    if (cpfProf && cpfProf.length !== 11) pendencias.push('CPF do responsável inválido.');
 
     return {
       enrollmentId: e.id,
@@ -125,13 +143,13 @@ export async function buildS2245Records(
       cnpjEmpregador,
       courseCode: e.course.code,
       courseName: e.course.name,
-      codTreina,
-      cargaHor: e.course.duration,
-      dtTreina: ymd(dt),
-      respCpf,
-      respNome: resp?.name ?? '',
-      respFormacao: resp?.formation ?? '',
-      respRegConselho: reg,
+      codTreiCap,
+      durTreiCap: e.course.duration,
+      dtTreiCap: ymd(dt),
+      cpfProf,
+      nmProf: resp?.name ?? '',
+      formProf,
+      codCBO,
       certificateCode: e.certificateCode,
       pendencias,
     };
@@ -143,34 +161,22 @@ export async function buildS2245Records(
 const esc = (s: string) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-// Gera um XML RASCUNHO do evento S-2245 para um trabalhador (um evento por
-// trabalhador, com os treinamentos do período no grupo treinamento). Segue a
-// estrutura conhecida do leiaute; precisa ser validada contra o XSD vigente.
-export function generateS2245Xml(
-  cnpjEmpregador: string,
-  cpfTrab: string,
-  nmTrab: string,
-  trainings: S2245Record[],
-): string {
-  const id = `ID1${cnpjEmpregador.padEnd(14, '0').slice(0, 14)}${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}`;
-  const treinos = trainings
-    .map((t) => `
-        <treinamento>
-          <codTreina>${esc(t.codTreina ?? '')}</codTreina>
-          <obsTreina>${esc(`${t.courseCode} - ${t.courseName} | CH ${t.cargaHor}h | Concluído ${t.dtTreina}${t.certificateCode ? ` | Cert. ${t.certificateCode}` : ''}`)}</obsTreina>
-          <responsavel>
-            <cpfResp>${esc(t.respCpf)}</cpfResp>
-            <nmResp>${esc(t.respNome)}</nmResp>
-            <dscResp>${esc(`${t.respFormacao}${t.respRegConselho ? ` - ${t.respRegConselho}` : ''}`)}</dscResp>
-          </responsavel>
-        </treinamento>`)
-    .join('');
+const pad = (s: string, n: number) => s.padStart(n, '0').slice(-n);
 
-  // OBS: namespace/versão precisam refletir o leiaute vigente antes de transmitir.
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!-- RASCUNHO S-2245 gerado pelo FalaInstrutor. Validar contra o XSD vigente do eSocial antes de transmitir. -->
-<eSocial xmlns="http://www.esocial.gov.br/schema/evt/evtTreiCap/v_S_01_03_00">
-  <evtTreiCap Id="${esc(id)}">
+// Id do evento (xs:ID): "ID" + tpInsc(1) + nrInsc(14) + AAAAMMDDHHMMSS(14) + seq(5).
+function buildEventId(cnpjEmpregador: string, seq: number): string {
+  const ts = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
+  return `ID1${pad(cnpjEmpregador, 14)}${ts}${pad(String(seq), 5)}`;
+}
+
+// Gera UM evento evtTreiCap (um treinamento por evento — treiCap é maxOccurs=1
+// no XSD v02_05_00) conforme o leiaute. SEM assinatura (rascunho); o empregador
+// deve anexar <Signature> antes de transmitir.
+export function generateS2245Event(r: S2245Record, seq: number): string {
+  const nrInsc = pad(r.cnpjEmpregador, 14).slice(0, 8); // CNPJ empregador: raiz (8 díg.)
+  const obs = `${r.courseCode} - ${r.courseName} | CH ${r.durTreiCap}h${r.certificateCode ? ` | Cert. ${r.certificateCode}` : ''}`.slice(0, 999);
+  const cpfProfTag = r.cpfProf.length === 11 ? `\n          <cpfProf>${esc(r.cpfProf)}</cpfProf>` : '';
+  return `  <evtTreiCap Id="${esc(buildEventId(r.cnpjEmpregador, seq))}">
     <ideEvento>
       <indRetif>1</indRetif>
       <tpAmb>2</tpAmb>
@@ -179,23 +185,52 @@ export function generateS2245Xml(
     </ideEvento>
     <ideEmpregador>
       <tpInsc>1</tpInsc>
-      <nrInsc>${esc(cnpjEmpregador.slice(0, 8))}</nrInsc>
+      <nrInsc>${esc(nrInsc)}</nrInsc>
     </ideEmpregador>
     <ideVinculo>
-      <cpfTrab>${esc(cpfTrab)}</cpfTrab>
+      <cpfTrab>${esc(r.cpfTrab)}</cpfTrab>
     </ideVinculo>
-    <treiCap>${treinos}
+    <treiCap>
+      <codTreiCap>${esc(r.codTreiCap ?? '')}</codTreiCap>
+      <obsTreiCap>${esc(obs)}</obsTreiCap>
+      <infoComplem>
+        <dtTreiCap>${esc(r.dtTreiCap)}</dtTreiCap>
+        <durTreiCap>${esc(String(r.durTreiCap))}</durTreiCap>
+        <indTreinAnt>N</indTreinAnt>
+        <ideProfResp>${cpfProfTag}
+          <nmProf>${esc(r.nmProf).slice(0, 70)}</nmProf>
+          <tpProf>2</tpProf>
+          <formProf>${esc(r.formProf).slice(0, 255)}</formProf>
+          <codCBO>${esc(r.codCBO)}</codCBO>
+          <nacProf>1</nacProf>
+        </ideProfResp>
+      </infoComplem>
     </treiCap>
   </evtTreiCap>
-</eSocial>`;
+  <!-- ATENÇÃO: anexar aqui o <Signature> (ds:Signature) — obrigatório na transmissão. -->`;
+}
+
+// Gera o lote de eventos (um por registro transmissível) num envelope simples.
+// NÃO é o lote oficial de envio (esse exige eventos assinados); é o conjunto de
+// rascunhos prontos para o empregador assinar e enviar.
+export function generateS2245Xml(records: S2245Record[]): string {
+  const ok = records.filter((r) => r.pendencias.length === 0);
+  const events = ok.map((r, i) => generateS2245Event(r, i + 1)).join('\n');
+  const omitidos = records.length - ok.length;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!-- ${ok.length} evento(s) S-2245 (evtTreiCap v02_05_00) — RASCUNHO sem assinatura. -->
+<!-- ${omitidos} registro(s) com pendência foram omitidos. Validar contra o XSD e ASSINAR antes de transmitir. -->
+<eSocialRascunho xmlns="${ESOCIAL_NS}">
+${events}
+</eSocialRascunho>`;
 }
 
 // Relatório CSV (separador ';' p/ Excel pt-BR) das conclusões eSocial.
 export function recordsToCsv(records: S2245Record[]): string {
-  const head = ['CPF', 'Trabalhador', 'CNPJ Empregador', 'Curso', 'codTreina', 'CargaHoraria', 'DataConclusao', 'CPF Responsavel', 'Responsavel', 'Registro', 'Certificado', 'Pendencias'];
+  const head = ['CPF Trabalhador', 'Trabalhador', 'CNPJ Empregador', 'Curso', 'codTreiCap', 'CargaHoraria', 'DataConclusao', 'CPF Responsavel', 'Responsavel', 'CBO', 'Formacao', 'Certificado', 'Pendencias'];
   const rows = records.map((r) => [
-    r.cpfTrab, r.nmTrab, r.cnpjEmpregador, `${r.courseCode} - ${r.courseName}`, r.codTreina ?? '',
-    String(r.cargaHor), r.dtTreina, r.respCpf, r.respNome, r.respRegConselho, r.certificateCode ?? '',
+    r.cpfTrab, r.nmTrab, r.cnpjEmpregador, `${r.courseCode} - ${r.courseName}`, r.codTreiCap ?? '',
+    String(r.durTreiCap), r.dtTreiCap, r.cpfProf, r.nmProf, r.codCBO, r.formProf, r.certificateCode ?? '',
     r.pendencias.join(' / '),
   ]);
   const line = (cols: string[]) => cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';');

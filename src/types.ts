@@ -23,7 +23,8 @@ export interface Instructor {
   name: string;
   formation: string;
   mte?: string; // Registro MTE do instrutor (ex.: "0124684/SP")
-  cpf?: string; // CPF do responsável (eSocial S-2245)
+  cpf?: string; // CPF do responsável (eSocial S-2245 ideProfResp.cpfProf)
+  codCBO?: string; // CBO do responsável (eSocial S-2245 ideProfResp.codCBO, 6 díg.)
   crea?: string; // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
   crq?: string; // Registro CRQ (Conselho Regional de Química), opcional
   signatureUrl?: string; // imagem da assinatura (scan), opcional

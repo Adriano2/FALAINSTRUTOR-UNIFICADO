@@ -32,14 +32,27 @@ NR→codTreina (`server/esocial.ts`), e **exportação no painel da empresa**
 (`/company/esocial/s2245`): tabela com pendências + download **CSV** e **XML
 rascunho** (um evento por trabalhador). Quem transmite é o empregador.
 
+**XML validado contra o leiaute (FEITO):** o gerador em `server/esocial.ts`
+agora segue o **XSD oficial `evtTreiCap` v02_05_00** (namespace
+`.../evtTreiCap/v02_05_00`): grupos `ideEvento`/`ideEmpregador`/`ideVinculo`/
+`treiCap`, com `codTreiCap`, `obsTreiCap`, `infoComplem` (`dtTreiCap`,
+`durTreiCap`, `indTreinAnt`) e `ideProfResp` (`cpfProf`, `nmProf`, `tpProf`,
+`formProf`, `codCBO`, `nacProf`). Um evento por treinamento (treiCap é
+maxOccurs=1). Capturamos o **CBO** do responsável (`Instructor.codCBO`).
+
+> ⚠️ **O S-2245 foi DESCONTINUADO no leiaute simplificado (S-1.3).** v02_05_00 é
+> a versão mais recente em que o evtTreiCap existe. **Confirmar com o receptor
+> eSocial do empregador** qual leiaute ele ainda aceita para o S-2245 — pode
+> ser necessário migrar a informação para **S-2200/S-2206** (Tabela 29 → 28).
+
 **Pendências/Fase 2:**
-1. **Validar o XML contra o XSD vigente** do eSocial (namespace/versão/tags do
-   grupo `treiCap`/`responsavel`) antes de qualquer transmissão — o XML atual é
-   RASCUNHO. Conferir também a **simplificação do SST**: o S-2245 pode ser
-   excluído e migrar p/ **S-2200/S-2206** (Tabela 29 → 28). O motor de dados em
-   `server/esocial.ts` já está desacoplado do leiaute.
-2. Conferir o **de-para `DEFAULT_CODTREINA`** com a tabela oficial vigente.
-3. **Transmissão direta** (opcional): cliente SOAP dos webservices (envio de
+1. **Assinatura `<Signature>` (ds:Signature) é OBRIGATÓRIA** e não é gerada — o
+   XML sai como RASCUNHO pronto-para-assinar; o empregador assina com o e-CNPJ.
+2. Conferir o **de-para `DEFAULT_CODTREINA`** (codTreiCap) com a **Tabela 29**
+   oficial vigente — os valores atuais são de referência; ajustar por curso.
+3. Validar valores de domínio: `tpProf` (1/2), `tpAmb` (1 produção/2 restrita),
+   `indTreinAnt` (N/S) conforme o caso real.
+4. **Transmissão direta** (opcional): cliente SOAP dos webservices (envio de
    lote → consulta), assinatura **XMLDSig** com o e-CNPJ do empregador
    (procuração eletrônica) — reaproveitar `server/icp.ts`. Homologar em
    **Produção Restrita** antes de produção.

@@ -92,6 +92,7 @@ interface ApiCourse {
     formation: string;
     mte: string | null;
     cpf?: string | null;
+    codCBO?: string | null;
     crea: string | null;
     crq: string | null;
     signatureUrl: string | null;
@@ -106,6 +107,7 @@ export interface ApiInstructor {
   formation: string;
   mte: string | null;
   cpf?: string | null;
+  codCBO?: string | null;
   crea: string | null;
   crq: string | null;
   signatureUrl: string | null;
@@ -228,6 +230,7 @@ export function mapApiCourse(c: ApiCourse): Course {
       formation: i.formation,
       mte: i.mte ?? undefined,
       cpf: i.cpf ?? undefined,
+      codCBO: i.codCBO ?? undefined,
       crea: i.crea ?? undefined,
       crq: i.crq ?? undefined,
       signatureUrl: i.signatureUrl ?? undefined,
@@ -555,16 +558,16 @@ export const adminApi = {
   assignUserCompany(userId: string, companyId: string | null) {
     return apiFetch(`/admin/users/${userId}/company`, { method: 'PATCH', body: JSON.stringify({ companyId }) });
   },
-  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; cpf?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) {
+  addInstructor(courseId: string, input: { name: string; formation: string; mte?: string; cpf?: string; codCBO?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean }) {
     return apiFetch(`/admin/courses/${courseId}/instructors`, { method: 'POST', body: JSON.stringify(input) });
   },
   listInstructors() {
     return apiFetch<{ instructors: ApiInstructor[] }>(`/admin/instructors`);
   },
-  createInstructor(input: { name: string; formation: string; mte?: string; cpf?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean; courseIds: string[] }) {
+  createInstructor(input: { name: string; formation: string; mte?: string; cpf?: string; codCBO?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled: boolean; courseIds: string[] }) {
     return apiFetch(`/admin/instructors`, { method: 'POST', body: JSON.stringify(input) });
   },
-  updateInstructor(id: string, input: { name?: string; formation?: string; mte?: string; cpf?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled?: boolean }) {
+  updateInstructor(id: string, input: { name?: string; formation?: string; mte?: string; cpf?: string; codCBO?: string; crea?: string; crq?: string; signatureUrl?: string; icpEnabled?: boolean }) {
     return apiFetch<{ instructors: ApiInstructor[] }>(`/admin/instructors/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   deleteInstructor(id: string) {
@@ -694,13 +697,13 @@ export interface EsocialS2245Record {
   cnpjEmpregador: string;
   courseCode: string;
   courseName: string;
-  codTreina: string | null;
-  cargaHor: number;
-  dtTreina: string;
-  respCpf: string;
-  respNome: string;
-  respFormacao: string;
-  respRegConselho: string;
+  codTreiCap: string | null;
+  durTreiCap: number;
+  dtTreiCap: string;
+  cpfProf: string;
+  nmProf: string;
+  formProf: string;
+  codCBO: string;
   certificateCode: string | null;
   pendencias: string[];
 }

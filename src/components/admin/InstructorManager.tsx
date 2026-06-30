@@ -37,6 +37,7 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
   const [formation, setFormation] = React.useState('');
   const [mte, setMte] = React.useState('');
   const [cpf, setCpf] = React.useState('');
+  const [codCBO, setCodCBO] = React.useState('');
   const [crea, setCrea] = React.useState('');
   const [crq, setCrq] = React.useState('');
   const [signatureUrl, setSignatureUrl] = React.useState('');
@@ -75,6 +76,7 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
         formation: formation.trim(),
         mte: mte.trim() || undefined,
         cpf: cpf.trim() || undefined,
+        codCBO: codCBO.trim() || undefined,
         crea: crea.trim() || undefined,
         crq: crq.trim() || undefined,
         signatureUrl: signatureUrl.trim() || undefined,
@@ -82,7 +84,7 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
         courseIds,
       }) as { instructors: ApiInstructor[] };
       setInstructors(Array.isArray(res.instructors) ? res.instructors : []);
-      setName(''); setFormation(''); setMte(''); setCpf(''); setCrea(''); setCrq(''); setSignatureUrl(''); setIcpEnabled(true); setCourseIds([]);
+      setName(''); setFormation(''); setMte(''); setCpf(''); setCodCBO(''); setCrea(''); setCrq(''); setSignatureUrl(''); setIcpEnabled(true); setCourseIds([]);
       onChanged?.();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Não foi possível cadastrar o instrutor.');
@@ -262,6 +264,10 @@ export default function InstructorManager({ courses, onChanged }: InstructorMana
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase">CPF (eSocial S-2245)</label>
             <input type="text" value={cpf} onChange={(e) => setCpf(e.target.value)} placeholder="Ex: 123.456.789-00" className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">CBO (eSocial S-2245)</label>
+            <input type="text" value={codCBO} onChange={(e) => setCodCBO(e.target.value.replace(/\D/g, ''))} placeholder="Ex: 351505 (6 dígitos)" maxLength={6} className={inputCls} />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase">Registro CREA</label>

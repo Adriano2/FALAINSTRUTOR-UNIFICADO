@@ -113,8 +113,8 @@ export default function EsocialS2245Panel() {
                 <tr key={r.enrollmentId}>
                   <td className="py-2 font-semibold text-slate-700 dark:text-slate-200">{r.nmTrab}</td>
                   <td className="py-2 text-slate-500">{r.courseCode} — {r.courseName}</td>
-                  <td className="py-2 font-mono">{r.codTreina ?? '—'}</td>
-                  <td className="py-2">{r.dtTreina ? new Date(r.dtTreina).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}</td>
+                  <td className="py-2 font-mono">{r.codTreiCap ?? '—'}</td>
+                  <td className="py-2">{r.dtTreiCap ? new Date(r.dtTreiCap).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}</td>
                   <td className="py-2">
                     {r.pendencias.length === 0
                       ? <span className="inline-flex items-center gap-1 text-emerald-600 font-bold"><CheckCircle2 className="w-3.5 h-3.5" /> Pronto</span>

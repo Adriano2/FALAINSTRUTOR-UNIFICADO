@@ -213,7 +213,8 @@ model Instructor {
   name         String
   formation    String
   mte          String?
-  cpf          String? // CPF do responsável (exigido no bloco "responsável" do S-2245)
+  cpf          String? // CPF do responsável (ideProfResp.cpfProf do S-2245)
+  codCBO       String? // CBO do responsável (ideProfResp.codCBO, 6 dígitos) — eSocial S-2245
   crea         String? // Registro CREA do instrutor (ex.: "SP-1234567/D"), opcional
   crq          String? // Registro CRQ (Conselho Regional de Química), opcional
   signatureUrl String? // imagem da assinatura (scan), opcional
