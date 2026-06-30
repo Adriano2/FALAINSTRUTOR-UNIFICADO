@@ -145,9 +145,17 @@ paymentsRouter.post('/checkout', authenticate, async (req: AuthedRequest, res: R
     return res.status(503).json({ error: 'Pagamento ainda não configurado (defina a chave Asaas no painel ou ASAAS_API_KEY).' });
   }
   const parsed = z
-    .object({ courseIds: z.array(z.string()).min(1), couponCode: z.string().optional() })
+    .object({ courseIds: z.array(z.string()).min(1), couponCode: z.string().optional(), partnerSlug: z.string().max(60).optional() })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Itens do pedido inválidos.' });
+
+  // Atribui a venda ao parceiro white-label de origem (se houver e estiver ativo).
+  let partnerSlug: string | null = null;
+  if (parsed.data.partnerSlug) {
+    const slug = parsed.data.partnerSlug.toLowerCase();
+    const partner = await prisma.partner.findFirst({ where: { slug, isActive: true } });
+    if (partner) partnerSlug = partner.slug;
+  }
 
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
@@ -162,6 +170,7 @@ paymentsRouter.post('/checkout', authenticate, async (req: AuthedRequest, res: R
       total,
       discount,
       couponCode: parsed.data.couponCode,
+      partnerSlug,
     },
   });
 

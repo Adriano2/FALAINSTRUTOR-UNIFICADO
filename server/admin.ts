@@ -18,6 +18,10 @@ import { lookupCnpj } from './nr04';
 import { extractPfx } from './icp';
 import { encryptSecret } from './crypto';
 import { listExpirations, runExpiryAlerts } from './expiry';
+import { sendEmail } from './email';
+
+// E-mail do administrador master (recebe o relatório oculto de vendas por parceiro).
+const MASTER_ADMIN_EMAIL = (process.env.MASTER_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'adriano.ricardo01@gmail.com').toLowerCase();
 
 export const adminRouter = Router();
 
@@ -576,6 +580,72 @@ adminRouter.patch('/job-roles/:id', async (req, res) => {
 adminRouter.delete('/job-roles/:id', async (req, res) => {
   await prisma.jobRole.delete({ where: { id: req.params.id } }).catch(() => {});
   res.json({ ok: true });
+});
+
+// --- Relatório OCULTO de vendas por parceiro (somente administrador master) ---
+// Só o administrador master (MASTER_ADMIN_EMAIL) enxerga a leitura do que foi
+// vendido atribuído a cada parceiro white-label; demais administradores não.
+async function requireMaster(req: AuthedRequest, res: Response): Promise<boolean> {
+  const me = await prisma.user.findUnique({ where: { id: req.user!.sub }, select: { email: true } });
+  if (!me || me.email.toLowerCase() !== MASTER_ADMIN_EMAIL) {
+    res.status(403).json({ error: 'Acesso restrito ao administrador master.' });
+    return false;
+  }
+  return true;
+}
+
+// Agrega as vendas pagas por parceiro de origem.
+async function buildPartnerSales() {
+  const orders = await prisma.order.findMany({
+    where: { status: 'PAID' },
+    select: { total: true, discount: true, partnerSlug: true, createdAt: true },
+  });
+  const partners = await prisma.partner.findMany({ select: { slug: true, name: true } });
+  const nameBySlug = new Map(partners.map((p) => [p.slug, p.name]));
+
+  const agg = new Map<string, { slug: string; name: string; orders: number; gross: number; discount: number }>();
+  for (const o of orders) {
+    const slug = o.partnerSlug ?? '';
+    const key = slug || '__direct__';
+    const name = slug ? (nameBySlug.get(slug) ?? slug) : 'Venda direta (FalaInstrutor)';
+    const cur = agg.get(key) ?? { slug, name, orders: 0, gross: 0, discount: 0 };
+    cur.orders += 1;
+    cur.gross += o.total;
+    cur.discount += o.discount;
+    agg.set(key, cur);
+  }
+  const rows = [...agg.values()].sort((a, b) => b.gross - a.gross);
+  const totals = rows.reduce(
+    (acc, r) => ({ orders: acc.orders + r.orders, gross: acc.gross + r.gross, discount: acc.discount + r.discount }),
+    { orders: 0, gross: 0, discount: 0 },
+  );
+  return { rows, totals };
+}
+
+adminRouter.get('/partner-sales', async (req: AuthedRequest, res: Response) => {
+  if (!(await requireMaster(req, res))) return;
+  res.json(await buildPartnerSales());
+});
+
+// Envia o relatório de vendas por parceiro de forma OCULTA: apenas para o
+// e-mail do administrador master, sem expor a outros administradores.
+adminRouter.post('/partner-sales/send', async (req: AuthedRequest, res: Response) => {
+  if (!(await requireMaster(req, res))) return;
+  const { rows, totals } = await buildPartnerSales();
+  const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const trs = rows
+    .map((r) => `<tr><td style="padding:6px 10px">${r.name}</td><td style="padding:6px 10px;text-align:center">${r.orders}</td><td style="padding:6px 10px;text-align:right">${brl(r.gross)}</td><td style="padding:6px 10px;text-align:right">${brl(r.discount)}</td></tr>`)
+    .join('');
+  const html = `
+    <h2 style="font-family:Arial">Relatório confidencial — Vendas por parceiro</h2>
+    <p style="font-family:Arial;color:#475569">Documento interno do administrador master. Não compartilhar.</p>
+    <table style="border-collapse:collapse;font-family:Arial;font-size:13px;border:1px solid #e2e8f0">
+      <thead><tr style="background:#1f2a44;color:#fff"><th style="padding:6px 10px;text-align:left">Parceiro</th><th style="padding:6px 10px">Pedidos</th><th style="padding:6px 10px">Bruto</th><th style="padding:6px 10px">Descontos</th></tr></thead>
+      <tbody>${trs || '<tr><td colspan="4" style="padding:10px">Sem vendas pagas.</td></tr>'}</tbody>
+      <tfoot><tr style="font-weight:bold;border-top:2px solid #1f2a44"><td style="padding:6px 10px">TOTAL</td><td style="padding:6px 10px;text-align:center">${totals.orders}</td><td style="padding:6px 10px;text-align:right">${brl(totals.gross)}</td><td style="padding:6px 10px;text-align:right">${brl(totals.discount)}</td></tr></tfoot>
+    </table>`;
+  const ok = await sendEmail(MASTER_ADMIN_EMAIL, 'FalaInstrutor — Relatório confidencial de vendas por parceiro', html);
+  res.json({ ok, sentTo: ok ? MASTER_ADMIN_EMAIL : null });
 });
 
 // --- Planos de assinatura corporativa ---

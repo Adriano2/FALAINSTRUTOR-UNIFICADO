@@ -351,6 +351,7 @@ model Order {
   paymentId  String? // id da cobrança no gateway (Asaas)
   paymentUrl String? // invoiceUrl do gateway
   couponCode String?
+  partnerSlug String? // parceiro white-label de origem da venda (atribuição)
   createdAt  DateTime    @default(now())
 }
 

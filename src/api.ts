@@ -510,6 +510,13 @@ export const adminApi = {
   deleteJobRole(id: string) {
     return apiFetch(`/admin/job-roles/${id}`, { method: 'DELETE' });
   },
+  // Relatório OCULTO de vendas por parceiro (somente administrador master).
+  partnerSales() {
+    return apiFetch<{ rows: { slug: string; name: string; orders: number; gross: number; discount: number }[]; totals: { orders: number; gross: number; discount: number } }>('/admin/partner-sales');
+  },
+  sendPartnerSales() {
+    return apiFetch<{ ok: boolean; sentTo: string | null }>('/admin/partner-sales/send', { method: 'POST' });
+  },
   replyComment(id: string, reply: string) {
     return apiFetch(`/admin/comments/${id}/reply`, { method: 'PATCH', body: JSON.stringify({ reply }) });
   },
@@ -677,9 +684,11 @@ export const paymentsApi = {
   // pagamento ainda não estiver configurado no servidor (403/503).
   async checkout(courseIds: string[], couponCode?: string): Promise<{ url: string; orderId: string } | null> {
     try {
+      // Atribui a venda ao parceiro white-label de origem (subdomínio atual).
+      const partnerSlug = typeof window !== 'undefined' ? partnerSlugFromHost(window.location.host) ?? undefined : undefined;
       return await apiFetch<{ url: string; orderId: string }>('/payments/checkout', {
         method: 'POST',
-        body: JSON.stringify({ courseIds, couponCode }),
+        body: JSON.stringify({ courseIds, couponCode, partnerSlug }),
       });
     } catch (err) {
       if (err instanceof Error && /não configurado|configurado/i.test(err.message)) return null;

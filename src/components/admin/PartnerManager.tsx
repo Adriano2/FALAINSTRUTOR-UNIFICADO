@@ -9,9 +9,88 @@
  */
 
 import React from 'react';
-import { Loader2, Plus, Trash2, Save, Check, ExternalLink } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Check, ExternalLink, Lock, Send, BarChart3 } from 'lucide-react';
 import { adminApi } from '../../api';
 import { Partner } from '../../types';
+
+const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// Relatório CONFIDENCIAL de vendas por parceiro. Só carrega para o
+// administrador master (o endpoint devolve 403 aos demais), permanecendo
+// oculto para os outros administradores.
+function PartnerSalesReport() {
+  type Row = { slug: string; name: string; orders: number; gross: number; discount: number };
+  const [rows, setRows] = React.useState<Row[]>([]);
+  const [totals, setTotals] = React.useState<{ orders: number; gross: number; discount: number } | null>(null);
+  const [allowed, setAllowed] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [sending, setSending] = React.useState(false);
+  const [sentMsg, setSentMsg] = React.useState('');
+
+  React.useEffect(() => {
+    adminApi.partnerSales()
+      .then((d) => { setRows(d.rows); setTotals(d.totals); setAllowed(true); })
+      .catch(() => setAllowed(false))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading || !allowed) return null; // oculto para não-master
+
+  const send = async () => {
+    setSending(true); setSentMsg('');
+    try {
+      const r = await adminApi.sendPartnerSales();
+      setSentMsg(r.ok ? `Relatório enviado de forma reservada para ${r.sentTo}.` : 'Não foi possível enviar (verifique a configuração de e-mail).');
+    } catch (e) { setSentMsg(e instanceof Error ? e.message : 'Falha ao enviar.'); }
+    finally { setSending(false); }
+  };
+
+  return (
+    <div className="mt-8 bg-white dark:bg-slate-900 border border-amber-300/60 dark:border-amber-500/30 rounded-lg p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2"><Lock className="w-4 h-4 text-amber-500" /> Vendas por parceiro <span className="text-[10px] font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded">confidencial — master</span></h3>
+          <p className="text-xs text-slate-400">Leitura do que foi vendido atribuído a cada parceiro white-label. Visível apenas para o administrador master.</p>
+        </div>
+        <button onClick={send} disabled={sending} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded bg-slate-800 hover:bg-slate-900 disabled:opacity-60 text-white">
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Enviar relatório (reservado)
+        </button>
+      </div>
+      {sentMsg && <p className="text-xs text-emerald-600">{sentMsg}</p>}
+      {rows.length === 0 ? (
+        <p className="text-xs text-slate-400 flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Nenhuma venda paga registrada ainda.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left">
+            <thead className="text-slate-400 uppercase text-[10px]">
+              <tr><th className="py-2">Parceiro</th><th className="py-2 text-center">Pedidos</th><th className="py-2 text-right">Bruto</th><th className="py-2 text-right">Descontos</th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {rows.map((r) => (
+                <tr key={r.slug || '__direct__'}>
+                  <td className="py-2 font-semibold text-slate-700 dark:text-slate-200">{r.name}</td>
+                  <td className="py-2 text-center">{r.orders}</td>
+                  <td className="py-2 text-right font-bold text-emerald-600">{brl(r.gross)}</td>
+                  <td className="py-2 text-right text-slate-400">{brl(r.discount)}</td>
+                </tr>
+              ))}
+            </tbody>
+            {totals && (
+              <tfoot>
+                <tr className="border-t-2 border-slate-300 dark:border-slate-700 font-extrabold">
+                  <td className="py-2">TOTAL</td>
+                  <td className="py-2 text-center">{totals.orders}</td>
+                  <td className="py-2 text-right">{brl(totals.gross)}</td>
+                  <td className="py-2 text-right">{brl(totals.discount)}</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PartnerManager() {
   const [items, setItems] = React.useState<Partner[]>([]);
@@ -109,6 +188,8 @@ export default function PartnerManager() {
           })}
         </div>
       )}
+
+      <PartnerSalesReport />
     </div>
   );
 }
