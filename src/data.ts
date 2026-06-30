@@ -12,6 +12,7 @@ export const INITIAL_LAYOUT_CONFIG: LayoutConfig = {
   youtubeUrl: "https://www.youtube.com/@fala.Instrutor",
   linkedinUrl: "",
   phone: "+55 (11) 99625-5102",
+  whatsappNumber: "5511996255102", // E.164 (sem símbolos) para o botão WhatsApp
   primaryColor: "#0f172a", // slate-900
   secondaryColor: "#eab308", // yellow-500
   backgroundColor: "#f8fafc", // slate-50

@@ -121,6 +121,7 @@ export interface LayoutConfig {
   youtubeUrl: string;
   linkedinUrl: string;
   phone: string;
+  whatsappNumber?: string; // número p/ o botão "Falar no WhatsApp" (click-to-chat)
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;

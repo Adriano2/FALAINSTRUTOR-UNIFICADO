@@ -231,6 +231,7 @@ export default function AdminDashboard({
   const [cfgInstagram, setCfgInstagram] = React.useState(layoutConfig.instagramUrl || '');
   const [cfgYoutube, setCfgYoutube] = React.useState(layoutConfig.youtubeUrl || '');
   const [cfgLinkedin, setCfgLinkedin] = React.useState(layoutConfig.linkedinUrl || '');
+  const [cfgWhatsapp, setCfgWhatsapp] = React.useState(layoutConfig.whatsappNumber || '');
   const [cfgAsaasToken, setCfgAsaasToken] = React.useState(paymentConfig.asaasToken || '');
   const [cfgAsaasEnv, setCfgAsaasEnv] = React.useState<'sandbox' | 'production'>(paymentConfig.asaasEnv || 'production');
   const [cfgAsaasWebhook, setCfgAsaasWebhook] = React.useState(paymentConfig.asaasWebhookToken || '');
@@ -414,7 +415,7 @@ export default function AdminDashboard({
   // Save Settings Config
   const handleSaveSettings = () => {
     onSaveConfig(
-      { ...layoutConfig, companyName: layoutCompany, phone: layoutPhone, primaryColor: cfgPrimary, secondaryColor: cfgSecondary, instagramUrl: cfgInstagram, youtubeUrl: cfgYoutube, linkedinUrl: cfgLinkedin },
+      { ...layoutConfig, companyName: layoutCompany, phone: layoutPhone, primaryColor: cfgPrimary, secondaryColor: cfgSecondary, instagramUrl: cfgInstagram, youtubeUrl: cfgYoutube, linkedinUrl: cfgLinkedin, whatsappNumber: cfgWhatsapp.replace(/\D/g, '') },
       {
         ...paymentConfig,
         asaasToken: cfgAsaasToken.trim(),
@@ -1302,7 +1303,7 @@ export default function AdminDashboard({
                           className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                         />
                       </div>
-                      <div className="space-y-1 sm:col-span-2">
+                      <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase">LinkedIn (URL)</label>
                         <input
                           type="text"
@@ -1311,6 +1312,17 @@ export default function AdminDashboard({
                           placeholder="https://linkedin.com/company/sua_empresa"
                           className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                         />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">WhatsApp (botão flutuante)</label>
+                        <input
+                          type="text"
+                          value={cfgWhatsapp}
+                          onChange={(e) => setCfgWhatsapp(e.target.value)}
+                          placeholder="5511999999999 (DDI+DDD+número)"
+                          className="w-full text-xs p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                        />
+                        <p className="text-[10px] text-slate-400">Número do botão "Falar no WhatsApp". Deixe em branco para ocultar.</p>
                       </div>
                     </div>
                     <p className="text-[10px] text-slate-400">Deixe em branco para ocultar o ícone no rodapé. (Facebook e Twitter/X removidos.)</p>

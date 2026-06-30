@@ -6,6 +6,7 @@
 import React from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import WhatsAppButton from './components/WhatsAppButton';
 import LandingPage from './components/LandingPage';
 // Telas pesadas/secundárias carregadas sob demanda (code-splitting).
 const CourseDetail = React.lazy(() => import('./components/CourseDetail'));
@@ -956,6 +957,11 @@ export default function App() {
         paymentConfig={paymentConfig}
         onNavigate={handleNavigate}
       />
+
+      {/* Botão flutuante "Falar no WhatsApp" (telas públicas) */}
+      {['home', 'course-detail', 'cart', 'validate-certificate', 'projeto-pedagogico', 'login', 'register'].includes(currentScreen) && (
+        <WhatsAppButton number={layoutConfig.whatsappNumber || layoutConfig.phone} />
+      )}
 
       {/* Boas-vindas após o cadastro gratuito */}
       {welcomeName && (
