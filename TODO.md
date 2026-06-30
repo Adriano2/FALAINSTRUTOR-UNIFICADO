@@ -9,6 +9,21 @@ Lista de itens combinados para evolução posterior da plataforma.
 > Arquivos do certificado: `src/components/StudentDashboard.tsx` (front `certificate-page-1`,
 > verso `BackPage`). Mexer apenas quando o cliente autorizar.
 
+## 💳 LEMBRETE — Finalizar pagamento Asaas (PENDENTE)
+
+**Status:** integração pronta no código; falta concluir a configuração na conta Asaas.
+Itens a fazer (produção, app.asaas.com):
+1. Colar a **API Key correta** (`$aact_...`, longa) no painel do site
+   (Configurações → Pagamento – Integração Asaas), Ambiente = **Produção**.
+   (A chave anterior era curta/errada — deu 401 em prod e sandbox.)
+2. **DESABILITAR** "Validação de saque via Webhook" (Integrações → Segurança) —
+   estava habilitada e pode **travar os saques** (nosso app não autoriza saque).
+3. Criar **Webhook de Cobranças**: URL `https://falainstrutor.com.br/api/payments/webhook`,
+   token = "Token do Webhook" do painel, eventos PAYMENT_CONFIRMED + PAYMENT_RECEIVED.
+4. Conferir: `curl -s http://localhost:8787/api/payments/status` → `configured:true`
+   e teste do token contra o Asaas → `producao: 200`.
+5. Compra-teste de **R$ 1,00** via PIX → confirmar matrícula automática.
+
 ## 🧾 Integração de emissão de NFS-e (Nota Fiscal de Serviço)
 
 **Status:** base de gerenciamento já implementada (cadastro manual, status
