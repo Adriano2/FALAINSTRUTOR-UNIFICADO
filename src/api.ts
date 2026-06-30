@@ -148,7 +148,7 @@ export interface CnpjInfo {
 export interface AccessWindow { days?: number[]; start?: string; end?: string }
 export interface AccessSchedule { enabled?: boolean; windows?: AccessWindow[]; days?: number[]; start?: string; end?: string }
 export interface CompanyDashboardData {
-  company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null; employeeCount: number; cnae: string | null; cnaeDescription: string | null; riskGrade: number | null; accessSchedule?: AccessSchedule } | null;
+  company: { id: string; name: string; cnpj: string | null; email: string | null; phone: string | null; employeeCount: number; cnae: string | null; cnaeDescription: string | null; riskGrade: number | null; accessSchedule?: AccessSchedule; subscription?: { planId: string | null; planName: string | null; priceMonthly: number | null; status: string | null; renewsAt: string | null; active: boolean } } | null;
   employees: {
     id: string;
     name: string;
@@ -667,6 +667,13 @@ export const companyApi = {
   // Atribui (ou remove) a trilha de cargo de um funcionário.
   assignJobRole(employeeId: string, jobRoleId: string | null) {
     return apiFetch(`/company/employees/${employeeId}/job-role`, { method: 'PATCH', body: JSON.stringify({ jobRoleId }) });
+  },
+  // Assinatura recorrente (plano corporativo).
+  subscribe(planId: string) {
+    return apiFetch<{ subscriptionId: string; url: string | null }>('/company/subscription', { method: 'POST', body: JSON.stringify({ planId }) });
+  },
+  cancelSubscription() {
+    return apiFetch<{ ok: boolean }>('/company/subscription/cancel', { method: 'POST' });
   },
   // eSocial S-2245: leitura dos treinamentos concluídos (com pendências).
   esocialS2245(from?: string, to?: string) {

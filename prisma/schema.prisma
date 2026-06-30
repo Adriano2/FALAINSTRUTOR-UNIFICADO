@@ -128,9 +128,10 @@ model Company {
   // Assinatura recorrente (plano corporativo).
   planId               String?
   plan                 Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
-  subscriptionStatus   String?   // active | trial | canceled
+  subscriptionStatus   String?   // active | pending | canceled
   subscriptionRenewsAt DateTime?
   asaasSubscriptionId  String?
+  asaasCustomerId      String?   // cliente Asaas da empresa (CNPJ) p/ a assinatura
 
   members   User[]
 }

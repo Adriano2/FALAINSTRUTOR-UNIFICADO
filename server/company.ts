@@ -16,6 +16,7 @@ import { prisma } from './db';
 import { authenticate, type AuthedRequest } from './auth';
 import { obligatoryTrainings, workloadForRisk } from './nr04';
 import { buildS2245Records, generateS2245Xml, recordsToCsv } from './esocial';
+import { asaas, resolveAsaas } from './payments';
 
 export const companyRouter = Router();
 
@@ -36,7 +37,7 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const companyId = await requireCompany(req, res);
   if (!companyId) return;
 
-  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  const company = await prisma.company.findUnique({ where: { id: companyId }, include: { plan: true } });
   const members = await prisma.user.findMany({
     where: { companyId, role: 'STUDENT' },
     orderBy: { name: 'asc' },
@@ -157,6 +158,14 @@ companyRouter.get('/me', async (req: AuthedRequest, res: Response) => {
           id: company.id, name: company.name, cnpj: company.cnpj, email: company.email, phone: company.phone,
           employeeCount: company.employeeCount, cnae: company.cnae, cnaeDescription: company.cnaeDescription, riskGrade: company.riskGrade,
           accessSchedule: company.accessSchedule ?? {},
+          subscription: {
+            planId: company.planId,
+            planName: company.plan?.name ?? null,
+            priceMonthly: company.plan?.priceMonthly ?? null,
+            status: company.subscriptionStatus,
+            renewsAt: company.subscriptionRenewsAt,
+            active: company.subscriptionStatus === 'active',
+          },
         }
       : null,
     employees,
@@ -260,4 +269,97 @@ companyRouter.get('/esocial/s2245/export', async (req: AuthedRequest, res: Respo
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="s2245-rascunho.xml"');
   res.send(xml);
+});
+
+// --- Assinatura recorrente (plano corporativo) ---
+
+// Garante um cliente Asaas para a empresa (cacheia o id), usando o CNPJ.
+async function getOrCreateCompanyCustomer(company: { id: string; name: string; email: string | null; cnpj: string | null; asaasCustomerId: string | null }): Promise<string> {
+  if (company.asaasCustomerId) return company.asaasCustomerId;
+  const created = await asaas<{ id: string }>('/customers', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: company.name,
+      email: company.email ?? undefined,
+      cpfCnpj: (company.cnpj ?? '').replace(/\D/g, ''),
+    }),
+  });
+  await prisma.company.update({ where: { id: company.id }, data: { asaasCustomerId: created.id } });
+  return created.id;
+}
+
+// Assina (ou troca) um plano: cria a assinatura mensal no Asaas e devolve a URL
+// da primeira fatura para a empresa pagar.
+companyRouter.post('/subscription', async (req: AuthedRequest, res: Response) => {
+  const companyId = await requireCompany(req, res);
+  if (!companyId) return;
+  const { key } = await resolveAsaas();
+  if (!key) return res.status(503).json({ error: 'Pagamento ainda não configurado.' });
+
+  const parsed = z.object({ planId: z.string().min(1) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Plano inválido.' });
+
+  const plan = await prisma.plan.findFirst({ where: { id: parsed.data.planId, isActive: true } });
+  if (!plan) return res.status(404).json({ error: 'Plano não encontrado.' });
+  if (plan.priceMonthly <= 0) return res.status(400).json({ error: 'Plano sem valor mensal definido.' });
+
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  if (!company) return res.status(404).json({ error: 'Empresa não encontrada.' });
+  if (!(company.cnpj ?? '').replace(/\D/g, '')) return res.status(400).json({ error: 'Cadastre o CNPJ da empresa antes de assinar.' });
+
+  try {
+    // Cancela a assinatura anterior (troca de plano), se houver.
+    if (company.asaasSubscriptionId) {
+      await asaas(`/subscriptions/${company.asaasSubscriptionId}`, { method: 'DELETE' }).catch(() => {});
+    }
+
+    const customerId = await getOrCreateCompanyCustomer(company);
+    const nextDueDate = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
+    const sub = await asaas<{ id: string }>('/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify({
+        customer: customerId,
+        billingType: 'UNDEFINED', // PIX, Boleto ou Cartão por fatura
+        value: plan.priceMonthly,
+        nextDueDate,
+        cycle: 'MONTHLY',
+        description: `FalaInstrutor • Plano ${plan.name}`,
+        externalReference: company.id,
+      }),
+    });
+
+    await prisma.company.update({
+      where: { id: company.id },
+      data: { planId: plan.id, asaasSubscriptionId: sub.id, subscriptionStatus: 'pending' },
+    });
+
+    // Recupera a URL da primeira fatura para pagamento imediato.
+    let url: string | null = null;
+    try {
+      const pays = await asaas<{ data: { invoiceUrl: string }[] }>(`/subscriptions/${sub.id}/payments`);
+      url = pays.data?.[0]?.invoiceUrl ?? null;
+    } catch { /* fatura ainda não gerada */ }
+
+    res.json({ subscriptionId: sub.id, url });
+  } catch (err) {
+    res.status(502).json({ error: err instanceof Error ? err.message : 'Falha ao criar a assinatura.' });
+  }
+});
+
+// Cancela a assinatura recorrente da empresa.
+companyRouter.post('/subscription/cancel', async (req: AuthedRequest, res: Response) => {
+  const companyId = await requireCompany(req, res);
+  if (!companyId) return;
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  if (!company?.asaasSubscriptionId) return res.status(400).json({ error: 'Nenhuma assinatura ativa.' });
+  try {
+    await asaas(`/subscriptions/${company.asaasSubscriptionId}`, { method: 'DELETE' }).catch(() => {});
+    await prisma.company.update({
+      where: { id: company.id },
+      data: { subscriptionStatus: 'canceled', asaasSubscriptionId: null },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: err instanceof Error ? err.message : 'Falha ao cancelar a assinatura.' });
+  }
 });

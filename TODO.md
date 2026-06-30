@@ -24,6 +24,22 @@ Itens a fazer (produção, app.asaas.com):
    e teste do token contra o Asaas → `producao: 200`.
 5. Compra-teste de **R$ 1,00** via PIX → confirmar matrícula automática.
 
+## 🔁 Assinatura recorrente (plano corporativo) — observações
+
+**Status (FEITO):** empresa assina/troca/cancela plano pelo painel; cria
+`subscription` mensal no Asaas (`server/company.ts` → `/company/subscription`),
+abre a 1ª fatura, e o webhook (`server/payments.ts`) marca `active` + renova
+`subscriptionRenewsAt` a cada pagamento confirmado da assinatura.
+
+**A conferir quando o Asaas estiver com a chave real:**
+- O webhook precisa receber também eventos de assinatura. Confirmar no painel
+  Asaas que os eventos `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED` estão habilitados
+  (eles cobrem faturas de assinatura, que trazem `payment.subscription`).
+- Opcional: tratar `PAYMENT_OVERDUE`/`SUBSCRIPTION_*` para marcar inadimplência
+  e suspender o plano automaticamente.
+- Não há gating de funcionalidades por plano ainda (limite de colaboradores do
+  plano é exibido, mas não bloqueia). Definir regras se necessário.
+
 ## 🏛️ eSocial S-2245 — Fase 2 (transmissão direta) e validação do leiaute
 
 **Status (Fase 1 — FEITO):** captura de `codTreina`/flag eSocial por curso

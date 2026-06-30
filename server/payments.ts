@@ -32,7 +32,7 @@ function baseUrlFor(env?: string | null): string {
 
 // Resolve a configuração ativa do Asaas: PRIORIZA o que foi salvo no painel
 // (Configurações → pagamento), caindo para as variáveis de ambiente.
-async function resolveAsaas(): Promise<{ key: string | null; baseUrl: string; webhookToken: string | null }> {
+export async function resolveAsaas(): Promise<{ key: string | null; baseUrl: string; webhookToken: string | null }> {
   let token: string | null = null;
   let env: string | null = ENV_ASAAS_ENV ?? null;
   let webhookToken: string | null = ENV_ASAAS_WEBHOOK_TOKEN ?? null;
@@ -52,7 +52,7 @@ async function resolveAsaas(): Promise<{ key: string | null; baseUrl: string; we
 // Mantido para o /health (configuração via ambiente). O /status reflete o painel.
 export const paymentsConfigured = Boolean(ENV_ASAAS_API_KEY);
 
-async function asaas<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+export async function asaas<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const { key, baseUrl } = await resolveAsaas();
   if (!key) throw new Error('Asaas não configurado (defina a chave no painel ou ASAAS_API_KEY).');
   const res = await fetch(`${baseUrl}${path}`, {
@@ -127,6 +127,21 @@ async function fulfillOrder(orderId: string, paymentId?: string) {
       },
     });
     await tx.order.update({ where: { id: order.id }, data: { status: 'PAID', paymentId: paymentId ?? order.paymentId } });
+  });
+}
+
+// Marca a assinatura corporativa como ativa e renova a data de vencimento ao
+// confirmar um pagamento recorrente (idempotente).
+async function fulfillSubscriptionPayment(subscriptionId: string, dueDateISO?: string) {
+  const company = await prisma.company.findFirst({ where: { asaasSubscriptionId: subscriptionId } });
+  if (!company) return;
+  // Próxima renovação: vencimento do ciclo + 1 mês (ou hoje + 1 mês).
+  const base = dueDateISO ? new Date(dueDateISO) : new Date();
+  const renews = new Date(base);
+  renews.setMonth(renews.getMonth() + 1);
+  await prisma.company.update({
+    where: { id: company.id },
+    data: { subscriptionStatus: 'active', subscriptionRenewsAt: renews },
   });
 }
 
@@ -211,13 +226,19 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Webhook não autorizado.' });
   }
   const event = req.body?.event as string | undefined;
-  const payment = req.body?.payment as { externalReference?: string; id?: string } | undefined;
+  const payment = req.body?.payment as { externalReference?: string; id?: string; subscription?: string; dueDate?: string } | undefined;
 
-  if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && payment?.externalReference) {
+  if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
     try {
-      await fulfillOrder(payment.externalReference, payment.id);
+      // Pagamento de assinatura recorrente (plano da empresa).
+      if (payment?.subscription) {
+        await fulfillSubscriptionPayment(payment.subscription, payment.dueDate);
+      } else if (payment?.externalReference) {
+        // Pagamento de pedido avulso (cursos).
+        await fulfillOrder(payment.externalReference, payment.id);
+      }
     } catch (err) {
-      console.error('[asaas webhook] erro ao provisionar pedido:', err);
+      console.error('[asaas webhook] erro ao processar pagamento:', err);
       return res.status(500).json({ error: 'Erro ao processar o pagamento.' });
     }
   }
