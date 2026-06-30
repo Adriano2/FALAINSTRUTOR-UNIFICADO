@@ -38,6 +38,8 @@ import { Lock, Mail, UserPlus, Key, Info, HelpCircle, Check, AlertCircle } from 
 export default function App() {
   // Global App States
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
+  // Nome do usuário recém-cadastrado (exibe a mensagem de boas-vindas).
+  const [welcomeName, setWelcomeName] = React.useState<string | null>(null);
 
   const [currentScreen, setCurrentScreen] = React.useState<string>(() => {
     // Landing de divulgação compartilhável: /?lp ou /?lp=1
@@ -402,7 +404,7 @@ export default function App() {
       setRegConfirmPass('');
 
       handleNavigate('student-dashboard');
-      alert(`Seja bem-vindo, ${newUser.name}! Sua conta de SST foi criada e habilitada.`);
+      setWelcomeName(newUser.name); // exibe a mensagem de boas-vindas
     } catch (err) {
       alert(err instanceof Error ? err.message : "Não foi possível concluir o cadastro.");
     }
@@ -949,11 +951,47 @@ export default function App() {
       </main>
 
       {/* Dynamic Footer Component */}
-      <Footer 
+      <Footer
         layoutConfig={layoutConfig}
         paymentConfig={paymentConfig}
         onNavigate={handleNavigate}
       />
+
+      {/* Boas-vindas após o cadastro gratuito */}
+      {welcomeName && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" onClick={() => setWelcomeName(null)}>
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-emerald-600 to-[#1f2a3a] px-6 py-7 text-center text-white">
+              <div className="mx-auto w-14 h-14 rounded-full bg-white/15 flex items-center justify-center text-3xl mb-2">🎉</div>
+              <h2 className="text-xl font-extrabold">Seja bem-vindo(a), {welcomeName.split(' ')[0]}!</h2>
+              <p className="text-xs text-emerald-50/90 mt-1">Sua conta FalaInstrutor foi criada com sucesso.</p>
+            </div>
+            <div className="p-6 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+              <p>Tudo pronto para você se capacitar em <strong>Segurança e Saúde no Trabalho</strong>. A partir de agora você pode:</p>
+              <ul className="space-y-1.5 text-[13px]">
+                <li className="flex items-start gap-2"><span className="text-emerald-500 mt-0.5">✓</span> Explorar os treinamentos (NRs) e se matricular;</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-500 mt-0.5">✓</span> Estudar em <strong>EaD</strong> com acesso imediato;</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-500 mt-0.5">✓</span> Emitir o <strong>certificado válido</strong> com QR de autenticidade ao concluir.</li>
+              </ul>
+              <p className="text-[12px] text-slate-400">Enviamos também um e-mail de boas-vindas para você. 📧</p>
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <button
+                  onClick={() => { setWelcomeName(null); handleNavigate('home'); }}
+                  className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl cursor-pointer"
+                >
+                  Explorar treinamentos
+                </button>
+                <button
+                  onClick={() => setWelcomeName(null)}
+                  className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl cursor-pointer"
+                >
+                  Ir para meus cursos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
