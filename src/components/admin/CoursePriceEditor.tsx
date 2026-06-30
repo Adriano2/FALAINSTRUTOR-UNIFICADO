@@ -21,23 +21,29 @@ interface CoursePriceEditorProps {
 export default function CoursePriceEditor({ course, onSaved }: CoursePriceEditorProps) {
   // Mantém como texto para o usuário digitar com vírgula/ponto livremente.
   const [value, setValue] = React.useState(String(course.price ?? 0).replace('.', ','));
+  const [validity, setValidity] = React.useState(String(course.validityMonths ?? 12));
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
     setValue(String(course.price ?? 0).replace('.', ','));
-  }, [course.price]);
+    setValidity(String(course.validityMonths ?? 12));
+  }, [course.price, course.validityMonths]);
 
   const parsed = Number(value.replace(/\./g, '').replace(',', '.'));
-  const changed = !Number.isNaN(parsed) && parsed !== (course.price ?? 0);
+  const validityNum = parseInt(validity, 10);
+  const changed =
+    (!Number.isNaN(parsed) && parsed !== (course.price ?? 0)) ||
+    (!Number.isNaN(validityNum) && validityNum !== (course.validityMonths ?? 12));
 
   const save = async () => {
     setError('');
     if (Number.isNaN(parsed) || parsed < 0) { setError('Preço inválido.'); return; }
+    if (Number.isNaN(validityNum) || validityNum < 1) { setError('Validade inválida.'); return; }
     setSaving(true);
     try {
-      await adminApi.updateCoursePrice(course.id, { price: Number(parsed.toFixed(2)) });
+      await adminApi.updateCoursePrice(course.id, { price: Number(parsed.toFixed(2)), validityMonths: validityNum });
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
       onSaved?.();
@@ -78,6 +84,16 @@ export default function CoursePriceEditor({ course, onSaved }: CoursePriceEditor
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : saved ? <Check className="w-3 h-3" /> : null}
           {saved ? 'Salvo' : 'Salvar'}
         </button>
+      </div>
+      <div className="flex items-center gap-1.5 mt-1.5">
+        <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">Validade (meses)</span>
+        <input
+          value={validity}
+          onChange={(e) => setValidity(e.target.value.replace(/\D/g, ''))}
+          inputMode="numeric"
+          className="w-14 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-1 text-[12px] font-bold text-slate-900 dark:text-white focus:outline-none"
+        />
+        <span className="text-[10px] text-slate-400">renovação do certificado</span>
       </div>
       {error && <p className="text-[10px] text-red-500 font-semibold mt-1">{error}</p>}
     </div>

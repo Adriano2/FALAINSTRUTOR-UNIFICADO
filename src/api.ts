@@ -72,6 +72,7 @@ interface ApiCourse {
   description: string;
   duration: number;
   modality: string | null;
+  validityMonths?: number | null;
   price: number;
   coverImage: string | null;
   isActive: boolean;
@@ -196,6 +197,7 @@ export function mapApiCourse(c: ApiCourse): Course {
     description: c.description,
     duration: c.duration,
     modality: c.modality ?? undefined,
+    validityMonths: c.validityMonths ?? undefined,
     price: c.price,
     coverImage: c.coverImage ?? undefined,
     isActive: c.isActive,
@@ -267,6 +269,7 @@ interface ApiEnrollment {
   examScore: number | null;
   passed: boolean;
   released: boolean;
+  releasedAt?: string | null;
   certificateCode: string | null;
   enrolledAt: string;
   course: ApiCourse;
@@ -288,6 +291,7 @@ export function mapApiEnrollment(e: ApiEnrollment, user: User): Enrollment {
     examScore: e.examScore,
     passed: e.passed,
     released: Boolean(e.released),
+    releasedAt: e.releasedAt ?? null,
     certificateCode: e.certificateCode,
     enrolledAt: (e.enrolledAt || '').split('T')[0],
   };
@@ -515,7 +519,7 @@ export const adminApi = {
     return apiFetch(`/admin/courses/${courseId}/exam`, { method: 'PATCH', body: JSON.stringify({ questions }) });
   },
   // Atualiza preço/visibilidade do curso (Gestão de Cursos).
-  updateCoursePrice(courseId: string, input: { price?: number; isActive?: boolean; isFeatured?: boolean }) {
+  updateCoursePrice(courseId: string, input: { price?: number; validityMonths?: number; isActive?: boolean; isFeatured?: boolean }) {
     return apiFetch(`/admin/courses/${courseId}/price`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   saveSlides(courseId: string, slides: { title: string; bullets: string[] }[]) {

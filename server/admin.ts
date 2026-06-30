@@ -483,6 +483,7 @@ adminRouter.patch('/courses/:id/price', async (req, res) => {
   const parsed = z
     .object({
       price: z.number().min(0).max(1_000_000).optional(),
+      validityMonths: z.number().int().min(1).max(120).optional(),
       isActive: z.boolean().optional(),
       isFeatured: z.boolean().optional(),
     })
@@ -490,6 +491,7 @@ adminRouter.patch('/courses/:id/price', async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: 'Valores inválidos.' });
   const data: Prisma.CourseUpdateInput = {};
   if (parsed.data.price !== undefined) data.price = parsed.data.price;
+  if (parsed.data.validityMonths !== undefined) data.validityMonths = parsed.data.validityMonths;
   if (parsed.data.isActive !== undefined) data.isActive = parsed.data.isActive;
   if (parsed.data.isFeatured !== undefined) data.isFeatured = parsed.data.isFeatured;
   if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada para atualizar.' });

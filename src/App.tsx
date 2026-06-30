@@ -691,6 +691,7 @@ export default function App() {
             onPostComment={handlePostComment}
             onCompleteEnrollment={handleCompleteEnrollment}
             onUpdateProgress={handleUpdateEnrollmentProgress}
+            onRenew={handleAddToCart}
           />
         )}
 

@@ -40,6 +40,13 @@ const COMPANY_PASSWORD = process.env.COMPANY_PASSWORD || 'Empresa@2026';
 const STUDENT_EMAIL = process.env.STUDENT_EMAIL || 'aluno@falainstrutor.com.br';
 const STUDENT_PASSWORD = process.env.STUDENT_PASSWORD || 'Aluno@2026';
 
+// Validade do certificado por NR (em meses). Ajustável depois no painel.
+const VALIDITY_BY_CODE: Record<string, number> = {
+  'NR 10': 24, 'NR 12': 24, 'NR 33': 12, 'NR 35': 24, 'NR 20': 12,
+  'NR 06': 12, 'NR 05': 12, 'NR 11': 12, 'NR 13': 12, 'NR 18': 12,
+  'LEI LUCAS 4H': 24, 'LEI LUCAS 10H': 24,
+};
+
 async function main() {
   // 1) Administrador
   const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
@@ -158,6 +165,7 @@ async function main() {
         modules: c.modules,
         manualActivities: c.manualActivities,
         modality: c.modality ?? 'EaD',
+        validityMonths: VALIDITY_BY_CODE[c.code] ?? 12,
         instructors: {
           create: c.instructors.map((i) => ({
             name: i.name,

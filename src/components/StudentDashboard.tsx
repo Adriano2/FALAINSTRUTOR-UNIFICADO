@@ -8,6 +8,7 @@ import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, E
 import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE, RESPONSAVEL_TECNICO } from '../data';
 import { enrollmentsApi } from '../api';
 import AvatarUploader from './AvatarUploader';
+import { certificateValidity } from '../lib/validity';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation,
   HardHat, Flame, Zap, Users, AlertTriangle, ClipboardList, ClipboardCheck, Eye, Droplets, Wrench, Layers, Thermometer, Factory, FlaskConical, Truck, Activity, BookOpen, Leaf, Settings, FileCheck, Flag, Wind, type LucideIcon } from 'lucide-react';
 
@@ -133,6 +134,7 @@ interface StudentDashboardProps {
   onPostComment: (comment: Omit<Comment, 'id' | 'date'>) => void;
   onCompleteEnrollment: (enrollmentId: string, score: number, passed: boolean, certificateCode: string, answers: Record<number, number>) => Promise<Enrollment | undefined>;
   onUpdateProgress: (enrollmentId: string, progress: number) => void;
+  onRenew?: (course: Course) => void; // renovar (recomprar) o treinamento vencido/a vencer
 }
 
 export default function StudentDashboard({
@@ -145,7 +147,8 @@ export default function StudentDashboard({
   onUpdateProfile,
   onPostComment,
   onCompleteEnrollment,
-  onUpdateProgress
+  onUpdateProgress,
+  onRenew,
 }: StudentDashboardProps) {
   const [activeTab, setActiveTab] = React.useState<'my-courses' | 'my-profile'>('my-courses');
   
@@ -1059,6 +1062,29 @@ export default function StudentDashboard({
                               </span>
                             ) : null}
                           </div>
+
+                          {/* Validade do certificado + renovação */}
+                          {enr.passed && enr.released && enr.certificateCode && (() => {
+                            const v = certificateValidity(enr.releasedAt || enr.startDate, course.validityMonths);
+                            if (v.status === 'none') return null;
+                            const cls =
+                              v.status === 'expired' ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 border-rose-200 dark:border-rose-500/30'
+                              : v.status === 'expiring' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-500/30'
+                              : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-500/30';
+                            return (
+                              <div className={`mt-2 flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border text-[11px] font-bold ${cls}`}>
+                                <span>{v.status === 'expired' ? '⚠ ' : ''}{v.label}</span>
+                                {(v.status === 'expired' || v.status === 'expiring') && onRenew && (
+                                  <button
+                                    onClick={() => onRenew(course)}
+                                    className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shrink-0 cursor-pointer"
+                                  >
+                                    Renovar
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                         </div>
                       );

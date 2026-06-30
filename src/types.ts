@@ -36,6 +36,7 @@ export interface Course {
   description: string;
   duration: number; // in hours
   modality?: string; // EaD | Semipresencial | Presencial
+  validityMonths?: number; // validade do certificado em meses (renovação)
   price: number;
   coverImage?: string;
   isActive: boolean;
@@ -63,6 +64,7 @@ export interface Enrollment {
   examScore: number | null; // null if not taken yet
   passed: boolean;
   released?: boolean; // certificado liberado (homologado) pelo instrutor
+  releasedAt?: string | null; // data de liberação (base para a validade)
   certificateCode: string | null;
   enrolledAt: string;
 }
