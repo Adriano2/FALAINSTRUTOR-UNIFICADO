@@ -36,6 +36,21 @@ apiRouter.get('/cnpj/:cnpj', async (req, res) => {
   }
 });
 
+// Branding white-label por subdomínio (público). Retorna a marca do parceiro
+// ativo para aquele slug, ou null (usa a marca padrão FalaInstrutor).
+apiRouter.get('/branding/:slug', async (req, res) => {
+  const slug = req.params.slug.toLowerCase().trim();
+  const p = await prisma.partner.findFirst({ where: { slug, isActive: true } });
+  if (!p) return res.json({ partner: null });
+  res.json({
+    partner: {
+      slug: p.slug, name: p.name, logoUrl: p.logoUrl, faviconUrl: p.faviconUrl,
+      primaryColor: p.primaryColor, secondaryColor: p.secondaryColor,
+      whatsappNumber: p.whatsappNumber, email: p.email, phone: p.phone,
+    },
+  });
+});
+
 // Planos de assinatura corporativa (públicos, ativos).
 apiRouter.get('/plans', async (_req, res) => {
   const plans = await prisma.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } });

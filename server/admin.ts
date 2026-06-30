@@ -498,6 +498,49 @@ adminRouter.patch('/courses/:id/content', async (req, res) => {
   res.json({ course });
 });
 
+// --- Parceiros white-label ---
+adminRouter.get('/partners', async (_req, res) => {
+  const partners = await prisma.partner.findMany({ orderBy: { createdAt: 'asc' } });
+  res.json({ partners });
+});
+
+const partnerSchema = z.object({
+  slug: z.string().min(2).max(40).regex(/^[a-z0-9-]+$/, 'Use apenas letras minúsculas, números e hífen.'),
+  name: z.string().min(2),
+  logoUrl: z.string().optional().nullable(),
+  faviconUrl: z.string().optional().nullable(),
+  primaryColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  whatsappNumber: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
+});
+
+adminRouter.post('/partners', async (req, res) => {
+  const parsed = partnerSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+  const slug = parsed.data.slug.toLowerCase();
+  const exists = await prisma.partner.findUnique({ where: { slug }, select: { id: true } });
+  if (exists) return res.status(409).json({ error: 'Já existe um parceiro com esse subdomínio.' });
+  const partner = await prisma.partner.create({ data: { ...parsed.data, slug } as Prisma.PartnerUncheckedCreateInput });
+  res.status(201).json({ partner });
+});
+
+adminRouter.patch('/partners/:id', async (req, res) => {
+  const parsed = partnerSchema.partial().safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+  const data = { ...parsed.data };
+  if (data.slug) data.slug = data.slug.toLowerCase();
+  const partner = await prisma.partner.update({ where: { id: req.params.id }, data: data as Prisma.PartnerUpdateInput });
+  res.json({ partner });
+});
+
+adminRouter.delete('/partners/:id', async (req, res) => {
+  await prisma.partner.delete({ where: { id: req.params.id } }).catch(() => {});
+  res.json({ ok: true });
+});
+
 // --- Planos de assinatura corporativa ---
 adminRouter.get('/plans', async (_req, res) => {
   const plans = await prisma.plan.findMany({ orderBy: { sortOrder: 'asc' } });

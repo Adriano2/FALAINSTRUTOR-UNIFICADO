@@ -30,6 +30,7 @@ import MyAccount from './admin/MyAccount';
 import CoursePriceEditor from './admin/CoursePriceEditor';
 import ExpirationsManager from './admin/ExpirationsManager';
 import PlanManager from './admin/PlanManager';
+import PartnerManager from './admin/PartnerManager';
 import { ShieldEmblem } from './BrandLogo';
 
 interface AdminDashboardProps {
@@ -495,6 +496,7 @@ export default function AdminDashboard({
                   { id: 'partners', label: 'Gestão de parceiros', icon: Building2 },
                   { id: 'companies', label: 'Gestão de empresas', icon: Building2 },
                   { id: 'plans', label: 'Planos (assinatura)', icon: Tag },
+                  { id: 'partners', label: 'Parceiros (white-label)', icon: Building2 },
                   { id: 'leads', label: 'Captação de leads', icon: Megaphone },
                   { id: 'files', label: 'Arquivos', icon: FolderArchive },
                   { id: 'users', label: 'Gestão de usuários', icon: Users },
@@ -903,6 +905,10 @@ export default function AdminDashboard({
 
           {activeTab === 'plans' && (
             <PlanManager />
+          )}
+
+          {activeTab === 'partners' && (
+            <PartnerManager />
           )}
 
           {/* TAB: GESTÃO DE EMPRESAS */}

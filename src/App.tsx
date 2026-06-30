@@ -33,8 +33,8 @@ import {
   SEED_EXAMS_SUBMISSIONS
 } from './data';
 
-import { User, Course, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission } from './types';
-import { authApi, coursesApi, enrollmentsApi, adminApi, mapApiEnrollment, clearToken, getToken } from './api';
+import { User, Course, Enrollment, SalesTransaction, Coupon, Comment, ContactMessage, LayoutConfig, PaymentConfig, StudentExamSubmission, Partner } from './types';
+import { authApi, coursesApi, enrollmentsApi, adminApi, mapApiEnrollment, clearToken, getToken, brandingApi, partnerSlugFromHost } from './api';
 import { Lock, Mail, UserPlus, Key, Info, HelpCircle, Check, AlertCircle } from 'lucide-react';
 
 export default function App() {
@@ -42,6 +42,23 @@ export default function App() {
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
   // Nome do usuário recém-cadastrado (exibe a mensagem de boas-vindas).
   const [welcomeName, setWelcomeName] = React.useState<string | null>(null);
+  // Marca white-label do parceiro (detectada pelo subdomínio).
+  const [partnerBrand, setPartnerBrand] = React.useState<Partner | null>(null);
+
+  React.useEffect(() => {
+    const slug = partnerSlugFromHost(window.location.hostname);
+    if (!slug) return;
+    brandingApi.get(slug).then((p) => {
+      if (!p) return;
+      setPartnerBrand(p);
+      document.title = p.name;
+      if (p.faviconUrl) {
+        let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+        if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+        link.href = p.faviconUrl;
+      }
+    });
+  }, []);
 
   const [currentScreen, setCurrentScreen] = React.useState<string>(() => {
     // Landing de divulgação compartilhável: /?lp ou /?lp=1
@@ -632,6 +649,7 @@ export default function App() {
         currentUser={currentUser}
         cartCount={cart.length}
         layoutConfig={layoutConfig}
+        brand={partnerBrand ? { name: partnerBrand.name, logoUrl: partnerBrand.logoUrl } : null}
         theme={theme}
         setTheme={setTheme}
         onNavigate={handleNavigate}
@@ -684,7 +702,7 @@ export default function App() {
         )}
 
         {currentScreen === 'plans' && (
-          <PlansPage onNavigate={handleNavigate} whatsappNumber={layoutConfig.whatsappNumber || layoutConfig.phone} />
+          <PlansPage onNavigate={handleNavigate} whatsappNumber={partnerBrand?.whatsappNumber || layoutConfig.whatsappNumber || layoutConfig.phone} />
         )}
 
         {currentScreen === 'student-dashboard' && currentUser && (
@@ -965,7 +983,7 @@ export default function App() {
 
       {/* Botão flutuante "Falar no WhatsApp" (telas públicas) */}
       {['home', 'course-detail', 'cart', 'validate-certificate', 'projeto-pedagogico', 'plans', 'login', 'register'].includes(currentScreen) && (
-        <WhatsAppButton number={layoutConfig.whatsappNumber || layoutConfig.phone} />
+        <WhatsAppButton number={partnerBrand?.whatsappNumber || layoutConfig.whatsappNumber || layoutConfig.phone} />
       )}
 
       {/* Boas-vindas após o cadastro gratuito */}

@@ -133,6 +133,23 @@ model Company {
   members   User[]
 }
 
+// Parceiro white-label: marca própria aplicada por subdomínio
+// (ex.: parceiro.falainstrutor.com.br).
+model Partner {
+  id             String   @id @default(cuid())
+  slug           String   @unique // subdomínio (ex.: "consultoriax")
+  name           String
+  logoUrl        String?
+  faviconUrl     String?
+  primaryColor   String   @default("#1E9B46")
+  secondaryColor String   @default("#1F2A3A")
+  whatsappNumber String?
+  email          String?
+  phone          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
 // Plano de assinatura corporativa (recorrência mensal).
 model Plan {
   id           String   @id @default(cuid())

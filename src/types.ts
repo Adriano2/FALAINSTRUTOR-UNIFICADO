@@ -144,6 +144,20 @@ export interface Plan {
   sortOrder: number;
 }
 
+export interface Partner {
+  id?: string;
+  slug: string;
+  name: string;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
+  whatsappNumber?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive?: boolean;
+}
+
 export interface PaymentConfig {
   asaasToken: string;
   asaasEnv?: 'sandbox' | 'production';

@@ -12,6 +12,7 @@ interface HeaderProps {
   currentUser: User | null;
   cartCount: number;
   layoutConfig: LayoutConfig;
+  brand?: { name: string; logoUrl?: string | null } | null; // marca white-label do parceiro
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
   onNavigate: (screen: string, extra?: any) => void;
@@ -22,6 +23,7 @@ export default function Header({
   currentUser,
   cartCount,
   layoutConfig,
+  brand,
   theme,
   setTheme,
   onNavigate,
@@ -58,10 +60,21 @@ export default function Header({
           className="flex items-center gap-2.5 cursor-pointer select-none group"
           id="header-brand-logo"
         >
-          <ShieldEmblem className="h-9 w-auto shrink-0 group-hover:scale-105 transition-transform duration-200" />
-          <span className="font-display font-semibold text-lg text-slate-800 dark:text-slate-100">
-            Fala<span className="text-blue-600 dark:text-blue-400 font-bold transition-colors">Instrutor</span>
-          </span>
+          {brand ? (
+            <>
+              {brand.logoUrl
+                ? <img src={brand.logoUrl} alt={brand.name} className="h-9 w-auto shrink-0 object-contain group-hover:scale-105 transition-transform duration-200" />
+                : <ShieldEmblem className="h-9 w-auto shrink-0 group-hover:scale-105 transition-transform duration-200" />}
+              <span className="font-display font-semibold text-lg text-slate-800 dark:text-slate-100">{brand.name}</span>
+            </>
+          ) : (
+            <>
+              <ShieldEmblem className="h-9 w-auto shrink-0 group-hover:scale-105 transition-transform duration-200" />
+              <span className="font-display font-semibold text-lg text-slate-800 dark:text-slate-100">
+                Fala<span className="text-blue-600 dark:text-blue-400 font-bold transition-colors">Instrutor</span>
+              </span>
+            </>
+          )}
         </div>
 
         {/* Desktop Navigation */}

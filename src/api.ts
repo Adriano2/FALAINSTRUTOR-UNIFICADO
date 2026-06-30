@@ -10,7 +10,7 @@
 
 import {
   User, Course, Enrollment, SalesTransaction, Coupon, Comment,
-  ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig, Plan,
+  ContactMessage, StudentExamSubmission, LayoutConfig, PaymentConfig, Plan, Partner,
 } from './types';
 import { apiUrl } from './config';
 
@@ -480,6 +480,19 @@ export const adminApi = {
   assignCompanyPlan(companyId: string, planId: string | null) {
     return apiFetch(`/admin/companies/${companyId}/plan`, { method: 'PATCH', body: JSON.stringify({ planId }) });
   },
+  // Parceiros white-label.
+  partners() {
+    return apiFetch<{ partners: Partner[] }>('/admin/partners').then((d) => d.partners ?? []);
+  },
+  createPartner(input: Partner) {
+    return apiFetch('/admin/partners', { method: 'POST', body: JSON.stringify(input) });
+  },
+  updatePartner(id: string, input: Partial<Partner>) {
+    return apiFetch(`/admin/partners/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  deletePartner(id: string) {
+    return apiFetch(`/admin/partners/${id}`, { method: 'DELETE' });
+  },
   replyComment(id: string, reply: string) {
     return apiFetch(`/admin/comments/${id}/reply`, { method: 'PATCH', body: JSON.stringify({ reply }) });
   },
@@ -781,3 +794,21 @@ export const plansApi = {
     return apiFetch<{ plans: ApiPlan[] }>('/plans').then((d) => (d.plans ?? []).map(mapApiPlan));
   },
 };
+
+// --- Branding white-label (público, por subdomínio) ---
+export const brandingApi = {
+  get(slug: string): Promise<Partner | null> {
+    return apiFetch<{ partner: Partner | null }>(`/branding/${encodeURIComponent(slug)}`).then((d) => d.partner ?? null).catch(() => null);
+  },
+};
+
+// Extrai o slug do parceiro a partir do host (subdomínio de falainstrutor.com.br).
+export function partnerSlugFromHost(host: string): string | null {
+  const h = (host || '').split(':')[0].toLowerCase();
+  const BASE = 'falainstrutor.com.br';
+  if (h.endsWith('.' + BASE)) {
+    const sub = h.slice(0, -(BASE.length + 1)).split('.')[0];
+    if (sub && !['www', 'app'].includes(sub)) return sub;
+  }
+  return null;
+}
