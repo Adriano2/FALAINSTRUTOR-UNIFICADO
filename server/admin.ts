@@ -152,6 +152,25 @@ adminRouter.patch('/users/:id/active', async (req, res) => {
   res.json({ user: sanitize(user) });
 });
 
+// Redefine e-mail e/ou senha de um usuário (admin).
+adminRouter.patch('/users/:id/credentials', async (req, res) => {
+  const parsed = z
+    .object({ email: z.string().email().optional(), password: z.string().min(6).optional() })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos (senha mínima de 6 caracteres).' });
+  const data: Prisma.UserUpdateInput = {};
+  if (parsed.data.email) {
+    const email = parsed.data.email.toLowerCase().trim();
+    const exists = await prisma.user.findFirst({ where: { email, NOT: { id: req.params.id } }, select: { id: true } });
+    if (exists) return res.status(409).json({ error: 'E-mail já em uso por outro usuário.' });
+    data.email = email;
+  }
+  if (parsed.data.password) data.passwordHash = await bcrypt.hash(parsed.data.password, 10);
+  if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada para atualizar.' });
+  const user = await prisma.user.update({ where: { id: req.params.id }, data });
+  res.json({ user: sanitize(user) });
+});
+
 // --- Matrículas / vendas / exames ---
 adminRouter.get('/enrollments', async (_req, res) => {
   const enrollments = await prisma.enrollment.findMany({

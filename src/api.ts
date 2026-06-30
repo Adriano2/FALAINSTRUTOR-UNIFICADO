@@ -460,6 +460,10 @@ export const adminApi = {
   toggleUserActive(id: string, isActive: boolean) {
     return apiFetch(`/admin/users/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) });
   },
+  // Redefine e-mail e/ou senha de um usuário.
+  updateUserCredentials(id: string, input: { email?: string; password?: string }) {
+    return apiFetch(`/admin/users/${id}/credentials`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
   replyComment(id: string, reply: string) {
     return apiFetch(`/admin/comments/${id}/reply`, { method: 'PATCH', body: JSON.stringify({ reply }) });
   },

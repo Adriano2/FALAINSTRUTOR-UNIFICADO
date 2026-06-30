@@ -432,6 +432,28 @@ export default function AdminDashboard({
     );
   };
 
+  // Redefine e-mail e/ou senha de um profissional cadastrado.
+  const handleEditUserCreds = async (u: User) => {
+    const email = window.prompt(`Novo e-mail para ${u.name} (mantenha igual para não alterar):`, u.email);
+    if (email === null) return;
+    const password = window.prompt('Nova senha (mín. 6 caracteres). Deixe em branco para NÃO alterar a senha:', '');
+    if (password === null) return;
+    const payload: { email?: string; password?: string } = {};
+    if (email.trim() && email.trim().toLowerCase() !== u.email.toLowerCase()) payload.email = email.trim();
+    if (password.trim()) {
+      if (password.trim().length < 6) { alert('A senha deve ter ao menos 6 caracteres.'); return; }
+      payload.password = password.trim();
+    }
+    if (!payload.email && !payload.password) { alert('Nada foi alterado.'); return; }
+    try {
+      await adminApi.updateUserCredentials(u.id, payload);
+      if (payload.email) onUpdateUsers(users.map((x) => (x.id === u.id ? { ...x, email: payload.email! } : x)));
+      alert('Credenciais atualizadas com sucesso.' + (payload.password ? ' Nova senha definida.' : ''));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Falha ao atualizar as credenciais.');
+    }
+  };
+
   // Post Administrative reply to comment
   const handleSaveReply = () => {
     if (!replyCommentId || !replyText) return;
@@ -1058,6 +1080,7 @@ export default function AdminDashboard({
                       <th className="p-3">Função</th>
                       <th className="p-3 text-center">Status</th>
                       <th className="p-3 text-right">Data Registro</th>
+                      <th className="p-3 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -1088,6 +1111,15 @@ export default function AdminDashboard({
                           </button>
                         </td>
                         <td className="p-3 text-right text-slate-400 font-bold font-mono">{u.registeredAt}</td>
+                        <td className="p-3 text-right">
+                          <button
+                            onClick={() => handleEditUserCreds(u)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white text-[11px] font-bold cursor-pointer"
+                            title="Redefinir e-mail / senha"
+                          >
+                            <Key className="w-3.5 h-3.5" /> E-mail / senha
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
