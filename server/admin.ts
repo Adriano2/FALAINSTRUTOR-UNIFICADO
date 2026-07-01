@@ -159,15 +159,22 @@ adminRouter.patch('/users/:id/active', async (req, res) => {
 // Redefine e-mail e/ou senha de um usuário (admin).
 adminRouter.patch('/users/:id/credentials', async (req, res) => {
   const parsed = z
-    .object({ email: z.string().email().optional(), password: z.string().min(6).optional() })
+    .object({ email: z.string().email().optional(), password: z.string().min(6).optional(), cpf: z.string().min(11).max(14).optional() })
     .safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos (senha mínima de 6 caracteres).' });
+  if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos (senha mínima de 6 caracteres, CPF com 11 dígitos).' });
   const data: Prisma.UserUpdateInput = {};
   if (parsed.data.email) {
     const email = parsed.data.email.toLowerCase().trim();
     const exists = await prisma.user.findFirst({ where: { email, NOT: { id: req.params.id } }, select: { id: true } });
     if (exists) return res.status(409).json({ error: 'E-mail já em uso por outro usuário.' });
     data.email = email;
+  }
+  if (parsed.data.cpf) {
+    const cpf = parsed.data.cpf.trim();
+    if (cpf.replace(/\D/g, '').length !== 11) return res.status(400).json({ error: 'CPF deve ter 11 dígitos.' });
+    const exists = await prisma.user.findFirst({ where: { cpf, NOT: { id: req.params.id } }, select: { id: true } });
+    if (exists) return res.status(409).json({ error: 'CPF já em uso por outro usuário.' });
+    data.cpf = cpf;
   }
   if (parsed.data.password) data.passwordHash = await bcrypt.hash(parsed.data.password, 10);
   if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada para atualizar.' });

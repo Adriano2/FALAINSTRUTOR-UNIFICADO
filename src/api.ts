@@ -475,7 +475,7 @@ export const adminApi = {
     return apiFetch(`/admin/users/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) });
   },
   // Redefine e-mail e/ou senha de um usuário.
-  updateUserCredentials(id: string, input: { email?: string; password?: string }) {
+  updateUserCredentials(id: string, input: { email?: string; password?: string; cpf?: string }) {
     return apiFetch(`/admin/users/${id}/credentials`, { method: 'PATCH', body: JSON.stringify(input) });
   },
   // Planos de assinatura corporativa.

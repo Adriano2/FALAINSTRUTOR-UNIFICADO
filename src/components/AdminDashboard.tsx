@@ -439,21 +439,29 @@ export default function AdminDashboard({
   const handleEditUserCreds = async (u: User) => {
     const email = window.prompt(`Novo e-mail para ${u.name} (mantenha igual para não alterar):`, u.email);
     if (email === null) return;
+    const cpf = window.prompt('CPF (11 dígitos). Mantenha igual para não alterar:', u.cpf ?? '');
+    if (cpf === null) return;
     const password = window.prompt('Nova senha (mín. 6 caracteres). Deixe em branco para NÃO alterar a senha:', '');
     if (password === null) return;
-    const payload: { email?: string; password?: string } = {};
+    const payload: { email?: string; password?: string; cpf?: string } = {};
     if (email.trim() && email.trim().toLowerCase() !== u.email.toLowerCase()) payload.email = email.trim();
+    if (cpf.trim() && cpf.trim() !== (u.cpf ?? '')) {
+      if (cpf.replace(/\D/g, '').length !== 11) { alert('O CPF deve ter 11 dígitos.'); return; }
+      payload.cpf = cpf.trim();
+    }
     if (password.trim()) {
       if (password.trim().length < 6) { alert('A senha deve ter ao menos 6 caracteres.'); return; }
       payload.password = password.trim();
     }
-    if (!payload.email && !payload.password) { alert('Nada foi alterado.'); return; }
+    if (!payload.email && !payload.cpf && !payload.password) { alert('Nada foi alterado.'); return; }
     try {
       await adminApi.updateUserCredentials(u.id, payload);
-      if (payload.email) onUpdateUsers(users.map((x) => (x.id === u.id ? { ...x, email: payload.email! } : x)));
-      alert('Credenciais atualizadas com sucesso.' + (payload.password ? ' Nova senha definida.' : ''));
+      if (payload.email || payload.cpf) {
+        onUpdateUsers(users.map((x) => (x.id === u.id ? { ...x, ...(payload.email ? { email: payload.email } : {}), ...(payload.cpf ? { cpf: payload.cpf } : {}) } : x)));
+      }
+      alert('Cadastro atualizado com sucesso.' + (payload.password ? ' Nova senha definida.' : ''));
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Falha ao atualizar as credenciais.');
+      alert(e instanceof Error ? e.message : 'Falha ao atualizar o cadastro.');
     }
   };
 
@@ -1133,9 +1141,9 @@ export default function AdminDashboard({
                           <button
                             onClick={() => handleEditUserCreds(u)}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white text-[11px] font-bold cursor-pointer"
-                            title="Redefinir e-mail / senha"
+                            title="Redefinir e-mail / CPF / senha"
                           >
-                            <Key className="w-3.5 h-3.5" /> E-mail / senha
+                            <Key className="w-3.5 h-3.5" /> E-mail / CPF / senha
                           </button>
                         </td>
                       </tr>
