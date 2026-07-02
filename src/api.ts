@@ -894,6 +894,36 @@ export const brandingApi = {
   },
 };
 
+// --- Gamificação + Microlearning (aluno) ---
+export interface GamificationBadge { id: string; label: string; icon: string; description: string; earned: boolean }
+export interface GamificationData {
+  level: number; xpInLevel: number; xpForNext: number; totalXp: number;
+  streakDays: number; answeredToday: boolean;
+  stats: { completed: number; perfect: number; inProgress: number };
+  badges: GamificationBadge[];
+}
+export interface MicroQuizData {
+  question: { question: string; options: string[] } | null;
+  ref?: { courseId: string; qIndex: number };
+  answeredToday?: boolean;
+}
+export interface MicroQuizResult { correct: boolean; correctIndex: number; xpAwarded: number; streakDays: number; alreadyAnswered: boolean }
+
+export const gamificationApi = {
+  me() {
+    return apiFetch<GamificationData>('/gamification/me');
+  },
+  micro() {
+    return apiFetch<MicroQuizData>('/gamification/micro');
+  },
+  answerMicro(courseId: string, qIndex: number, answerIndex: number) {
+    return apiFetch<MicroQuizResult>('/gamification/micro', {
+      method: 'POST',
+      body: JSON.stringify({ courseId, qIndex, answerIndex }),
+    });
+  },
+};
+
 // Extrai o slug do parceiro a partir do host (subdomínio de falainstrutor.com.br).
 export function partnerSlugFromHost(host: string): string | null {
   const h = (host || '').split(':')[0].toLowerCase();

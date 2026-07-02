@@ -93,6 +93,11 @@ model User {
   avatar       String?
   registeredAt DateTime @default(now())
   asaasCustomerId String?
+
+  // Gamificação / microlearning
+  xp           Int      @default(0)  // XP acumulado nas pílulas diárias (microlearning)
+  streakDays   Int      @default(0)  // dias consecutivos de atividade (pílula do dia)
+  lastQuizDate String?               // AAAA-MM-DD (fuso BRT) da última pílula respondida
   company      Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
   companyId    String?
   jobRole      JobRole? @relation(fields: [jobRoleId], references: [id], onDelete: SetNull)

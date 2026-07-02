@@ -8,6 +8,7 @@ import { User, Course, Instructor, Enrollment, Comment, StudentExamSubmission, E
 import { getExamQuestions, CONTEUDO_PROGRAMATICO, SLIDES_BY_CODE, REFERENCE_VIDEO_BY_CODE, RESPONSAVEL_TECNICO } from '../data';
 import { enrollmentsApi } from '../api';
 import AvatarUploader from './AvatarUploader';
+import GamificationPanel from './GamificationPanel';
 import { certificateValidity } from '../lib/validity';
 import { Clock, Shield, ShieldCheck, Award, Play, CheckCircle2, ChevronRight, FileDown, MessageSquare, Check, X, ShieldAlert, AwardIcon, Printer, Video, FileText, MonitorPlay, Presentation,
   HardHat, Flame, Zap, Users, AlertTriangle, ClipboardList, ClipboardCheck, Eye, Droplets, Wrench, Layers, Thermometer, Factory, FlaskConical, Truck, Activity, BookOpen, Leaf, Settings, FileCheck, Flag, Wind, type LucideIcon } from 'lucide-react';
@@ -150,7 +151,7 @@ export default function StudentDashboard({
   onUpdateProgress,
   onRenew,
 }: StudentDashboardProps) {
-  const [activeTab, setActiveTab] = React.useState<'my-courses' | 'my-profile'>('my-courses');
+  const [activeTab, setActiveTab] = React.useState<'my-courses' | 'my-profile' | 'my-progress'>('my-courses');
   
   // Classroom Player View Mode
   const [activeEnrollment, setActiveEnrollment] = React.useState<Enrollment | null>(null);
@@ -933,7 +934,17 @@ export default function StudentDashboard({
               >
                 Meus Treinamentos
               </button>
-              <button 
+              <button
+                onClick={() => setActiveTab('my-progress')}
+                className={`px-4 py-2.5 font-bold text-xs uppercase tracking-wider transition ${
+                  activeTab === 'my-progress'
+                    ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-blue-500'
+                }`}
+              >
+                Meu Progresso
+              </button>
+              <button
                 onClick={() => setActiveTab('my-profile')}
                 className={`px-4 py-2.5 font-bold text-xs uppercase tracking-wider transition ${
                   activeTab === 'my-profile' 
@@ -1012,6 +1023,8 @@ export default function StudentDashboard({
                   </button>
                 </form>
               </div>
+            ) : activeTab === 'my-progress' ? (
+              <GamificationPanel />
             ) : (
               /* Enrolled Courses registry list */
               <div className="space-y-4">

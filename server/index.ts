@@ -27,6 +27,7 @@ import { adminRouter } from './admin';
 import { companyRouter } from './company';
 import { instructorRouter } from './instructor';
 import { paymentsRouter, paymentsConfigured } from './payments';
+import { gamificationRouter } from './gamification';
 import { emailConfigured } from './email';
 import { whatsappConfigured } from './whatsapp';
 import { prisma } from './db';
@@ -67,6 +68,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/company', companyRouter);
 app.use('/api/instructor', instructorRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/gamification', gamificationRouter);
 app.use('/api', apiRouter);
 
 // --- Tutor de IA ---
