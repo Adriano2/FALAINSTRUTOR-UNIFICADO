@@ -9,6 +9,7 @@
  * papéis (admin/aluno).
  */
 
+import { randomBytes } from 'node:crypto';
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -18,7 +19,21 @@ import { prisma } from './db';
 import { sendWelcomeEmail } from './email';
 import { evaluateUserAccess } from './accessSchedule';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'insecure-dev-secret';
+// Segredo de assinatura do JWT — OBRIGATÓRIO e forte. Removido o antigo fallback
+// público ('insecure-dev-secret') que permitia forjar tokens de admin. Se o
+// ambiente não trouxer um segredo forte, gera um ALEATÓRIO por processo (seguro,
+// porém invalida sessões a cada reinício) e emite um aviso crítico para o
+// operador definir JWT_SECRET persistente no .env.
+const JWT_SECRET: string = (() => {
+  const s = process.env.JWT_SECRET || '';
+  if (s && s.length >= 16) return s;
+  const generated = randomBytes(48).toString('hex');
+  console.error(
+    '\n[SEGURANÇA] JWT_SECRET ausente ou fraco no ambiente. Gerado um segredo ALEATÓRIO temporário ' +
+    '— as sessões serão invalidadas a cada reinício. Defina um JWT_SECRET forte (>= 16 caracteres) no .env.\n',
+  );
+  return generated;
+})();
 const JWT_EXPIRES_IN = '7d';
 
 export interface AuthPayload {
@@ -132,15 +147,40 @@ authRouter.patch('/me', authenticate, async (req: AuthedRequest, res: Response) 
     .object({
       name: z.string().min(2).max(120).optional(),
       dob: z.string().max(20).optional(),
-      cpf: z.string().max(25).optional(),
+      cpf: z.string().max(14).optional(),
       avatar: z.string().max(3_000_000).optional(), // suporta foto em data URL
     })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Dados de perfil inválidos.' });
   const data: Record<string, unknown> = {};
-  for (const k of ['name', 'dob', 'cpf', 'avatar'] as const) {
-    if (parsed.data[k] !== undefined) data[k] = parsed.data[k];
+
+  if (parsed.data.name !== undefined) {
+    // O escopo do instrutor é vinculado por NOME; não permitir que INSTRUCTOR/
+    // ADMIN alterem o próprio nome (evita sequestro de escopo de outro instrutor).
+    if (req.user!.role === 'INSTRUCTOR' || req.user!.role === 'ADMIN') {
+      return res.status(403).json({ error: 'Alteração de nome não permitida para este perfil. Contate o administrador.' });
+    }
+    data.name = parsed.data.name;
   }
+  if (parsed.data.dob !== undefined) data.dob = parsed.data.dob;
+
+  if (parsed.data.cpf !== undefined) {
+    const cpf = parsed.data.cpf.trim();
+    if (cpf.replace(/\D/g, '').length !== 11) return res.status(400).json({ error: 'CPF deve ter 11 dígitos.' });
+    const exists = await prisma.user.findFirst({ where: { cpf, NOT: { id: req.user!.sub } }, select: { id: true } });
+    if (exists) return res.status(409).json({ error: 'CPF já em uso por outro usuário.' });
+    data.cpf = cpf;
+  }
+
+  if (parsed.data.avatar !== undefined) {
+    const a = parsed.data.avatar.trim();
+    // Só aceita URL https ou data URL de imagem — bloqueia javascript:/outros esquemas.
+    if (a && !/^https:\/\//i.test(a) && !/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(a)) {
+      return res.status(400).json({ error: 'Avatar inválido: use uma imagem (https ou upload).' });
+    }
+    data.avatar = a;
+  }
+
   if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada para atualizar.' });
   const user = await prisma.user.update({ where: { id: req.user!.sub }, data });
   res.json({ user: publicUser(user) });
@@ -148,14 +188,24 @@ authRouter.patch('/me', authenticate, async (req: AuthedRequest, res: Response) 
 
 // --- Middlewares ---
 
-export function authenticate(req: AuthedRequest, res: Response, next: NextFunction) {
+export async function authenticate(req: AuthedRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token de autenticação ausente.' });
   }
   try {
     const decoded = jwt.verify(header.slice(7), JWT_SECRET) as AuthPayload;
-    req.user = { sub: decoded.sub, role: decoded.role };
+    // Revalida a conta no banco a cada requisição: papel (role) e status atuais
+    // vêm do BANCO, não do token. Assim, desativar um usuário ou mudar seu papel
+    // tem efeito imediato e um token não pode carregar um papel forjado/obsoleto.
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.sub },
+      select: { id: true, role: true, isActive: true },
+    });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Sessão inválida ou conta desativada.' });
+    }
+    req.user = { sub: user.id, role: user.role };
     next();
   } catch {
     return res.status(401).json({ error: 'Token inválido ou expirado.' });

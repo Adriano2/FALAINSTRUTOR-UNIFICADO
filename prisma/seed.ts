@@ -53,7 +53,9 @@ async function main() {
   const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
   await prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
-    update: { passwordHash, role: 'ADMIN', isActive: true },
+    // Senha NÃO é sobrescrita em contas existentes (create-only): mudanças de
+    // senha feitas no painel sobrevivem aos redeploys.
+    update: { role: 'ADMIN', isActive: true },
     create: {
       id: 'usr-1',
       name: 'Adriano Ricardo',
@@ -74,7 +76,7 @@ async function main() {
   const instructorHashOp = await bcrypt.hash(INSTRUCTOR_PASSWORD, 10);
   await prisma.user.upsert({
     where: { email: INSTRUCTOR_EMAIL },
-    update: { passwordHash: instructorHashOp, role: 'INSTRUCTOR', name: INSTRUCTOR_NAME, isActive: true },
+    update: { role: 'INSTRUCTOR', name: INSTRUCTOR_NAME, isActive: true },
     create: {
       id: 'usr-op-instrutor',
       name: INSTRUCTOR_NAME,
@@ -104,7 +106,7 @@ async function main() {
   const companyHashOp = await bcrypt.hash(COMPANY_PASSWORD, 10);
   await prisma.user.upsert({
     where: { email: COMPANY_EMAIL },
-    update: { passwordHash: companyHashOp, role: 'COMPANY', companyId: 'comp-fala', isActive: true },
+    update: { role: 'COMPANY', companyId: 'comp-fala', isActive: true },
     create: {
       id: 'usr-op-empresa',
       name: 'Gestor — Empresa FalaInstrutor',
@@ -121,7 +123,7 @@ async function main() {
   const studentHashOp = await bcrypt.hash(STUDENT_PASSWORD, 10);
   await prisma.user.upsert({
     where: { email: STUDENT_EMAIL },
-    update: { passwordHash: studentHashOp, role: 'STUDENT', isActive: true },
+    update: { role: 'STUDENT', isActive: true },
     create: {
       id: 'usr-op-aluno',
       name: 'Aluno FalaInstrutor',

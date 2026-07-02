@@ -167,7 +167,7 @@ paymentsRouter.post('/checkout', authenticate, async (req: AuthedRequest, res: R
     return res.status(503).json({ error: 'Pagamento ainda não configurado (defina a chave Asaas no painel ou ASAAS_API_KEY).' });
   }
   const parsed = z
-    .object({ courseIds: z.array(z.string()).min(1), couponCode: z.string().optional(), partnerSlug: z.string().max(60).optional() })
+    .object({ courseIds: z.array(z.string()).min(1).max(50), couponCode: z.string().max(40).optional(), partnerSlug: z.string().max(60).optional() })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Itens do pedido inválidos.' });
 
@@ -228,8 +228,11 @@ paymentsRouter.get('/order/:id', authenticate, async (req: AuthedRequest, res: R
 
 // Webhook do Asaas: confirma o pagamento e provisiona as matrículas.
 paymentsRouter.post('/webhook', async (req: Request, res: Response) => {
+  // Webhook FECHADO por padrão: exige um token configurado E correspondente.
+  // Sem isso, qualquer um poderia forjar PAYMENT_CONFIRMED e liberar cursos/
+  // assinaturas de graça. Configure o "Token do Webhook" no painel/ambiente.
   const { webhookToken } = await resolveAsaas();
-  if (webhookToken && req.headers['asaas-access-token'] !== webhookToken) {
+  if (!webhookToken || req.headers['asaas-access-token'] !== webhookToken) {
     return res.status(401).json({ error: 'Webhook não autorizado.' });
   }
   const event = req.body?.event as string | undefined;

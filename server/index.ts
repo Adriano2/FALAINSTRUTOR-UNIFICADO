@@ -19,7 +19,9 @@ import 'dotenv/config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
-import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { authRouter } from './auth';
 import { apiRouter, createLeadFromInput } from './routes';
@@ -48,9 +50,40 @@ interface ChatTurn {
 }
 
 const app = express();
-app.use(express.json({ limit: '1mb' }));
 
-// Health check / configuration status (does NOT leak secrets).
+// Está atrás do Nginx: confia no primeiro proxy para obter o IP real do cliente
+// (necessário para o rate limiting funcionar por IP e não pela ponta do proxy).
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+// Cabeçalhos de segurança (clickjacking, MIME sniffing, HSTS, referrer, etc.).
+// CSP fica desligada para não quebrar o SPA/recursos externos (hardening futuro).
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+
+app.use(express.json({ limit: '3mb' }));
+
+// --- Rate limiting (anti brute force / anti abuso de custo) ---
+const rlMsg = { error: 'Muitas requisições. Aguarde alguns instantes e tente novamente.' };
+// Backstop geral por IP em toda a API.
+const apiLimiter = rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, legacyHeaders: false, message: rlMsg });
+// Login/cadastro: janela mais restrita contra força bruta / spam de conta.
+const authLimiter = rateLimit({ windowMs: 15 * 60_000, max: 30, standardHeaders: true, legacyHeaders: false, message: rlMsg });
+// Endpoints de IA (Gemini) — evita estouro de custo/quota.
+const aiLimiter = rateLimit({ windowMs: 60_000, max: 12, standardHeaders: true, legacyHeaders: false, message: rlMsg });
+// Captação de leads pública — evita flood de banco + e-mail + WhatsApp.
+const leadLimiter = rateLimit({ windowMs: 60 * 60_000, max: 20, standardHeaders: true, legacyHeaders: false, message: rlMsg });
+// Checkout — evita criação em massa de cobranças no Asaas.
+const checkoutLimiter = rateLimit({ windowMs: 15 * 60_000, max: 20, standardHeaders: true, legacyHeaders: false, message: rlMsg });
+
+app.use('/api', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/tutor', aiLimiter);
+app.use('/api/sales-agent', aiLimiter);
+app.use('/api/leads', leadLimiter);
+app.use('/api/payments/checkout', checkoutLimiter);
+
+// Health check enxuto (não expõe integrações/modelo — evita fingerprinting).
 app.get('/api/health', async (_req: Request, res: Response) => {
   let dbOk = false;
   try {
@@ -59,7 +92,7 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   } catch {
     dbOk = false;
   }
-  res.json({ ok: true, db: dbOk, aiConfigured: Boolean(ai), model: GEMINI_MODEL, paymentsConfigured, emailConfigured: emailConfigured(), whatsappConfigured: whatsappConfigured() });
+  res.json({ ok: true, db: dbOk });
 });
 
 // Authentication + resource routes.
@@ -212,11 +245,26 @@ app.post('/api/sales-agent', async (req: Request, res: Response) => {
 
 // Serve the production build when it exists (single-server deployment).
 if (fs.existsSync(DIST_DIR)) {
-  app.use(express.static(DIST_DIR));
+  // dotfiles: 'ignore' impede servir arquivos ocultos; index:false deixa o
+  // fallback de SPA controlar a raiz.
+  app.use(express.static(DIST_DIR, { dotfiles: 'ignore', index: false }));
   app.get(/^(?!\/api\/).*/, (_req: Request, res: Response) => {
     res.sendFile(path.join(DIST_DIR, 'index.html'));
   });
 }
+
+// Rotas de API não encontradas → JSON 404 (não cai no fallback do SPA).
+app.use('/api', (_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Recurso não encontrado.' });
+});
+
+// Handler global de erros: registra no servidor e devolve mensagem genérica
+// (nunca vaza stack trace ao cliente, independentemente de NODE_ENV).
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[erro não tratado]', err);
+  if (res.headersSent) return;
+  res.status(500).json({ error: 'Erro interno do servidor.' });
+});
 
 app.listen(PORT, () => {
   console.log(`\n  FalaInstrutor API ouvindo em http://localhost:${PORT}`);

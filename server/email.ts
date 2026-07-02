@@ -21,6 +21,16 @@ import { prisma } from './db';
 
 const PUBLIC_URL = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '';
 
+// Escapa HTML de qualquer valor controlado pelo usuário antes de injetar no
+// corpo do e-mail — impede injeção de HTML/links de phishing pelo nosso mailer.
+const esc = (v: unknown): string =>
+  String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
 }
@@ -84,12 +94,12 @@ function wrapHtml(title: string, bodyHtml: string): string {
 }
 
 export async function sendWelcomeEmail(user: { name: string; email: string }): Promise<void> {
-  const vars = { nome: user.name, curso: '', codigo: '', link: PUBLIC_URL };
+  const vars = { nome: esc(user.name), curso: '', codigo: '', link: PUBLIC_URL };
   const tpl = await findTemplate(['boas', 'vindas', 'bem-vindo', 'bem vindo', 'welcome']);
   const subject = tpl?.subject ? applyVars(tpl.subject, vars) : 'Bem-vindo(a) ao FalaInstrutor!';
   const body = tpl?.body
     ? applyVars(tpl.body, vars).replace(/\n/g, '<br>')
-    : `Olá <strong>${user.name}</strong>,<br><br>Sua conta foi criada com sucesso na plataforma FalaInstrutor. ` +
+    : `Olá <strong>${esc(user.name)}</strong>,<br><br>Sua conta foi criada com sucesso na plataforma FalaInstrutor. ` +
       `Você já pode acessar seus treinamentos de Segurança e Saúde no Trabalho.` +
       `<br><br>🎁 <strong>Presente de boas-vindas:</strong> use o cupom <strong style="color:#1e9b46">BEMVINDO10</strong> e ganhe <strong>10% de desconto</strong> na sua primeira compra.` +
       (PUBLIC_URL ? `<br><br><a href="${PUBLIC_URL}" style="background:#1e9b46;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Acessar a plataforma</a>` : '');
@@ -111,10 +121,10 @@ export async function sendExpiryAlert(
     ? `<br><br><a href="${PUBLIC_URL}" style="background:#1e9b46;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Renovar treinamento</a>`
     : '';
   const body =
-    `Olá <strong>${user.name}</strong>,<br><br>` +
+    `Olá <strong>${esc(user.name)}</strong>,<br><br>` +
     (expired
-      ? `O seu certificado do treinamento <strong>${courseName}</strong> <span style="color:#e11d48;font-weight:bold">venceu em ${validUntil}</span>. `
-      : `O seu certificado do treinamento <strong>${courseName}</strong> vence em <strong>${validUntil}</strong>. `) +
+      ? `O seu certificado do treinamento <strong>${esc(courseName)}</strong> <span style="color:#e11d48;font-weight:bold">venceu em ${esc(validUntil)}</span>. `
+      : `O seu certificado do treinamento <strong>${esc(courseName)}</strong> vence em <strong>${esc(validUntil)}</strong>. `) +
     `Para se manter em conformidade com as Normas Regulamentadoras, faça a <strong>reciclagem/renovação</strong>.` +
     cta;
   return sendEmail(user.email, subject, wrapHtml(expired ? 'Certificado vencido' : 'Renovação de certificado', body));
@@ -132,7 +142,7 @@ export async function sendLeadNotification(lead: {
   const tipo = lead.type === 'COMPANY' ? 'Empresa' : 'Profissional';
   const origem = lead.source === 'ai-agent' ? 'Agente de IA' : 'Formulário da landing';
   const row = (label: string, value?: string | number | null) =>
-    value ? `<tr><td style="padding:4px 10px 4px 0;color:#64748b">${label}</td><td style="padding:4px 0;font-weight:bold">${value}</td></tr>` : '';
+    value ? `<tr><td style="padding:4px 10px 4px 0;color:#64748b">${esc(label)}</td><td style="padding:4px 0;font-weight:bold">${esc(value)}</td></tr>` : '';
   const body =
     `Um novo lead foi captado pela <strong>${origem}</strong>.<br><br>` +
     `<table style="font-size:14px;border-collapse:collapse">` +
@@ -156,14 +166,14 @@ export async function sendCertificateEmail(
   certificateCode: string,
 ): Promise<void> {
   const link = PUBLIC_URL ? `${PUBLIC_URL}/?cert=${encodeURIComponent(certificateCode)}` : '';
-  const vars = { nome: user.name, curso: courseName, codigo: certificateCode, link };
+  const vars = { nome: esc(user.name), curso: esc(courseName), codigo: esc(certificateCode), link };
   const tpl = await findTemplate(['certificad', 'aprovad', 'conclus']);
   const subject = tpl?.subject ? applyVars(tpl.subject, vars) : `Certificado emitido — ${courseName}`;
   const body = tpl?.body
     ? applyVars(tpl.body, vars).replace(/\n/g, '<br>')
-    : `Parabéns, <strong>${user.name}</strong>!<br><br>Você concluiu e foi aprovado(a) no treinamento ` +
-      `<strong>${courseName}</strong>. Seu certificado já está disponível.<br><br>` +
-      `Código de validação: <strong>${certificateCode}</strong>` +
+    : `Parabéns, <strong>${esc(user.name)}</strong>!<br><br>Você concluiu e foi aprovado(a) no treinamento ` +
+      `<strong>${esc(courseName)}</strong>. Seu certificado já está disponível.<br><br>` +
+      `Código de validação: <strong>${esc(certificateCode)}</strong>` +
       (link ? `<br><br><a href="${link}" style="color:#1e9b46;font-weight:bold">Visualizar / validar o certificado</a>` : '');
   await sendEmail(user.email, subject, wrapHtml('Seu certificado foi emitido', body));
 }

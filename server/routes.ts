@@ -324,7 +324,16 @@ apiRouter.post('/enrollments/:id/exam', authenticate, async (req: AuthedRequest,
 });
 
 // --- Conteúdo editável do site (público para leitura) ---
+// Só chaves de conteúdo PÚBLICO podem ser lidas sem autenticação. Chaves
+// internas (ex.: "commissions", "emails") ficam restritas ao painel admin
+// (/api/admin/content/:key) e nunca são expostas aqui.
+const PUBLIC_CONTENT_KEYS = new Set([
+  'news', 'partners', 'pages', 'products', 'tech_responsible', 'faq', 'banners', 'testimonials', 'home',
+]);
 apiRouter.get('/content/:key', async (req, res) => {
+  if (!PUBLIC_CONTENT_KEYS.has(req.params.key)) {
+    return res.status(404).json({ error: 'Conteúdo não encontrado.' });
+  }
   const row = await prisma.siteContent.findUnique({ where: { key: req.params.key } });
   res.json({ key: req.params.key, data: row?.data ?? [] });
 });

@@ -190,13 +190,17 @@ gamificationRouter.post('/micro', async (req: AuthedRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-  const course = await prisma.course.findUnique({ where: { id: parsed.data.courseId }, select: { examQuestions: true } });
-  const qs = (Array.isArray(course?.examQuestions) ? course!.examQuestions : []) as unknown as ExamQ[];
-  const q = qs[parsed.data.qIndex];
-  if (!q) return res.status(404).json({ error: 'Questão não encontrada.' });
+  // A resposta SÓ vale para a pílula real do dia (recomputada no servidor) —
+  // impede farmar XP respondendo questões arbitrárias de qualquer curso.
+  const today = brtToday();
+  const pool = await questionPool(user.id);
+  const expected = pickOfTheDay(pool, `${today}|${user.id}`);
+  if (!expected || expected.courseId !== parsed.data.courseId || expected.qIndex !== parsed.data.qIndex) {
+    return res.status(400).json({ error: 'Pílula inválida para hoje.' });
+  }
+  const q = expected.q;
 
   const correct = parsed.data.answerIndex === q.correctIndex;
-  const today = brtToday();
   const alreadyToday = user.lastQuizDate === today;
 
   let xpAwarded = 0;

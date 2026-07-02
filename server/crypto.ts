@@ -18,7 +18,13 @@
 import crypto from 'node:crypto';
 
 function key(): Buffer {
+  // Prefere uma chave dedicada; cai para o JWT_SECRET por compatibilidade com o
+  // material já cifrado. NUNCA usa chave vazia (isso tornaria o .pfx dos
+  // instrutores decifrável com uma chave pública conhecida).
   const secret = process.env.CERT_ENC_KEY || process.env.JWT_SECRET || '';
+  if (!secret) {
+    throw new Error('CERT_ENC_KEY/JWT_SECRET ausente: impossível cifrar/decifrar certificados com segurança.');
+  }
   // Deriva uma chave de 32 bytes (AES-256) de forma estável a partir do segredo.
   return crypto.createHash('sha256').update(String(secret)).digest();
 }

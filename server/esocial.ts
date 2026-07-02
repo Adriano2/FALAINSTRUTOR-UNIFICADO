@@ -240,6 +240,9 @@ export function recordsToCsv(records: S2245Record[]): string {
     String(r.durTreiCap), r.dtTreiCap, r.cpfProf, r.nmProf, r.codCBO, r.formProf, r.certificateCode ?? '',
     r.pendencias.join(' / '),
   ]);
-  const line = (cols: string[]) => cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';');
+  // Neutraliza injeção de fórmula no Excel/LibreOffice: células iniciadas por
+  // = + - @ (ou tab/CR) são prefixadas com aspa simples para não executarem.
+  const neutralize = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
+  const line = (cols: string[]) => cols.map((c) => `"${neutralize(String(c)).replace(/"/g, '""')}"`).join(';');
   return [head, ...rows].map(line).join('\r\n');
 }
