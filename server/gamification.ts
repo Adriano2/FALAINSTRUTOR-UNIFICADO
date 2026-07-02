@@ -89,6 +89,51 @@ gamificationRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   });
 });
 
+// XP total de um aluno = XP de microlearning (persistido) + derivado de cursos.
+function totalXpOf(xp: number, completed: number, perfect: number) {
+  return xp + completed * XP_COURSE + perfect * XP_PERFECT;
+}
+
+// Ranking (leaderboard) da EMPRESA do aluno: só compara colegas da mesma
+// empresa. Alunos sem empresa não têm ranking.
+gamificationRouter.get('/leaderboard', async (req: AuthedRequest, res: Response) => {
+  const me = await prisma.user.findUnique({ where: { id: req.user!.sub }, select: { id: true, companyId: true } });
+  if (!me) return res.status(404).json({ error: 'Usuário não encontrado.' });
+  if (!me.companyId) return res.json({ hasCompany: false, entries: [], myRank: null });
+
+  const peers = await prisma.user.findMany({
+    where: { companyId: me.companyId, role: 'STUDENT', isActive: true },
+    select: {
+      id: true, name: true, avatar: true, xp: true, streakDays: true,
+      enrollments: { select: { passed: true, certificateCode: true, released: true, revoked: true, examScore: true } },
+    },
+  });
+
+  const ranked = peers.map((u) => {
+    const completed = u.enrollments.filter((e) => e.passed && e.certificateCode && e.released && !e.revoked).length;
+    const perfect = u.enrollments.filter((e) => (e.examScore ?? 0) >= 100).length;
+    const totalXp = totalXpOf(u.xp, completed, perfect);
+    return { id: u.id, name: u.name, avatar: u.avatar, totalXp, level: Math.floor(totalXp / LEVEL_SIZE) + 1, streakDays: u.streakDays, completed };
+  }).sort((a, b) => b.totalXp - a.totalXp || b.completed - a.completed);
+
+  const myIndex = ranked.findIndex((r) => r.id === me.id);
+  const entries = ranked.slice(0, 20).map((r, i) => ({
+    rank: i + 1,
+    name: r.name,
+    avatar: r.avatar,
+    level: r.level,
+    totalXp: r.totalXp,
+    streakDays: r.streakDays,
+    isMe: r.id === me.id,
+  }));
+  res.json({
+    hasCompany: true,
+    entries,
+    myRank: myIndex >= 0 ? myIndex + 1 : null,
+    totalPeers: ranked.length,
+  });
+});
+
 // Reúne o banco de questões dos cursos do aluno (fallback: cursos ativos).
 async function questionPool(userId: string): Promise<{ courseId: string; qIndex: number; q: ExamQ }[]> {
   const enrollments = await prisma.enrollment.findMany({

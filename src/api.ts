@@ -343,12 +343,12 @@ export const enrollmentsApi = {
     });
     return data.enrollment;
   },
-  async updateProgress(id: string, progress: number): Promise<ApiEnrollment> {
-    const data = await apiFetch<{ enrollment: ApiEnrollment }>(`/enrollments/${id}/progress`, {
+  async updateProgress(id: string, progress: number): Promise<{ enrollment: ApiEnrollment; xpAwarded: number }> {
+    const data = await apiFetch<{ enrollment: ApiEnrollment; xpAwarded?: number }>(`/enrollments/${id}/progress`, {
       method: 'PATCH',
       body: JSON.stringify({ progress }),
     });
-    return data.enrollment;
+    return { enrollment: data.enrollment, xpAwarded: data.xpAwarded ?? 0 };
   },
   async submitExam(
     id: string,
@@ -922,7 +922,13 @@ export const gamificationApi = {
       body: JSON.stringify({ courseId, qIndex, answerIndex }),
     });
   },
+  leaderboard() {
+    return apiFetch<LeaderboardData>('/gamification/leaderboard');
+  },
 };
+
+export interface LeaderboardEntry { rank: number; name: string; avatar: string | null; level: number; totalXp: number; streakDays: number; isMe: boolean }
+export interface LeaderboardData { hasCompany: boolean; entries: LeaderboardEntry[]; myRank: number | null; totalPeers?: number }
 
 // Extrai o slug do parceiro a partir do host (subdomínio de falainstrutor.com.br).
 export function partnerSlugFromHost(host: string): string | null {

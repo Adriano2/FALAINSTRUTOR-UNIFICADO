@@ -42,6 +42,7 @@ export default function App() {
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
   // Nome do usuário recém-cadastrado (exibe a mensagem de boas-vindas).
   const [welcomeName, setWelcomeName] = React.useState<string | null>(null);
+  const [xpToast, setXpToast] = React.useState<string | null>(null);
   // Marca white-label do parceiro (detectada pelo subdomínio).
   const [partnerBrand, setPartnerBrand] = React.useState<Partner | null>(null);
 
@@ -619,13 +620,21 @@ export default function App() {
     }
   };
 
+  // Some o aviso de XP automaticamente após alguns segundos.
+  React.useEffect(() => {
+    if (!xpToast) return;
+    const t = setTimeout(() => setXpToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [xpToast]);
+
   // Watch classroom studies and save progress rate — persiste no banco.
   const handleUpdateEnrollmentProgress = async (enrollmentId: string, progressFraction: number) => {
     if (getToken() && currentUser) {
       try {
-        const updated = await enrollmentsApi.updateProgress(enrollmentId, progressFraction);
-        const mapped = mapApiEnrollment(updated, currentUser);
+        const { enrollment, xpAwarded } = await enrollmentsApi.updateProgress(enrollmentId, progressFraction);
+        const mapped = mapApiEnrollment(enrollment, currentUser);
         setMyEnrollments((prev) => prev.map((e) => (e.id === enrollmentId ? mapped : e)));
+        if (xpAwarded > 0) setXpToast(`+${xpAwarded} XP • módulo concluído! 🎯`);
       } catch {
         /* progresso é atualizado de forma otimista no componente */
       }
@@ -984,6 +993,15 @@ export default function App() {
       {/* Botão flutuante "Falar no WhatsApp" (telas públicas) */}
       {['home', 'course-detail', 'cart', 'validate-certificate', 'projeto-pedagogico', 'plans', 'login', 'register'].includes(currentScreen) && (
         <WhatsAppButton number={partnerBrand?.whatsappNumber || layoutConfig.whatsappNumber || layoutConfig.phone} />
+      )}
+
+      {/* Aviso de XP ganho (gamificação) */}
+      {xpToast && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[70] animate-fade-in">
+          <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-5 py-2.5 shadow-2xl text-sm font-bold">
+            <span className="text-lg">⚡</span> {xpToast}
+          </div>
+        </div>
       )}
 
       {/* Boas-vindas após o cadastro gratuito */}

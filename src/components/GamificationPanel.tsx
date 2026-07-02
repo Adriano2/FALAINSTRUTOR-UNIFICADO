@@ -9,12 +9,13 @@
  */
 
 import React from 'react';
-import { Loader2, Flame, Trophy, Zap, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
-import { gamificationApi, GamificationData, MicroQuizData, MicroQuizResult } from '../api';
+import { Loader2, Flame, Trophy, Zap, CheckCircle2, XCircle, Sparkles, Medal } from 'lucide-react';
+import { gamificationApi, GamificationData, MicroQuizData, MicroQuizResult, LeaderboardData } from '../api';
 
 export default function GamificationPanel() {
   const [data, setData] = React.useState<GamificationData | null>(null);
   const [micro, setMicro] = React.useState<MicroQuizData | null>(null);
+  const [board, setBoard] = React.useState<LeaderboardData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [selected, setSelected] = React.useState<number | null>(null);
   const [result, setResult] = React.useState<MicroQuizResult | null>(null);
@@ -22,8 +23,8 @@ export default function GamificationPanel() {
 
   const load = React.useCallback(() => {
     setLoading(true);
-    Promise.all([gamificationApi.me(), gamificationApi.micro()])
-      .then(([g, m]) => { setData(g); setMicro(m); })
+    Promise.all([gamificationApi.me(), gamificationApi.micro(), gamificationApi.leaderboard().catch(() => null)])
+      .then(([g, m, b]) => { setData(g); setMicro(m); setBoard(b); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -145,6 +146,34 @@ export default function GamificationPanel() {
           ))}
         </div>
       </div>
+
+      {/* Ranking da empresa */}
+      {board?.hasCompany && board.entries.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+            <Medal className="w-4 h-4 text-amber-500" /> Ranking da Empresa
+            {board.myRank && <span className="text-[11px] font-bold text-slate-400">você: {board.myRank}º de {board.totalPeers}</span>}
+          </h3>
+          <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
+            {board.entries.map((e) => (
+              <div key={e.rank} className={`flex items-center gap-3 py-2 px-1 rounded ${e.isMe ? 'bg-blue-500/10' : ''}`}>
+                <span className={`w-6 text-center font-black text-sm ${e.rank === 1 ? 'text-amber-500' : e.rank === 2 ? 'text-slate-400' : e.rank === 3 ? 'text-orange-400' : 'text-slate-400'}`}>
+                  {e.rank <= 3 ? ['🥇', '🥈', '🥉'][e.rank - 1] : e.rank}
+                </span>
+                {e.avatar
+                  ? <img src={e.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  : <span className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[11px] font-bold text-slate-500">{e.name.charAt(0)}</span>}
+                <span className={`flex-1 text-xs truncate ${e.isMe ? 'font-black text-blue-700 dark:text-blue-300' : 'font-semibold text-slate-700 dark:text-slate-200'}`}>
+                  {e.name}{e.isMe ? ' (você)' : ''}
+                </span>
+                {e.streakDays > 0 && <span className="text-[11px] text-orange-500 font-bold">{e.streakDays}🔥</span>}
+                <span className="text-[11px] font-bold text-slate-400">Nv {e.level}</span>
+                <span className="text-xs font-black text-blue-600 w-16 text-right">{e.totalXp} XP</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

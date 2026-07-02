@@ -259,6 +259,9 @@ model Enrollment {
   // Alerta de vencimento já enviado (evita reenvio constante)
   expiryNotifiedAt DateTime?
 
+  // Gamificação: nº de módulos já premiados com XP (evita creditar duas vezes).
+  xpModulesAwarded Int @default(0)
+
   // Rastreamento de tempo (auditoria do treinamento)
   firstAccessAt   DateTime? // primeiro acesso à sala de aula
   watchedSeconds  Int       @default(0) // tempo assistido acumulado, em segundos

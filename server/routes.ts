@@ -160,16 +160,36 @@ apiRouter.patch('/enrollments/:id/progress', authenticate, async (req: AuthedReq
   const parsed = z.object({ progress: z.number().int().min(0).max(100) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Progresso inválido.' });
 
-  const enr = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+  const enr = await prisma.enrollment.findUnique({
+    where: { id: req.params.id },
+    include: { course: { select: { modules: true } } },
+  });
   if (!enr || enr.userId !== req.user!.sub) {
     return res.status(404).json({ error: 'Matrícula não encontrada.' });
   }
+
+  // Gamificação: credita XP a cada módulo concluído (progresso cruza a fração
+  // de um módulo). Deduplicado por Enrollment.xpModulesAwarded.
+  const XP_PER_MODULE = 15;
+  const moduleCount = Math.max(1, enr.course.modules.length);
+  const modulesDone = Math.min(moduleCount, Math.floor((parsed.data.progress / 100) * moduleCount));
+  let xpAwarded = 0;
+  if (modulesDone > enr.xpModulesAwarded) {
+    xpAwarded = (modulesDone - enr.xpModulesAwarded) * XP_PER_MODULE;
+  }
+
   const enrollment = await prisma.enrollment.update({
     where: { id: enr.id },
-    data: { progress: parsed.data.progress },
+    data: {
+      progress: parsed.data.progress,
+      ...(xpAwarded > 0 ? { xpModulesAwarded: modulesDone } : {}),
+    },
     include: enrollInclude,
   });
-  res.json({ enrollment });
+  if (xpAwarded > 0) {
+    await prisma.user.update({ where: { id: enr.userId }, data: { xp: { increment: xpAwarded } } });
+  }
+  res.json({ enrollment, xpAwarded });
 });
 
 // Verifica se o aluno pode acessar os treinamentos AGORA (restrição de horário
